@@ -1,4 +1,4 @@
-package de.uol.sao.rcpsp_framework.model;
+package de.uol.sao.rcpsp_framework.model.benchmark;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;

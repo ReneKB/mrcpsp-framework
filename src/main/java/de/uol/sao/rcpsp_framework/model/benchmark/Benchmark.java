@@ -1,4 +1,4 @@
-package de.uol.sao.rcpsp_framework.model;
+package de.uol.sao.rcpsp_framework.model.benchmark;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Benchmark {
     Project project;
+    String name;
 
     int numberJobs;
     int horizon;

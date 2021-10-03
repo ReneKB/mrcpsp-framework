@@ -27,6 +27,18 @@
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- Visualization -->
+        <dependency>
+            <groupId>guru.nidi</groupId>
+            <artifactId>graphviz-java</artifactId>
+            <version>0.18.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+
         <!-- Misc -->
         <dependency>
             <groupId>org.projectlombok</groupId>
