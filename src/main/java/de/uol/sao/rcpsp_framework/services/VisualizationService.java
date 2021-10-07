@@ -122,12 +122,11 @@ public class VisualizationService {
         resourceIntegerMap.forEach((resource, availableResource) -> {
             CategoryTableXYDataset dataset = new CategoryTableXYDataset();
 
-            // ToDo: Needs replacement with actual data
-            schedule.getIntervals().forEach(interval -> {
-                interval.getJobMode().getMode().getRequestedResources().forEach((requestedResource, requestedResourceAmount) -> {
+            schedule.getResourcePlans().keySet().forEach(resourceOfPlan -> {
+                schedule.getResourcePlans().get(resourceOfPlan).forEach(interval -> {
                     for (int t = interval.getLowerBound(); t <= interval.getUpperBound(); t++) {
-                        if (resource.getResourceId() == requestedResource.getResourceId()) {
-                            dataset.add(t, requestedResourceAmount, interval.getJobMode().getJob().toString());
+                        if (resourceOfPlan.getResourceId() == resource.getResourceId()) {
+                            dataset.add(t, interval.getAmount(), interval.getSource().getJob().toString());
                         }
                     }
                 });
