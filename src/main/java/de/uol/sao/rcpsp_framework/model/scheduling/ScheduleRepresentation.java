@@ -1,5 +1,7 @@
 package de.uol.sao.rcpsp_framework.model.scheduling;
 
+import de.uol.sao.rcpsp_framework.model.benchmark.Project;
+
 import java.util.List;
 
 public interface ScheduleRepresentation {
@@ -18,5 +20,5 @@ public interface ScheduleRepresentation {
      * Converts the given representation into a JobMode object
      * @return Convert result
      */
-    List<JobMode> toJobMode();
+    List<JobMode> toJobMode(Project project);
 }

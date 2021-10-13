@@ -1,9 +1,12 @@
 package de.uol.sao.rcpsp_framework.services;
 
+import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.services.experiment.ExperimentService;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
+import de.uol.sao.rcpsp_framework.services.solver.RandomSolver;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -23,10 +26,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
     BenchmarkLoaderService benchmarkLoaderService;
 
     @Autowired
-    VisualizationService visualizationService;
-
-    @Autowired
-    SchedulerService schedulerService;
+    ExperimentService experimentService;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -52,17 +52,6 @@ public class CommandRunnerComponent implements ApplicationRunner {
         Benchmark benchmark = benchmarkLoaderService.loadBenchmark(benchmarkFilePath.get());
 
         // Actual task
-        Schedule schedule = schedulerService.createSchedule(benchmark, new ArrayList<>());
-
-        // Afterwork
-        options.forEach(finalOption -> {
-            switch (CommandArgsOptions.fromString(finalOption)) {
-                case VISUALIZE:
-                    visualizationService.visualizeJobsBenchmark(benchmark);
-                    visualizationService.visualizeResults(schedule);
-                    break;
-                default:
-            }
-        });
+        experimentService.runExperiment(args, benchmark);
     }
 }

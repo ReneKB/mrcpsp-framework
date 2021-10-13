@@ -7,6 +7,9 @@ import java.util.Arrays;
 public enum CommandArgsOptions {
     VISUALIZE("visualize"),
     SOURCE("source"),
+    ITERATIONS("iterations"),
+    SOLVERS("solvers"),
+    EXPERIMENT("experiment"),
     NONE("none");
 
     @Getter

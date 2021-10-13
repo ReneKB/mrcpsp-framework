@@ -122,11 +122,11 @@ public class VisualizationService {
         resourceIntegerMap.forEach((resource, availableResource) -> {
             CategoryTableXYDataset dataset = new CategoryTableXYDataset();
 
-            schedule.getResourcePlans().keySet().forEach(resourceOfPlan -> {
-                schedule.getResourcePlans().get(resourceOfPlan).forEach(interval -> {
+            schedule.getResourcePlans().forEach((resourceOfPlan, intervals) -> {
+                intervals.forEach(interval -> {
                     for (int t = interval.getLowerBound(); t <= interval.getUpperBound(); t++) {
-                        if (resourceOfPlan.getResourceId() == resource.getResourceId()) {
-                            dataset.add(t, interval.getAmount(), interval.getSource().getJob().toString());
+                        if (resourceOfPlan.toString().equals(resource.toString())) {
+                            dataset.add(t + 1, interval.getAmount(), interval.getSource().getJob().toString());
                         }
                     }
                 });
@@ -149,7 +149,7 @@ public class VisualizationService {
 
             // Domain axis
             NumberAxis domain = (NumberAxis) plot.getDomainAxis();
-            domain.setRange(0, benchmark.getHorizon());
+            domain.setRange(1, benchmark.getHorizon());
             domain.setVerticalTickLabels(true);
             domain.setTickUnit(new NumberTickUnit(1));
 
