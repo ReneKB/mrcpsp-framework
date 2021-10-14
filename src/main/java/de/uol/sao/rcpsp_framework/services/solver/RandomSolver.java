@@ -5,6 +5,7 @@ import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.scheduling.PriorityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +30,9 @@ public class RandomSolver implements Solver {
             try {
                 schedule = schedulerService.createSchedule(benchmark, this.createRandomPriorityListRepresentation(benchmark));
             } catch (NoNonRenewableResourcesLeftException e) {
-
+                // ignore as it will be considered as worst result
             }
-            if (bestSchedule == null || (schedule != null && bestSchedule.getMakespan() > schedule.getMakespan()))
+            if (bestSchedule == null || (schedule != null && bestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN)))
                 bestSchedule = schedule;
         }
         return bestSchedule;

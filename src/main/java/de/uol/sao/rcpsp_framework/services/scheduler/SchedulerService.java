@@ -78,6 +78,7 @@ public class SchedulerService {
                         potentialLowerBound++;
                     }
 
+                    /*
                     // Check if match globally and get the new possible solution
                     if (solutionFound) {
                         for (Map.Entry<Resource, List<Interval>> resourceListEntry : resourcePlan.entrySet()) {
@@ -104,7 +105,7 @@ public class SchedulerService {
                                 }
                             }
                         }
-                    }
+                    }*/
                 }
             }
 

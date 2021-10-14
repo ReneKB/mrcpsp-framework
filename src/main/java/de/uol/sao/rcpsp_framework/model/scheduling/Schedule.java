@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.model.scheduling;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.RenewableResource;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
+import de.uol.sao.rcpsp_framework.services.metrics.Metric;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,12 +23,7 @@ public class Schedule {
     Map<Resource, List<Interval>> resourcePlans = new HashMap<>();
     ScheduleRepresentation scheduleRepresentation;
 
-    public int getMakespan() {
-        AtomicInteger makespan = new AtomicInteger();
-        resourcePlans.forEach((resource, intervals) -> {
-            if (resource instanceof RenewableResource)
-                intervals.forEach(interval -> makespan.set(Math.max(interval.getUpperBound() + 1, makespan.get())));
-        });
-        return makespan.get();
+    public <T> T computeMetric(Metric<T> metric) {
+        return (T) metric.computeMetric(this);
     }
 }

@@ -10,6 +10,7 @@ public enum CommandArgsOptions {
     ITERATIONS("iterations"),
     SOLVERS("solvers"),
     EXPERIMENT("experiment"),
+    METRIC("metric"),
     NONE("none");
 
     @Getter

@@ -42,6 +42,8 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
     @SneakyThrows
     public Benchmark loadBenchmark(String file) {
         InputStream inputStream = BenchmarkPSPLIBMultiModeLoader.class.getClassLoader().getResourceAsStream(file);
+        if (inputStream == null)
+            throw new RuntimeException("Benchmark " + file + " not found");
 
         Project project = new Project();
         Benchmark benchmark = new Benchmark();

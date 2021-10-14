@@ -4,7 +4,8 @@ import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
-import de.uol.sao.rcpsp_framework.services.solver.RandomSolver;
+import de.uol.sao.rcpsp_framework.services.metrics.Metric;
+import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.solver.Solver;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
@@ -12,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -34,9 +32,9 @@ public class ExperimentService {
         Set<String> options = args.getOptionNames();
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
-        int experiment = 15;
+        int experiment = 8;
 
-        iterations.add(100000);
+        iterations.add(10000);
         solvers.add("RandomSolver");
 
         // Prework
@@ -73,6 +71,7 @@ public class ExperimentService {
         List<String> finalSolvers = solvers;
 
         AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
+
         IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
             // Main work
             for (Integer iteration : finalIterations) {
@@ -81,28 +80,22 @@ public class ExperimentService {
                     Schedule bestSchedule = solver.algorithm(benchmark, iteration);
 
                     if (bestSchedule != null) {
-                        log.info(String.format("Experiment %d - Iterations %d - Solver %s # Best Schedule: %d",
-                                experimentNo,
-                                iteration,
-                                solver,
-                                bestSchedule.getMakespan()));
+                        logSchedule(experimentNo, iteration, solverStr, bestSchedule, Collections.singletonList(Metrics.RM1));
 
                         // Afterwork;
-                        if (bestOverallSchedule.get() == null || (bestOverallSchedule.get().getMakespan() > bestSchedule.getMakespan())) {
+                        if (bestOverallSchedule.get() == null ||
+                            (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) > bestSchedule.computeMetric(Metrics.MAKESPAN))) {
                             bestOverallSchedule.set(bestSchedule);
                         }
                     } else {
-                        log.info(String.format("Experiment %d - Iterations %d - Solver %s # No schedule found!",
-                                experimentNo,
-                                iteration,
-                                solver));
+                        logSchedule(experimentNo, iteration, solverStr, bestSchedule, Collections.singletonList(Metrics.RM1));
                     }
                 }
             }
         });
 
         if (bestOverallSchedule.get() != null) {
-            log.info("Best Overall Schedule: " + bestOverallSchedule.get().getMakespan());
+            log.info("Best Overall Schedule: " + bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN));
             options.forEach(finalOption -> {
                 switch (CommandArgsOptions.fromString(finalOption)) {
                     case VISUALIZE:
@@ -113,6 +106,21 @@ public class ExperimentService {
                 }
             });
         }
+    }
+
+    private void logSchedule(int experimentNo, Integer iteration, String solverStr, Schedule schedule, List<Metric> metrics) {
+        Set<String> values = new HashSet<>();
+        if (schedule != null) {
+            metrics.forEach(metric -> {
+                values.add(metric.getClass().getSimpleName() + ": " + metric.computeMetric(schedule));
+            });
+        }
+        log.info(String.format("Experiment %d - Iterations %d - Solver %s # Makespan: %s, Metrics: %s",
+                experimentNo,
+                iteration,
+                solverStr,
+                schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
+                values));
     }
 
 }
