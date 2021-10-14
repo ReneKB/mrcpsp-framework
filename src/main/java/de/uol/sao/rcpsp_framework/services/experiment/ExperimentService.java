@@ -86,6 +86,10 @@ public class ExperimentService {
                         if (bestOverallSchedule.get() == null ||
                             (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) > bestSchedule.computeMetric(Metrics.MAKESPAN))) {
                             bestOverallSchedule.set(bestSchedule);
+                        } else if(
+                         (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) == bestSchedule.computeMetric(Metrics.MAKESPAN)) &&
+                         (bestOverallSchedule.get().computeMetric(Metrics.RM1) < bestSchedule.computeMetric(Metrics.RM1)))        {
+                            bestOverallSchedule.set(bestSchedule);
                         }
                     } else {
                         logSchedule(experimentNo, iteration, solverStr, bestSchedule, Collections.singletonList(Metrics.RM1));
@@ -95,7 +99,7 @@ public class ExperimentService {
         });
 
         if (bestOverallSchedule.get() != null) {
-            log.info("Best Overall Schedule: " + bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN));
+            logSchedule(-1, 0, "", bestOverallSchedule.get(), Collections.singletonList(Metrics.RM1));
             options.forEach(finalOption -> {
                 switch (CommandArgsOptions.fromString(finalOption)) {
                     case VISUALIZE:
@@ -115,12 +119,19 @@ public class ExperimentService {
                 values.add(metric.getClass().getSimpleName() + ": " + metric.computeMetric(schedule));
             });
         }
-        log.info(String.format("Experiment %d - Iterations %d - Solver %s # Makespan: %s, Metrics: %s",
-                experimentNo,
-                iteration,
-                solverStr,
-                schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
-                values));
+
+        if (experimentNo == -1) {
+            log.info(String.format("Best Overall Schedule # Makespan: %s, Metrics: %s",
+                    schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
+                    values));
+        } else {
+            log.info(String.format("Experiment %d - Iterations %d - Solver %s # Makespan: %s, Metrics: %s",
+                    experimentNo,
+                    iteration,
+                    solverStr,
+                    schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
+                    values));
+        }
     }
 
 }
