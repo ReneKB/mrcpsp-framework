@@ -28,8 +28,8 @@ public class RandomSolver implements Solver {
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createSchedule(benchmark, this.createRandomPriorityListRepresentation(benchmark));
-            } catch (NoNonRenewableResourcesLeftException e) {
+                schedule = schedulerService.createScheduleProactive(benchmark, this.createRandomPriorityListRepresentation(benchmark));
+            } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
             if (bestSchedule == null || (schedule != null && bestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN)))

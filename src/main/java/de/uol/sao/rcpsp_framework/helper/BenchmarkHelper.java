@@ -21,9 +21,9 @@ public class BenchmarkHelper {
         Set<Job> jobs = new HashSet<>();
         project.getJobs().forEach(possiblePredecessor -> {
             Optional<Job> possiblePredecessorOptional = possiblePredecessor.getSuccessor()
-                .stream()
-                .filter(job2 -> job2.getJobId() == job.getJobId())
-                .findFirst();
+                    .stream()
+                    .filter(job2 -> job2.getJobId() == job.getJobId())
+                    .findFirst();
             if (possiblePredecessorOptional.isPresent())
                 jobs.add(possiblePredecessor);
         });
@@ -33,6 +33,7 @@ public class BenchmarkHelper {
     /**
      * Some benchmarks mandatory requires non-renewable resources as there is no mode alternative in an activity.
      * Solvers might need information about these Modes and need to be executed these.
+     *
      * @return Map of all reserved jobs including the modes
      */
     public static Map<Job, List<Mode>> getReservationOfNonRenewableResources(Project project) {
@@ -99,5 +100,30 @@ public class BenchmarkHelper {
         }
 
         return reservationsAmount;
+    }
+
+    public static int getDepthOfJob(Project project, Job job, int currentDepth) {
+        Set<Job> directPredecessors = BenchmarkHelper.getPredecessorsOfJob(project, job);
+        if (directPredecessors.isEmpty())
+            return currentDepth;
+
+        int maxPredecessor = 0;
+        for (Job directPredecessor : directPredecessors) {
+            maxPredecessor = Math.max(maxPredecessor, getDepthOfJob(project, directPredecessor, currentDepth + 1));
+        }
+
+        return maxPredecessor;
+    }
+
+    /**
+     * Get all available Jobs where the already scheduled jobs holds
+     * @param project Project
+     * @param alreadyScheduledJobs The current scheduled jobs which is necessary to determine the new states
+     * @return
+     */
+    public static Set<Job> getAvailableJobs(Project project, List<Job> alreadyScheduledJobs) {
+        Set<Job> availableJobs = project.getJobs().stream().filter(job -> alreadyScheduledJobs.containsAll(BenchmarkHelper.getPredecessorsOfJob(project, job))).collect(Collectors.toSet());
+        availableJobs.removeAll(alreadyScheduledJobs);
+        return availableJobs;
     }
 }

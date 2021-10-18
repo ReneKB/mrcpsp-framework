@@ -1,5 +1,7 @@
 package de.uol.sao.rcpsp_framework.services.scheduler;
 
+import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
+import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.scheduling.Interval;
 import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
@@ -20,7 +22,7 @@ public class SchedulerService {
      * @param execution List of all required executions
      * @return
      */
-    public Schedule createSchedule(Benchmark benchmark, ScheduleRepresentation execution) {
+    public Schedule createScheduleProactive(Benchmark benchmark, ScheduleRepresentation execution) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
         Map<Job, Integer> earliestStartTime = new HashMap<>();
@@ -69,10 +71,10 @@ public class SchedulerService {
 
                     // Check if the schedule can be actually scheduled
                     if (currentModeAmount > resourceAvailableGeneral) {
-                        throw new RuntimeException("Unsolvable (RenewableResource) @: " + jobMode);
+                        throw new RenewableResourceNotEnoughException();
                     } else if (currentModeAmount > resourceAvailableOnInterval &&
                             currentModeResource instanceof NonRenewableResource) {
-                        throw new RuntimeException("Unsolvable (NonRenewableResource) @: " + jobMode);
+                        throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialLowerBound++;

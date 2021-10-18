@@ -1,19 +1,14 @@
 package de.uol.sao.rcpsp_framework.services;
 
-import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
-import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.experiment.ExperimentService;
-import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
-import de.uol.sao.rcpsp_framework.services.solver.RandomSolver;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;

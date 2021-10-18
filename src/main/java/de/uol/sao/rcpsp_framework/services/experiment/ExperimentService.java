@@ -32,10 +32,10 @@ public class ExperimentService {
         Set<String> options = args.getOptionNames();
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
-        int experiment = 8;
+        int experiment = 1;
 
-        iterations.add(10000);
-        solvers.add("RandomSolver");
+        iterations.add(100000000);
+        solvers.add("GreedySolver");
 
         // Prework
         for (String beginningOption : options) {
@@ -44,7 +44,7 @@ public class ExperimentService {
                     List<String> iterationsStrings = args.getOptionValues(CommandArgsOptions.ITERATIONS.getCommandStr());
                     if (iterationsStrings.size() == 0)
                         log.warn(String.format("No iterations specified. %s will be kept a will be set as default iterations. " +
-                                "Usage: --iterations=100,10000,...", iterations));
+                                "Usage: --iterations=100 --iterations=10000,...", iterations));
                     else
                         iterations = iterationsStrings.stream().map(Integer::parseInt).collect(Collectors.toList());
                     break;
@@ -52,7 +52,7 @@ public class ExperimentService {
                     List<String> solverStrings = args.getOptionValues(CommandArgsOptions.SOLVERS.getCommandStr());
                     if (solverStrings.size() == 0)
                         log.warn(String.format("No solvers specified. %s will be kept a will be set as default iterations. " +
-                                "Usage: --solvers=100,10000,...", iterations));
+                                "Usage: --solvers=RandomSolver --solvers=GeneticAlgorithm", iterations));
                     else
                         solvers = solverStrings;
                     break;

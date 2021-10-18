@@ -9,4 +9,7 @@ public class NoNonRenewableResourcesLeftException extends Exception {
     public NoNonRenewableResourcesLeftException(Job job, Map<Resource, Integer> left) {
         super(String.format("No non renewable resources left. Job %s, Left Resources %s", job, left));
     }
+    public NoNonRenewableResourcesLeftException(Job job) {
+        super(String.format("No non renewable resources left. Job %s", job));
+    }
 }
