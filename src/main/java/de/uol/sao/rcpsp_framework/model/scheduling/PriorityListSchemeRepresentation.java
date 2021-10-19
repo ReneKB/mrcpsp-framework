@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @NoArgsConstructor
@@ -38,6 +39,10 @@ public class PriorityListSchemeRepresentation implements ScheduleRepresentation 
             jobModes.add(new JobMode(job, mode));
         }
         return jobModes;
+    }
+
+    public String toString() {
+        return String.format("λ: %s, µ: %s", Arrays.toString(activities), Arrays.toString(modes));
     }
 
 }

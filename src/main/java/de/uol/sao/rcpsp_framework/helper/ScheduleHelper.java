@@ -4,12 +4,15 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
+import de.uol.sao.rcpsp_framework.services.metrics.Metric;
 import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import lombok.extern.log4j.Log4j2;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Log4j2
 public class ScheduleHelper {
 
     public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
@@ -90,5 +93,18 @@ public class ScheduleHelper {
         }
 
         return slack;
+    }
+
+    public static void outputSchedule(Schedule schedule, Metric robustnessMetric) {
+        if (schedule == null) {
+            log.info("No result available");
+        }
+        else {
+            log.info(String.format("Makespan: %d - %s: %d - %s",
+                    schedule.computeMetric(Metrics.MAKESPAN),
+                    robustnessMetric.getClass().getSimpleName(),
+                    schedule.computeMetric(robustnessMetric),
+                    schedule.getScheduleRepresentation()));
+        }
     }
 }

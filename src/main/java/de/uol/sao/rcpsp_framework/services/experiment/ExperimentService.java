@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.services.experiment;
 
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
@@ -28,13 +29,14 @@ public class ExperimentService {
     @Autowired
     BeanFactory beans;
 
-    public void runExperiment(ApplicationArguments args, Benchmark benchmark) {
+    public void runExperiments(ApplicationArguments args, Benchmark benchmark) {
         Set<String> options = args.getOptionNames();
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
-        int experiment = 1;
+        Metric<Integer> robustnessMetric = Metrics.RM1;
+        int experiment = 5;
 
-        iterations.add(100000000);
+        iterations.add(100000);
         solvers.add("GreedySolver");
 
         // Prework
@@ -67,6 +69,14 @@ public class ExperimentService {
             }
         }
 
+        log.info("");
+        log.info(String.format("## Benchmark %s starts with the following metadata ##", benchmark.getName()));
+        log.info("Solvers: " + solvers);
+        log.info("Experiments: " + experiment);
+        log.info("Iterations: " + iterations);
+        log.info("Robustness Metric: " + robustnessMetric.getClass().getSimpleName());
+        log.info("");
+
         List<Integer> finalIterations = iterations;
         List<String> finalSolvers = solvers;
 
@@ -76,12 +86,14 @@ public class ExperimentService {
             // Main work
             for (Integer iteration : finalIterations) {
                 for (String solverStr : finalSolvers) {
+                    log.info(String.format("Started experiment %d (Solver: %s, Iterations: %d) ", experimentNo, solverStr, iteration));
                     Solver solver = beans.getBean(solverStr, Solver.class);
                     Schedule bestSchedule = solver.algorithm(benchmark, iteration);
 
-                    if (bestSchedule != null) {
-                        logSchedule(experimentNo, iteration, solverStr, bestSchedule, Collections.singletonList(Metrics.RM1));
+                    log.info(String.format("Completed experiment %d (Solver: %s, Iterations: %d). Best Result: ", experimentNo, solverStr, iteration));
+                    ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
 
+                    if (bestSchedule != null) {
                         // Afterwork;
                         if (bestOverallSchedule.get() == null ||
                             (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) > bestSchedule.computeMetric(Metrics.MAKESPAN))) {
@@ -91,18 +103,21 @@ public class ExperimentService {
                          (bestOverallSchedule.get().computeMetric(Metrics.RM1) < bestSchedule.computeMetric(Metrics.RM1)))        {
                             bestOverallSchedule.set(bestSchedule);
                         }
-                    } else {
-                        logSchedule(experimentNo, iteration, solverStr, bestSchedule, Collections.singletonList(Metrics.RM1));
                     }
                 }
             }
         });
 
+        log.info("");
+        log.info("All experiments have been finished! Best Overall Schedule: ");
+
         if (bestOverallSchedule.get() != null) {
-            logSchedule(-1, 0, "", bestOverallSchedule.get(), Collections.singletonList(Metrics.RM1));
+            ScheduleHelper.outputSchedule(bestOverallSchedule.get(), robustnessMetric);
             options.forEach(finalOption -> {
                 switch (CommandArgsOptions.fromString(finalOption)) {
                     case VISUALIZE:
+                        log.info("");
+                        log.info("Visualizing the result... ");
                         visualizationService.visualizeJobsBenchmark(benchmark);
                         visualizationService.visualizeResults(bestOverallSchedule.get());
                         break;
@@ -112,26 +127,5 @@ public class ExperimentService {
         }
     }
 
-    private void logSchedule(int experimentNo, Integer iteration, String solverStr, Schedule schedule, List<Metric> metrics) {
-        Set<String> values = new HashSet<>();
-        if (schedule != null) {
-            metrics.forEach(metric -> {
-                values.add(metric.getClass().getSimpleName() + ": " + metric.computeMetric(schedule));
-            });
-        }
-
-        if (experimentNo == -1) {
-            log.info(String.format("Best Overall Schedule # Makespan: %s, Metrics: %s",
-                    schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
-                    values));
-        } else {
-            log.info(String.format("Experiment %d - Iterations %d - Solver %s # Makespan: %s, Metrics: %s",
-                    experimentNo,
-                    iteration,
-                    solverStr,
-                    schedule != null ? schedule.computeMetric(Metrics.MAKESPAN).toString() : "No result",
-                    values));
-        }
-    }
 
 }

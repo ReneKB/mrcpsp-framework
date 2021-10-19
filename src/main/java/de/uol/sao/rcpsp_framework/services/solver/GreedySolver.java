@@ -1,14 +1,17 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
-import de.uol.sao.rcpsp_framework.model.benchmark.*;
+import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
+import de.uol.sao.rcpsp_framework.model.benchmark.Job;
+import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.scheduling.PriorityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service("GreedySolver")
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class GreedySolver implements Solver {
 
     @Autowired
