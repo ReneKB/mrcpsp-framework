@@ -4,6 +4,9 @@ import lombok.Getter;
 
 import java.util.Arrays;
 
+/**
+ * All available programs args options are listed here
+ */
 public enum CommandArgsOptions {
     VISUALIZE("visualize"),
     SOURCE("source"),

@@ -10,12 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 public class RandomKeySchemeRepresentation implements ScheduleRepresentation{
     double[] activities; // equals \lambda acc. to literature
-    int[] modes; // equals \mu acc. to literature
-
-    @Override
-    public Schedule buildScheme() {
-        return null;
-    }
+    double[] modes; // equals \mu acc. to literature
 
     @Override
     public void validityScheme() {

@@ -1,9 +1,9 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
-import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
+import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
-import de.uol.sao.rcpsp_framework.model.scheduling.PriorityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
@@ -41,7 +41,7 @@ public class RandomSolver implements Solver {
         return bestSchedule;
     }
 
-    private PriorityListSchemeRepresentation createRandomPriorityListRepresentation(Benchmark benchmark) throws NoNonRenewableResourcesLeftException {
+    private ActivityListSchemeRepresentation createRandomPriorityListRepresentation(Benchmark benchmark) throws NoNonRenewableResourcesLeftException {
         List<Job> activityScheduled = new ArrayList<>();
         List<Mode> modesScheduled = new ArrayList<>();
 
@@ -68,7 +68,7 @@ public class RandomSolver implements Solver {
             possibleJobs.remove(selectedJob);
 
             selectedJob.getSuccessor().forEach(successorJob -> {
-                Set<Job> successorsPredecessors = BenchmarkHelper.getPredecessorsOfJob(benchmark.getProject(), successorJob);
+                Set<Job> successorsPredecessors = ProjectHelper.getPredecessorsOfJob(benchmark.getProject(), successorJob);
                 // Check if all are already scheduled if yes, add them to possible succesors
                 boolean possible = true;
                 for (Job successorsPredecessor : successorsPredecessors) {
@@ -82,8 +82,8 @@ public class RandomSolver implements Solver {
         }
 
         // Second schedule the modes
-        Map<Job, List<Mode>> reservation = BenchmarkHelper.getReservationOfNonRenewableResources(benchmark.getProject());
-        Map<Resource, Integer> reservedResources = BenchmarkHelper.getReservationAmountOfNonRenewableResources(reservation);
+        Map<Job, List<Mode>> reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
+        Map<Resource, Integer> reservedResources = ProjectHelper.getReservationAmountOfNonRenewableResources(reservation);
 
         for (Job selectedJob : activityScheduled) {
             List<Mode> possibleModes = new ArrayList<>(selectedJob.getModes());
@@ -129,10 +129,10 @@ public class RandomSolver implements Solver {
             modesScheduled.add(selectedMode);
 
             reservation.remove(selectedJob);
-            reservedResources = BenchmarkHelper.getReservationAmountOfNonRenewableResources(reservation);
+            reservedResources = ProjectHelper.getReservationAmountOfNonRenewableResources(reservation);
         }
 
-        return new PriorityListSchemeRepresentation(
+        return new ActivityListSchemeRepresentation(
                 activityScheduled.stream().mapToInt(Job::getJobId).toArray(),
                 modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
         );

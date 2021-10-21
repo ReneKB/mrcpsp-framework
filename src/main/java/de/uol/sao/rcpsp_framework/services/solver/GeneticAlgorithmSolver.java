@@ -1,9 +1,6 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
-import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
-import de.uol.sao.rcpsp_framework.model.scheduling.PriorityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
@@ -20,7 +17,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service("GeneticAlgorithm")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class GeneticAlgorithm implements Solver {
+public class GeneticAlgorithmSolver implements Solver {
     @Autowired
     SchedulerService schedulerService;
 

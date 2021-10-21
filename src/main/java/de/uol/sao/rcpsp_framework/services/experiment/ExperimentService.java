@@ -34,10 +34,14 @@ public class ExperimentService {
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
-        int experiment = 5;
+        int experiment = 8;
 
-        iterations.add(100000);
-        solvers.add("GreedySolver");
+        // iterations.add(500);
+        iterations.add(5000);
+        // iterations.add(5000);
+
+        solvers.add("TabuSearchSolver");
+        // solvers.add("TabuSearchSolver");
 
         // Prework
         for (String beginningOption : options) {
@@ -69,13 +73,7 @@ public class ExperimentService {
             }
         }
 
-        log.info("");
-        log.info(String.format("## Benchmark %s starts with the following metadata ##", benchmark.getName()));
-        log.info("Solvers: " + solvers);
-        log.info("Experiments: " + experiment);
-        log.info("Iterations: " + iterations);
-        log.info("Robustness Metric: " + robustnessMetric.getClass().getSimpleName());
-        log.info("");
+        printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment);
 
         List<Integer> finalIterations = iterations;
         List<String> finalSolvers = solvers;
@@ -125,6 +123,16 @@ public class ExperimentService {
                 }
             });
         }
+    }
+
+    private void printBenchmarkStartInfo(Benchmark benchmark, List<Integer> iterations, List<String> solvers, Metric<Integer> robustnessMetric, int experiment) {
+        log.info("");
+        log.info(String.format("## Benchmark %s starts with the following metadata ##", benchmark.getName()));
+        log.info("Solvers: " + solvers);
+        log.info("Experiments: " + experiment);
+        log.info("Iterations: " + iterations);
+        log.info("Robustness Metric: " + robustnessMetric.getClass().getSimpleName());
+        log.info("");
     }
 
 

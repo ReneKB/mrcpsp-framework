@@ -6,11 +6,6 @@ import java.util.List;
 
 public interface ScheduleRepresentation {
     /**
-     * Build the actual schedule according the representation.
-     */
-    Schedule buildScheme();
-
-    /**
      * Ensures that the given schedule presentation is a correct one which holds all properties
      * for a full schedule.
      */

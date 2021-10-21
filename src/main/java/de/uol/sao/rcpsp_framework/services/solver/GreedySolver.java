@@ -1,10 +1,10 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
-import de.uol.sao.rcpsp_framework.helper.BenchmarkHelper;
+import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
-import de.uol.sao.rcpsp_framework.model.scheduling.PriorityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
@@ -70,7 +70,7 @@ public class GreedySolver implements Solver {
         return current;
     }
 
-    private PriorityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark) {
+    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark) {
         Project project = benchmark.getProject();
 
         if (positionActivityScheduled == null) {
@@ -82,14 +82,14 @@ public class GreedySolver implements Solver {
                 int activityId = i + 1;
                 positionActivityScheduled[i] = activityId;
                 positionModeScheduled[i] = 1;
-                maxModesValues[i] = BenchmarkHelper.getJobFromBenchmark(project, activityId).get().getModes().size();
+                maxModesValues[i] = ProjectHelper.getJobFromProject(project, activityId).get().getModes().size();
             }
         }
 
         int[] activitySchedule = Arrays.copyOf(positionActivityScheduled, positionActivityScheduled.length);
         int[] modesSchedule = Arrays.copyOf(positionModeScheduled, positionModeScheduled.length);
 
-        PriorityListSchemeRepresentation priorityListSchemeRepresentation = new PriorityListSchemeRepresentation(
+        ActivityListSchemeRepresentation activityListSchemeRepresentation = new ActivityListSchemeRepresentation(
             activitySchedule,
             modesSchedule
         );
@@ -103,7 +103,7 @@ public class GreedySolver implements Solver {
         } else {
             Arrays.fill(positionModeScheduled, 1);
             List<Job> activityScheduled = Arrays.stream(activitySchedule)
-                    .mapToObj(operand -> BenchmarkHelper.getJobFromBenchmark(project, operand).get())
+                    .mapToObj(operand -> ProjectHelper.getJobFromProject(project, operand).get())
                     .collect(Collectors.toList());
 
             List<Job> potentialResult = new ArrayList<>(activityScheduled);
@@ -115,10 +115,10 @@ public class GreedySolver implements Solver {
             while (!completed && (potentialResult.equals(activityScheduled) || potentialResult.size() < activitySchedule.length)) {
                 if (!climbUp) {
                     Job removedJob = potentialResult.remove(lastIndex);
-                    availableJobs = BenchmarkHelper.getAvailableJobs(project, potentialResult);
+                    availableJobs = ProjectHelper.getAvailableJobs(project, potentialResult);
                     availableJobs.removeIf(job -> job.getJobId() <= removedJob.getJobId());
                 } else {
-                    availableJobs = BenchmarkHelper.getAvailableJobs(project, potentialResult);
+                    availableJobs = ProjectHelper.getAvailableJobs(project, potentialResult);
                 }
 
                 if (availableJobs.isEmpty()) {
@@ -139,7 +139,7 @@ public class GreedySolver implements Solver {
             }
         }
 
-        return priorityListSchemeRepresentation;
+        return activityListSchemeRepresentation;
     }
 
 }

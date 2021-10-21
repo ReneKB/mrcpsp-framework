@@ -12,9 +12,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The schedule helper containing helpful functions which are related to schedule and their information of a project
+ */
 @Log4j2
 public class ScheduleHelper {
 
+    /**
+     * Creates a {@link ScheduleRelationInfo} which contains activity plan information, like earliest/latest
+     * finishing and starting times of each job.
+     * @param schedule The schedule of relevance
+     * @return The object {@link ScheduleRelationInfo} with the computed values
+     */
     public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
         ScheduleRepresentation scheduleRepresentation = schedule.getScheduleRepresentation();
@@ -82,6 +91,11 @@ public class ScheduleHelper {
         return scheduleRelationInfo;
     }
 
+    /**
+     * Computes the slack S for every job. Relevant for a lot of robustness calculations.
+     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
+     * @return The map of all job slacks
+     */
     public static Map<Job, Integer> computeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
         Map<Job, Integer> slack = new HashMap<>();
 
@@ -95,16 +109,27 @@ public class ScheduleHelper {
         return slack;
     }
 
+    /**
+     * Output function for a schedule
+     * @param schedule Schedule of relevance
+     * @param robustnessMetric Selected robustness metric which should be printed as well
+     */
     public static void outputSchedule(Schedule schedule, Metric robustnessMetric) {
         if (schedule == null) {
             log.info("No result available");
         }
         else {
-            log.info(String.format("Makespan: %d - %s: %d - %s",
-                    schedule.computeMetric(Metrics.MAKESPAN),
-                    robustnessMetric.getClass().getSimpleName(),
-                    schedule.computeMetric(robustnessMetric),
-                    schedule.getScheduleRepresentation()));
+            if (robustnessMetric != null) {
+                log.info(String.format("Makespan: %d - %s: %d - %s",
+                        schedule.computeMetric(Metrics.MAKESPAN),
+                        robustnessMetric.getClass().getSimpleName(),
+                        schedule.computeMetric(robustnessMetric),
+                        schedule.getScheduleRepresentation()));
+            } else {
+                log.info(String.format("Makespan: %d - %s",
+                        schedule.computeMetric(Metrics.MAKESPAN),
+                        schedule.getScheduleRepresentation()));
+            }
         }
     }
 }
