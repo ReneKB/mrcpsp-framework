@@ -9,7 +9,7 @@ import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 @Service("TabuSearchSolver")
@@ -36,7 +37,7 @@ public class TabuSearchSolver implements Solver {
     public Schedule algorithm(Benchmark benchmark, int iterations) {
         Schedule bestSchedule = this.createInitialSolution(benchmark);
 
-        int tabuListSize = benchmark.getNumberJobs() * benchmark.getNumberJobs() * 3;
+        int tabuListSize = benchmark.getNumberJobs() * 3;
         List<ScheduleRepresentation> tabuList = new LinkedList<>();
 
         // Generate random solution until it's feasible
@@ -78,10 +79,14 @@ public class TabuSearchSolver implements Solver {
 
     public List<ScheduleRepresentation> getNeighbourhood(Project project, ScheduleRepresentation scheduleRepresentation) {
         List<JobMode> jobModes = scheduleRepresentation.toJobMode(project);
-        List<ScheduleRepresentation> representations = new ArrayList<>();
+
+        List<ScheduleRepresentation> activityNeighbourhood = new ArrayList<>();
+        List<ScheduleRepresentation> modesNeighbourhood = new ArrayList<>();
 
         List<Job> jobList = jobModes.stream().map(JobMode::getJob).collect(Collectors.toList());
         List<Mode> modeList = jobModes.stream().map(JobMode::getMode).collect(Collectors.toList());
+
+        activityNeighbourhood.add(scheduleRepresentation);
 
         int[] jobs = new int[jobList.size()];
         int[] modes = new int[modeList.size()];
@@ -111,12 +116,12 @@ public class TabuSearchSolver implements Solver {
                 neighbourModes[i-1] = neighbourModes[i];
                 neighbourModes[i] = tmp;
 
-                representations.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
+                activityNeighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
             }
             handledJobs.add(currentJob);
         }
 
-        for (ScheduleRepresentation representation : new ArrayList<>(representations)) {
+        for (ScheduleRepresentation representation : new ArrayList<>(activityNeighbourhood)) {
             List<JobMode> jobModeList = representation.toJobMode(project);
             int[] activityArrayRepresentation = this.convertIntegerListToArray(jobModeList.stream().map(jobMode -> jobMode.getJob().getJobId()).collect(Collectors.toList()));
 
@@ -131,22 +136,26 @@ public class TabuSearchSolver implements Solver {
                     if (modeIndex != 0) {
                         int[] modesArrayRepresentation = this.convertIntegerListToArray(jobModeList.stream().map(currentJobMode -> currentJobMode.getMode().getModeId()).collect(Collectors.toList()));
                         modesArrayRepresentation[i] = modeIndex;
-                        representations.add(new ActivityListSchemeRepresentation(activityArrayRepresentation, modesArrayRepresentation));
+                        modesNeighbourhood.add(new ActivityListSchemeRepresentation(activityArrayRepresentation, modesArrayRepresentation));
                     }
 
                     // add next mode representation
                     if (modeIndex != currentJobModeAmount - 1) {
                         int[] modesArrayRepresentation = this.convertIntegerListToArray(jobModeList.stream().map(currentJobMode -> currentJobMode.getMode().getModeId()).collect(Collectors.toList()));
                         modesArrayRepresentation[i] = modeIndex;
-                        representations.add(new ActivityListSchemeRepresentation(activityArrayRepresentation, modesArrayRepresentation));
+                        modesNeighbourhood.add(new ActivityListSchemeRepresentation(activityArrayRepresentation, modesArrayRepresentation));
                     }
                 }
                 i++;
             }
         }
 
-        Collections.shuffle(representations);
-        return representations.subList(0, Math.min(jobList.size() * 2, representations.size()));
+        Collections.shuffle(modesNeighbourhood);
+
+        activityNeighbourhood.remove(scheduleRepresentation); // As the origin is no possible neighbour
+        modesNeighbourhood = modesNeighbourhood.subList(0, Math.min(activityNeighbourhood.size(), modesNeighbourhood.size()));
+
+        return Stream.concat(activityNeighbourhood.stream(), modesNeighbourhood.stream()).collect(Collectors.toList());
     }
 
     public Schedule createInitialSolution(Benchmark benchmark) {

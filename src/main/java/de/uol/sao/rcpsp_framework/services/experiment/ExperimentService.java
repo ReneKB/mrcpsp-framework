@@ -5,8 +5,8 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
-import de.uol.sao.rcpsp_framework.services.metrics.Metric;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metric;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.solver.Solver;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
@@ -34,14 +34,10 @@ public class ExperimentService {
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
-        int experiment = 8;
+        int experiment = 1;
 
-        // iterations.add(500);
-        iterations.add(5000);
-        // iterations.add(5000);
-
-        solvers.add("TabuSearchSolver");
-        // solvers.add("TabuSearchSolver");
+        iterations.add(10);
+        solvers.add("RandomSolver");
 
         // Prework
         for (String beginningOption : options) {

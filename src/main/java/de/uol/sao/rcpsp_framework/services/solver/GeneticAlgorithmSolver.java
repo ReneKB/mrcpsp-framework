@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.services.solver;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;

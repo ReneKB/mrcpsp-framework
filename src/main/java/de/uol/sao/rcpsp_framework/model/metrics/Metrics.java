@@ -1,4 +1,4 @@
-package de.uol.sao.rcpsp_framework.services.metrics;
+package de.uol.sao.rcpsp_framework.model.metrics;
 
 
 public class Metrics {

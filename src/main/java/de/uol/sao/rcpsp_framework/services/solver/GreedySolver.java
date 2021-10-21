@@ -6,7 +6,7 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
