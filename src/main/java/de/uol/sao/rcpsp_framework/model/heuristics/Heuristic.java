@@ -12,7 +12,7 @@ import java.util.*;
 public abstract class Heuristic {
 
     abstract int determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark);
-    abstract int determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark);
+    abstract int determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark);
 
     Map<Job, Integer> computePriorityValueForJobs(List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         Map<Job, Integer> jobWithPriorityValue = new HashMap<>();
@@ -48,7 +48,7 @@ public abstract class Heuristic {
         }
 
         selectedJob.getModes().forEach(mode ->
-            jobWithPriorityValue.put(mode, determineModePriorityValue(selectedJob, mode, scheduledJobs, scheduledModes, reservedResources, nonRenewableResourcesLeft, benchmark))
+            jobWithPriorityValue.put(mode, determineModePriorityValue(selectedJob, mode, scheduledJobs, scheduledModes, reservation, reservedResources, nonRenewableResourcesLeft, benchmark))
         );
         return jobWithPriorityValue;
     }
@@ -57,7 +57,7 @@ public abstract class Heuristic {
         return this.buildScheduleRepresentation(benchmark, HeuristicSelection.MIN, HeuristicSelection.MIN);
     }
 
-    public ScheduleRepresentation buildScheduleRepresentation(Benchmark benchmark, HeuristicSelection heuristicSelectionActivity, HeuristicSelection heuristicSelectionMode) {
+    public ScheduleRepresentation buildScheduleRepresentation(Benchmark benchmark, HeuristicSelection heuristicSelectionActivity, HeuristicSelection heuristicSelectionMode) throws NoNonRenewableResourcesLeftException {
         List<Job> activityScheduled = new ArrayList<>();
         List<Mode> modesScheduled = new ArrayList<>();
         Map<Job, List<Mode>> reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
@@ -92,7 +92,6 @@ public abstract class Heuristic {
             }
 
             // Add to representation
-            activityScheduled.add(selectedJob);
             Map<Mode, Integer> modesPriorityValues = this.computeModePriorityValues(selectedJob, activityScheduled, modesScheduled, reservation, benchmark);
 
             // Compute all possible modes acc. to the heuristic alg
@@ -111,6 +110,10 @@ public abstract class Heuristic {
                 }
             }
 
+            if (selectedModePriorityValue == Integer.MAX_VALUE)
+                throw new NoNonRenewableResourcesLeftException(selectedJob);
+
+            activityScheduled.add(selectedJob);
             modesScheduled.add(selectedMode);
 
             // Remove from list and add the possible successors

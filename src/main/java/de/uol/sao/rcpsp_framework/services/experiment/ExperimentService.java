@@ -34,9 +34,9 @@ public class ExperimentService {
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
-        int experiment = 1;
+        int experiment = 8;
 
-        iterations.add(50000);
+        iterations.add(20000);
         solvers.add("RandomSolver");
 
         // Prework

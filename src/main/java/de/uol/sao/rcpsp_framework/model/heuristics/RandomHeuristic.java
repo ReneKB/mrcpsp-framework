@@ -13,11 +13,6 @@ import java.util.Random;
  * into account
  */
 public class RandomHeuristic extends Heuristic {
-    Map<Job, List<Mode>> reservation;
-
-    public RandomHeuristic(Benchmark benchmark) {
-        this.reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
-    }
 
     @Override
     int determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
@@ -29,9 +24,11 @@ public class RandomHeuristic extends Heuristic {
                                    Mode mode,
                                    List<Job> scheduledJobs,
                                    List<Mode> scheduledModes,
+                                   Map<Job, List<Mode>> reservation,
                                    Map<Resource, Integer> reservedResources,
                                    Map<Resource, Integer> nonRenewableResourcesLeft,
                                    Benchmark benchmark) {
+
         // If a reservation for the job is determined, than these should be focused. Means for this algorithmus:
         // Every non-reserved modes from a reserved job will be removed
         if (reservation.containsKey(job)) {
@@ -45,6 +42,9 @@ public class RandomHeuristic extends Heuristic {
             Integer possibleRequestedAmount = entry.getValue();
             if (possibleRequestedResource instanceof NonRenewableResource) {
                 int reservedResourcesAmount = reservedResources.getOrDefault(possibleRequestedResource, 0);
+                if (reservation.containsKey(job))
+                    reservedResourcesAmount = 0;
+                
                 if (possibleRequestedAmount > nonRenewableResourcesLeft.get(possibleRequestedResource) - reservedResourcesAmount)
                     return Integer.MAX_VALUE;
             } else if (possibleRequestedResource instanceof RenewableResource) {
@@ -53,7 +53,7 @@ public class RandomHeuristic extends Heuristic {
             }
         }
 
-        // In the end, mode should be selected randomly
-        return new Random().nextInt();
+        // In the end, mode should be selected randomly (generate an arbitrary random no)
+        return new Random().nextInt(10000);
     }
 }

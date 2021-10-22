@@ -23,7 +23,7 @@ public class RandomSolver implements Solver {
     @Override
     public Schedule algorithm(Benchmark benchmark, int iterations) {
         Schedule bestSchedule = null;
-        Heuristic heuristic = new RandomHeuristic(benchmark);
+        Heuristic heuristic = new RandomHeuristic();
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
