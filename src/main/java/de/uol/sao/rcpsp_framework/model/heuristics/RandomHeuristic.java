@@ -15,12 +15,12 @@ import java.util.Random;
 public class RandomHeuristic extends Heuristic {
 
     @Override
-    int determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        return new Random().nextInt();
+    double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+        return new Random().nextInt(10000);
     }
 
     @Override
-    int determineModePriorityValue(Job job,
+    double determineModePriorityValue(Job job,
                                    Mode mode,
                                    List<Job> scheduledJobs,
                                    List<Mode> scheduledModes,
@@ -34,7 +34,7 @@ public class RandomHeuristic extends Heuristic {
         if (reservation.containsKey(job)) {
             List<Mode> reservedModes = reservation.get(job);
             if (!reservedModes.contains(mode))
-                return Integer.MAX_VALUE;
+                return Double.MAX_VALUE;
         }
 
         for (Map.Entry<Resource, Integer> entry : mode.getRequestedResources().entrySet()) {
@@ -46,10 +46,10 @@ public class RandomHeuristic extends Heuristic {
                     reservedResourcesAmount = 0;
                 
                 if (possibleRequestedAmount > nonRenewableResourcesLeft.get(possibleRequestedResource) - reservedResourcesAmount)
-                    return Integer.MAX_VALUE;
+                    return Double.MAX_VALUE;
             } else if (possibleRequestedResource instanceof RenewableResource) {
                 if (possibleRequestedAmount > benchmark.getProject().getAvailableResources().get(possibleRequestedResource))
-                    return Integer.MAX_VALUE;
+                    return Double.MAX_VALUE;
             }
         }
 

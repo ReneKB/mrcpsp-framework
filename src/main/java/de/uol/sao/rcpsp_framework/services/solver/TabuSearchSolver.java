@@ -1,15 +1,19 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
+import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
+import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
+import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
-import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
+import de.uol.sao.rcpsp_framework.model.heuristics.ActivityLFTModeLRSHeuristic;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
@@ -34,16 +38,18 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations) {
-        Schedule bestSchedule = this.createInitialSolution(benchmark);
+    public Schedule algorithm(Benchmark benchmark, int iterations) throws GiveUpException {
+        Schedule tabuSchedule = this.createInitialSolution(benchmark);
+        Schedule bestSchedule = tabuSchedule;
 
         int tabuListSize = benchmark.getNumberJobs() * 3;
         List<ScheduleRepresentation> tabuList = new LinkedList<>();
 
         // Generate random solution until it's feasible
-        for (int i = 0; i < iterations; i++) {
+        int i = 0;
+        while (i < iterations) {
             // Create neighbors
-            ScheduleRepresentation representation = bestSchedule.getScheduleRepresentation();
+            ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
             List<ScheduleRepresentation> neighbourhood = this.getNeighbourhood(benchmark.getProject(), representation);
             neighbourhood.removeIf(tabuList::contains);
 
@@ -71,8 +77,18 @@ public class TabuSearchSolver implements Solver {
 
             }
 
-            if (neighbourhoodFavorite != null)
-               bestSchedule = neighbourhoodFavorite;
+            if (neighbourhoodFavorite != null) {
+                tabuSchedule = neighbourhoodFavorite;
+
+                if (bestSchedule == null || bestSchedule.computeMetric(Metrics.MAKESPAN) > tabuSchedule.computeMetric(Metrics.MAKESPAN)) {
+                    bestSchedule = tabuSchedule;
+                } else if (bestSchedule.computeMetric(Metrics.MAKESPAN) == tabuSchedule.computeMetric(Metrics.MAKESPAN) &&
+                           bestSchedule.computeMetric(Metrics.RM1) < tabuSchedule.computeMetric(Metrics.RM1)) {
+                    bestSchedule = tabuSchedule;
+                }
+            }
+
+            i += neighbourhood.size();
         }
         return bestSchedule;
     }
@@ -158,13 +174,22 @@ public class TabuSearchSolver implements Solver {
         return Stream.concat(activityNeighbourhood.stream(), modesNeighbourhood.stream()).collect(Collectors.toList());
     }
 
-    public Schedule createInitialSolution(Benchmark benchmark) {
+    public Schedule createInitialSolution(Benchmark benchmark) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 
-        // ToDo: Replace with heuristic
-        while (schedule == null)
-            schedule = beans.getBean(RandomSolver.class).algorithm(benchmark, 1);
+        int initialSolutionTries = 0;
+        while (schedule == null) {
+            try {
+                initialSolutionTries++;
+                if (initialSolutionTries > 10000)
+                    throw new GiveUpException();
+                ScheduleRepresentation representation = new ActivityLFTModeLRSHeuristic().buildScheduleRepresentation(benchmark);
+                schedule = this.schedulerService.createScheduleProactive(benchmark, representation);
+            } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException e) {
+
+            }
+        }
 
         return schedule;
     }

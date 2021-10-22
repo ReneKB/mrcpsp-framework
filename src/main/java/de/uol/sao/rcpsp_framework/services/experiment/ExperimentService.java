@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.services.experiment;
 
+import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
@@ -36,8 +37,8 @@ public class ExperimentService {
         Metric<Integer> robustnessMetric = Metrics.RM1;
         int experiment = 8;
 
-        iterations.add(20000);
-        solvers.add("RandomSolver");
+        iterations.add(5000);
+        solvers.add("TabuSearchSolver");
 
         // Prework
         for (String beginningOption : options) {
@@ -82,7 +83,13 @@ public class ExperimentService {
                 for (String solverStr : finalSolvers) {
                     log.info(String.format("Started experiment %d (Solver: %s, Iterations: %d) ", experimentNo, solverStr, iteration));
                     Solver solver = beans.getBean(solverStr, Solver.class);
-                    Schedule bestSchedule = solver.algorithm(benchmark, iteration);
+                    Schedule bestSchedule = null;
+                    try {
+                        bestSchedule = solver.algorithm(benchmark, iteration);
+                    } catch (GiveUpException e) {
+                        log.info(String.format("Gave up on experiment %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
+                        continue;
+                    }
 
                     log.info(String.format("Completed experiment %d (Solver: %s, Iterations: %d). Best Result: ", experimentNo, solverStr, iteration));
                     ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);

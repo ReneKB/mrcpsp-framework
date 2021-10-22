@@ -4,32 +4,41 @@ import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftExceptio
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
+import de.uol.sao.rcpsp_framework.model.scheduling.Interval;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.util.*;
 
 public abstract class Heuristic {
 
-    abstract int determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark);
-    abstract int determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark);
+    @Data
+    @AllArgsConstructor
+    class RegretBiasInterval {
+        double min;
+        double max;
+    }
 
-    Map<Job, Integer> computePriorityValueForJobs(List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        Map<Job, Integer> jobWithPriorityValue = new HashMap<>();
+    abstract double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark);
+    abstract double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark);
+
+    Map<Job, Double> computePriorityValueForJobs(List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+        Map<Job, Double> jobWithPriorityValue = new HashMap<>();
         jobs.forEach(job ->
             jobWithPriorityValue.put(job, determineActivityPriorityValue(job, scheduledJobs, scheduledModes, benchmark))
         );
         return jobWithPriorityValue;
     }
 
-    Map<Mode, Integer> computeModePriorityValues(Job selectedJob, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Benchmark benchmark) {
-        Map<Mode, Integer> jobWithPriorityValue = new HashMap<>();
+    Map<Mode, Double> computeModePriorityValues(Job selectedJob, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Benchmark benchmark) {
+        Map<Mode, Double> jobWithPriorityValue = new HashMap<>();
 
         // Remove already scheduled reservation and compute the amount of non-renewable resources reservation acc. to the reservation map
         scheduledJobs.forEach(reservation::remove);
         Map<Resource, Integer> reservedResources = ProjectHelper.getReservationAmountOfNonRenewableResources(reservation);
 
-        // Compute the renewable resources left and reservation. Required for several mode selection heuristics
+        // Compute the non-renewable resources left and reservation. Required for several mode selection heuristics
         Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
         benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
             if (resource instanceof NonRenewableResource) {
@@ -57,6 +66,88 @@ public abstract class Heuristic {
         return this.buildScheduleRepresentation(benchmark, HeuristicSelection.MIN, HeuristicSelection.MIN);
     }
 
+    private <T> T samplingMinMax(Map<T, Double> objectWithPriorityValue, HeuristicSelection selection) {
+        T selected = null;
+        Double selectedPriorityValue = 0.0;
+
+        // Select the activity acc. to heuristic selection
+        for (Map.Entry<T, Double> entry : objectWithPriorityValue.entrySet()) {
+            T job = entry.getKey();
+            Double priorityValue = entry.getValue();
+
+            if (selected == null || (selection == HeuristicSelection.MIN ? selectedPriorityValue > priorityValue : selectedPriorityValue < priorityValue)) {
+                selected = job;
+                selectedPriorityValue = priorityValue;
+            }
+        }
+
+        return selected;
+    }
+
+    /*
+    private <T> T samplingMinMaxRegretBias(Map<T, Double> objectWithPriorityValue, HeuristicSelection selection) {
+        Map<T, Double> objectWithProbability = new HashMap<>();
+        Double sumOfAllPriorityValues = objectWithPriorityValue.values().stream().reduce(Double::sum).get();
+
+        // if null than equally selection
+        if (sumOfAllPriorityValues == 0 || sumOfAllPriorityValues.isInfinite()) {
+             List<T> objects = new ArrayList<>(objectWithPriorityValue.keySet());
+             Collections.shuffle(objects);
+             return objects.get(0);
+        } else { // else regret biased
+            for (Map.Entry<T, Double> entry : objectWithPriorityValue.entrySet()) {
+                T t = entry.getKey();
+                Double aDouble = entry.getValue();
+                objectWithProbability.put(t, aDouble / sumOfAllPriorityValues);
+            }
+        }
+
+        if (selection == HeuristicSelection.MIN) {
+            for (T t : objectWithProbability.keySet()) {
+                Double prob = objectWithProbability.get(t);
+                double invertProb = 1 - prob;
+                if (invertProb == 0)
+                    return t;
+
+                objectWithProbability.put(t, invertProb);
+            }
+
+            sumOfAllPriorityValues = objectWithProbability.values().stream().reduce(Double::sum).get();
+            for (T t : objectWithProbability.keySet()) {
+                Double prob = objectWithProbability.get(t);
+                objectWithProbability.put(t, prob / sumOfAllPriorityValues);
+            }
+        }
+
+        Map<T, RegretBiasInterval> objectWithCumProbability = new HashMap<>();
+
+        double previous = 0;
+        for (Map.Entry<T, Double> entry : objectWithProbability.entrySet()) {
+            T t = entry.getKey();
+            Double prob = entry.getValue();
+
+            RegretBiasInterval regretBiasInterval = new RegretBiasInterval(previous, previous + prob);
+            objectWithCumProbability.put(t, regretBiasInterval);
+            previous = regretBiasInterval.max;
+        }
+
+        T selected = null;
+        double random = Math.random();
+        for (Map.Entry<T, RegretBiasInterval> entry : objectWithCumProbability.entrySet()) {
+            T t = entry.getKey();
+            RegretBiasInterval regretBiasInterval = entry.getValue();
+
+            if (regretBiasInterval.getMin() < random && random <= regretBiasInterval.getMax())
+                selected = t;
+        }
+
+        if (selected == null)
+            System.out.println("");
+
+        return selected;
+    }
+     */
+
     public ScheduleRepresentation buildScheduleRepresentation(Benchmark benchmark, HeuristicSelection heuristicSelectionActivity, HeuristicSelection heuristicSelectionMode) throws NoNonRenewableResourcesLeftException {
         List<Job> activityScheduled = new ArrayList<>();
         List<Mode> modesScheduled = new ArrayList<>();
@@ -75,43 +166,12 @@ public abstract class Heuristic {
         // First schedule the activities
         while (!possibleJobs.isEmpty()) {
             // Compute all possible activities acc. to the heuristic alg
-            Map<Job, Integer> activityPriorityValues = this.computePriorityValueForJobs(possibleJobs, activityScheduled, modesScheduled, benchmark);
-            Job selectedJob = null;
-            int selectedJobPriorityValue = 0;
-
-            // Select the activity acc. to heuristic selection
-            for (Map.Entry<Job, Integer> entry : activityPriorityValues.entrySet()) {
-                Job job = entry.getKey();
-                Integer priorityValue = entry.getValue();
-
-                if (selectedJob == null || (heuristicSelectionActivity == HeuristicSelection.MIN ?
-                        selectedJobPriorityValue > priorityValue : selectedJobPriorityValue < priorityValue)) {
-                    selectedJob = job;
-                    selectedJobPriorityValue = priorityValue;
-                }
-            }
-
-            // Add to representation
-            Map<Mode, Integer> modesPriorityValues = this.computeModePriorityValues(selectedJob, activityScheduled, modesScheduled, reservation, benchmark);
+            Map<Job, Double> activityPriorityValues = this.computePriorityValueForJobs(possibleJobs, activityScheduled, modesScheduled, benchmark);
+            Job selectedJob = this.samplingMinMax(activityPriorityValues, heuristicSelectionMode);;
 
             // Compute all possible modes acc. to the heuristic alg
-            Mode selectedMode = null;
-            int selectedModePriorityValue = 0;
-
-            // Select the activity acc. to heuristic selection
-            for (Map.Entry<Mode, Integer> entry : modesPriorityValues.entrySet()) {
-                Mode mode = entry.getKey();
-                Integer priorityValue = entry.getValue();
-
-                if (selectedMode == null || (heuristicSelectionMode == HeuristicSelection.MIN ?
-                        selectedModePriorityValue > priorityValue : selectedModePriorityValue < priorityValue)) {
-                    selectedMode = mode;
-                    selectedModePriorityValue = priorityValue;
-                }
-            }
-
-            if (selectedModePriorityValue == Integer.MAX_VALUE)
-                throw new NoNonRenewableResourcesLeftException(selectedJob);
+            Map<Mode, Double> modesPriorityValues = this.computeModePriorityValues(selectedJob, activityScheduled, modesScheduled, reservation, benchmark);
+            Mode selectedMode = this.samplingMinMax(modesPriorityValues, heuristicSelectionMode);
 
             activityScheduled.add(selectedJob);
             modesScheduled.add(selectedMode);
