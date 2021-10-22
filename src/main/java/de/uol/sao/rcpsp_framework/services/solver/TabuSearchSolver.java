@@ -40,7 +40,8 @@ public class TabuSearchSolver implements Solver {
         List<ScheduleRepresentation> tabuList = new LinkedList<>();
 
         // Generate random solution until it's feasible
-        for (int i = 0; i < iterations; i++) {
+        int i = 0;
+        while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = bestSchedule.getScheduleRepresentation();
             List<ScheduleRepresentation> neighbourhood = this.getNeighbourhood(benchmark.getProject(), representation);
@@ -72,6 +73,8 @@ public class TabuSearchSolver implements Solver {
 
             if (neighbourhoodFavorite != null)
                bestSchedule = neighbourhoodFavorite;
+
+            i += neighbourhood.size();
         }
         return bestSchedule;
     }

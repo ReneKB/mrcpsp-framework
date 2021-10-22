@@ -36,12 +36,15 @@ public class ExperimentService {
         Metric<Integer> robustnessMetric = Metrics.RM1;
         int experiment = 8;
 
-        // iterations.add(500);
+        iterations.add(100);
         iterations.add(5000);
+        iterations.add(10000);
+        iterations.add(50000);
+        iterations.add(100000);
         // iterations.add(5000);
 
         solvers.add("TabuSearchSolver");
-        // solvers.add("TabuSearchSolver");
+        solvers.add("RandomSolver");
 
         // Prework
         for (String beginningOption : options) {
