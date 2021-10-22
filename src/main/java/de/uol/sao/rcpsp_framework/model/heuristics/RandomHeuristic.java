@@ -1,45 +1,37 @@
 package de.uol.sao.rcpsp_framework.model.heuristics;
 
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
- * Actual no heuristic however similar to the heuristics.
+ * Actual no heuristic however similar to the heuristics. Mainly this heuristic takes the "reservation" of needed modes
+ * into account
  */
 public class RandomHeuristic extends Heuristic {
-
     Map<Job, List<Mode>> reservation;
 
+    public RandomHeuristic(Benchmark benchmark) {
+        this.reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
+    }
+
     @Override
-    int determinePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        scheduledJobs.forEach(alreadyScheduledJob -> reservation.remove(alreadyScheduledJob));
-        Map<Resource, Integer> reservedResources = ProjectHelper.getReservationAmountOfNonRenewableResources(reservation);
+    int determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+        return new Random().nextInt();
+    }
 
-        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            if (resource instanceof NonRenewableResource) {
-                nonRenewableResourcesLeft.put(resource, amount);
-            }
-        });
-
-        // Calculate
-        for (int i = 0; i < scheduledJobs.size(); i++) {
-            Job scheduledJob = scheduledJobs.get(i);
-            Mode scheduledMode = scheduledModes.get(i);
-
-            scheduledMode.getRequestedResources().forEach((scheduledModeResource, scheduledModeAmount) -> {
-                Integer resourceLeftAmount = nonRenewableResourcesLeft.get(scheduledModeResource);
-                if (resourceLeftAmount != null) {
-                    nonRenewableResourcesLeft.put(scheduledModeResource, resourceLeftAmount - scheduledModeAmount);
-                }
-            });
-        }
-
+    @Override
+    int determineModePriorityValue(Job job,
+                                   Mode mode,
+                                   List<Job> scheduledJobs,
+                                   List<Mode> scheduledModes,
+                                   Map<Resource, Integer> reservedResources,
+                                   Map<Resource, Integer> nonRenewableResourcesLeft,
+                                   Benchmark benchmark) {
         // If a reservation for the job is determined, than these should be focused. Means for this algorithmus:
         // Every non-reserved modes from a reserved job will be removed
         if (reservation.containsKey(job)) {
@@ -57,14 +49,11 @@ public class RandomHeuristic extends Heuristic {
                     return Integer.MAX_VALUE;
             } else if (possibleRequestedResource instanceof RenewableResource) {
                 if (possibleRequestedAmount > benchmark.getProject().getAvailableResources().get(possibleRequestedResource))
-                        return Integer.MAX_VALUE;
+                    return Integer.MAX_VALUE;
             }
         }
 
+        // In the end, mode should be selected randomly
         return new Random().nextInt();
-    }
-
-    public RandomHeuristic(Benchmark benchmark) {
-        this.reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
     }
 }

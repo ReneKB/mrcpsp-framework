@@ -12,11 +12,11 @@ import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+/*
 public class LFTHeuristic extends Heuristic {
 
     @Override
-    int determinePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    int determineActivityPriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         int latestStartTime = 0;
 
         Map<Job, Integer> leastFinishingTime = new HashMap<>();
@@ -47,3 +47,4 @@ public class LFTHeuristic extends Heuristic {
     }
 
 }
+*/
