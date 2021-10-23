@@ -1,12 +1,11 @@
 package de.uol.sao.rcpsp_framework.model.heuristics;
 
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
-import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;

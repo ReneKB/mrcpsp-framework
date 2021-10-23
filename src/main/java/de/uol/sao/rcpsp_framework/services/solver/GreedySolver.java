@@ -1,12 +1,15 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
-import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,23 +35,19 @@ public class GreedySolver implements Solver {
     boolean completed = false;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel) {
         Schedule bestSchedule = null;
         Project project = benchmark.getProject();
 
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark));
+                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark), uncertaintyModel);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
-            if (bestSchedule == null || (schedule != null &&
-                    bestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN)))
-                bestSchedule = schedule;
-            else if (schedule != null &&
-                    (bestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                    (bestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1)))        {
+
+            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, ScheduleComparator.MAKESPAN_AND_RM)) {
                 bestSchedule = schedule;
             }
 

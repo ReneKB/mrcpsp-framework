@@ -2,14 +2,17 @@ package de.uol.sao.rcpsp_framework.services.experiment;
 
 import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.solver.Solver;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -35,10 +38,13 @@ public class ExperimentService {
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
-        int experiment = 1;
+        UncertaintyModel uncertaintyModel = new UncertaintyModel(new BinomialDistribution(10, 0.0));
+        int experiment = 8;
 
         iterations.add(5000);
-        solvers.add("TabuSearchSolver");
+        // solvers.add("RandomSolver");
+        solvers.add("TabuSearch");
+        // solvers.add("GeneticAlgorithm");
 
         // Prework
         for (String beginningOption : options) {
@@ -54,15 +60,15 @@ public class ExperimentService {
                 case SOLVERS:
                     List<String> solverStrings = args.getOptionValues(CommandArgsOptions.SOLVERS.getCommandStr());
                     if (solverStrings.size() == 0)
-                        log.warn(String.format("No solvers specified. %s will be kept a will be set as default iterations. " +
-                                "Usage: --solvers=RandomSolver --solvers=GeneticAlgorithm", iterations));
+                        log.warn(String.format("No solvers specified. %s will be kept a will be set as default solvers. " +
+                                "Usage: --solvers=RandomSolver --solvers=GeneticAlgorithm", solvers));
                     else
                         solvers = solverStrings;
                     break;
                 case EXPERIMENT:
                     List<String> experimentValues = args.getOptionValues(CommandArgsOptions.EXPERIMENT.getCommandStr());
                     if (experimentValues.size() != 1)
-                        log.warn(String.format("Amount of experiments not properly set. %d will be used. " +
+                        log.warn(String.format("Amount of experiments not properly set. %s will be used. " +
                                 "Usage: --experiment=10", iterations));
                     else
                         experiment = Integer.parseInt(experimentValues.get(0));
@@ -85,7 +91,7 @@ public class ExperimentService {
                     Solver solver = beans.getBean(solverStr, Solver.class);
                     Schedule bestSchedule = null;
                     try {
-                        bestSchedule = solver.algorithm(benchmark, iteration);
+                        bestSchedule = solver.algorithm(benchmark, iteration, uncertaintyModel);
                     } catch (GiveUpException e) {
                         log.info(String.format("Gave up on experiment %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
                         continue;
@@ -96,12 +102,7 @@ public class ExperimentService {
 
                     if (bestSchedule != null) {
                         // Afterwork;
-                        if (bestOverallSchedule.get() == null ||
-                            (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) > bestSchedule.computeMetric(Metrics.MAKESPAN))) {
-                            bestOverallSchedule.set(bestSchedule);
-                        } else if(
-                         (bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) == bestSchedule.computeMetric(Metrics.MAKESPAN)) &&
-                         (bestOverallSchedule.get().computeMetric(Metrics.RM1) < bestSchedule.computeMetric(Metrics.RM1)))        {
+                        if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), ScheduleComparator.MAKESPAN_AND_RM)) {
                             bestOverallSchedule.set(bestSchedule);
                         }
                     }

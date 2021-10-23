@@ -6,13 +6,13 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * The schedule helper containing helpful functions which are related to schedule and their information of a project
@@ -133,5 +133,17 @@ public class ScheduleHelper {
                         schedule.getScheduleRepresentation()));
             }
         }
+    }
+
+    public static boolean compareSchedule(Schedule schedule, Schedule currentBestSchedule, ScheduleComparator scheduleComparator) {
+        if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
+            return true;
+        } else if(scheduleComparator == ScheduleComparator.MAKESPAN_AND_RM &&
+                (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
+                (currentBestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1)))        {
+            return true;
+        }
+
+        return false;
     }
 }

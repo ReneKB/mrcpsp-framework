@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.services;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
-import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.experiment.ExperimentService;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
@@ -76,7 +76,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
                 int[] activities = getArrayFromString(jobList);
                 int[] modes = this.getArrayFromString(modeList);
 
-                Schedule schedule = schedulerService.createScheduleProactive(benchmark,new ActivityListSchemeRepresentation(activities, modes));
+                Schedule schedule = schedulerService.createScheduleProactive(benchmark, new ActivityListSchemeRepresentation(activities, modes), null);
 
                 // Output Metrics and visualize
                 log.info("Custom Schedule successfully created! ");

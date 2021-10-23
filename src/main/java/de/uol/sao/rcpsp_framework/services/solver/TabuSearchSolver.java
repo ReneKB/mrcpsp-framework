@@ -4,6 +4,8 @@ import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
 import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
@@ -12,12 +14,11 @@ import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
-import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.*;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
-@Service("TabuSearchSolver")
+@Service("TabuSearch")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class TabuSearchSolver implements Solver {
 
@@ -43,8 +44,8 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations) throws GiveUpException {
-        Schedule tabuSchedule = this.createInitialSolution(benchmark);
+    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel) throws GiveUpException {
+        Schedule tabuSchedule = this.createInitialSolution(benchmark, uncertaintyModel);
         Schedule bestSchedule = tabuSchedule;
 
         int tabuListSize = benchmark.getNumberJobs() * 3;
@@ -64,14 +65,11 @@ public class TabuSearchSolver implements Solver {
                 Schedule currentSchedule = null;
 
                 try {
-                    currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation);
+                    currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation, uncertaintyModel);
                 } catch (Exception ex) { }
 
                 if (currentSchedule != null) {
-                    if (neighbourhoodFavorite == null || neighbourhoodFavorite.computeMetric(Metrics.MAKESPAN) > currentSchedule.computeMetric(Metrics.MAKESPAN)) {
-                        neighbourhoodFavorite = currentSchedule;
-                    } else if (neighbourhoodFavorite.computeMetric(Metrics.MAKESPAN) == currentSchedule.computeMetric(Metrics.MAKESPAN) &&
-                               neighbourhoodFavorite.computeMetric(Metrics.RM1) < currentSchedule.computeMetric(Metrics.RM1)) {
+                    if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, ScheduleComparator.MAKESPAN_AND_RM)) {
                         neighbourhoodFavorite = currentSchedule;
                     }
                 }
@@ -84,11 +82,7 @@ public class TabuSearchSolver implements Solver {
 
             if (neighbourhoodFavorite != null) {
                 tabuSchedule = neighbourhoodFavorite;
-
-                if (bestSchedule == null || bestSchedule.computeMetric(Metrics.MAKESPAN) > tabuSchedule.computeMetric(Metrics.MAKESPAN)) {
-                    bestSchedule = tabuSchedule;
-                } else if (bestSchedule.computeMetric(Metrics.MAKESPAN) == tabuSchedule.computeMetric(Metrics.MAKESPAN) &&
-                           bestSchedule.computeMetric(Metrics.RM1) < tabuSchedule.computeMetric(Metrics.RM1)) {
+                if (ScheduleHelper.compareSchedule(tabuSchedule, bestSchedule, ScheduleComparator.MAKESPAN_AND_RM)) {
                     bestSchedule = tabuSchedule;
                 }
             }
@@ -179,7 +173,7 @@ public class TabuSearchSolver implements Solver {
         return Stream.concat(activityNeighbourhood.stream(), modesNeighbourhood.stream()).collect(Collectors.toList());
     }
 
-    public Schedule createInitialSolution(Benchmark benchmark) throws GiveUpException {
+    public Schedule createInitialSolution(Benchmark benchmark, UncertaintyModel uncertaintyModel) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 
@@ -194,9 +188,9 @@ public class TabuSearchSolver implements Solver {
                                 .modeHeuristic(LRSHeuristic.class)
                                 .activityHeuristic(RandomActivityHeuristic.class)
                                 .build());
-                schedule = this.schedulerService.createScheduleProactive(benchmark, representation);
+                schedule = this.schedulerService.createScheduleProactive(benchmark, representation, uncertaintyModel);
             } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException ignored) {
-
+                // ignored.printStackTrace();
             }
         }
 

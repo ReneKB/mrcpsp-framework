@@ -1,13 +1,15 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.modes.LTRUHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,7 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel) {
         Schedule bestSchedule = null;
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
@@ -33,11 +35,13 @@ public class RandomSolver implements Solver {
                         Heuristic.builder()
                             .modeHeuristic(RandomModeHeuristic.class)
                             .activityHeuristic(RandomActivityHeuristic.class)
-                            .build()));
+                            .build()),
+                        uncertaintyModel);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
-            if (bestSchedule == null || (schedule != null && bestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN)))
+
+            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, ScheduleComparator.MAKESPAN_AND_RM))
                 bestSchedule = schedule;
         }
         return bestSchedule;
