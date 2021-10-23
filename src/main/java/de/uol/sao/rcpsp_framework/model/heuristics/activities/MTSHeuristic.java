@@ -7,14 +7,14 @@ import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 
 import java.util.List;
 
-public class GNSHeuristic extends ActivityHeuristic {
+public class MTSHeuristic extends ActivityHeuristic {
 
     @Override
     public double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         return job.getSuccessor().size();
     }
 
-    public GNSHeuristic() {
+    public MTSHeuristic() {
         this.heuristicSelection = HeuristicSelection.MAX;
     }
 }

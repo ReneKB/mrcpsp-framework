@@ -28,4 +28,7 @@ public class Schedule {
         return (T) metric.computeMetric(this);
     }
 
+    public boolean isPartialSchedule() {
+        return scheduleRepresentation.toJobMode(benchmark.getProject()).size() != this.getBenchmark().getProject().getJobs().size();
+    }
 }

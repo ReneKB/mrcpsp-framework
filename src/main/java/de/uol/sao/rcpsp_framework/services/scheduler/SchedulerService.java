@@ -31,7 +31,7 @@ public class SchedulerService {
         for (int i = 0; i < jobModeList.size(); i++) {
             JobMode jobMode = jobModeList.get(i);
             boolean isDummyMode = i == 0 | i == jobModeList.size() - 1;
-            modeDurations.put(jobMode, isDummyMode ? jobMode.getMode().getDuration() : uncertaintyModel.computeActualDuration(jobMode.getMode().getDuration()));
+            modeDurations.put(jobMode, isDummyMode || uncertaintyModel == null ? jobMode.getMode().getDuration() : uncertaintyModel.computeActualDuration(jobMode.getMode().getDuration()));
         }
 
         // Creates initial allocation map
