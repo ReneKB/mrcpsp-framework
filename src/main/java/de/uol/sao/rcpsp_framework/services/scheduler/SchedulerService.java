@@ -3,10 +3,9 @@ package de.uol.sao.rcpsp_framework.services.scheduler;
 import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
-import de.uol.sao.rcpsp_framework.model.scheduling.Interval;
-import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
-import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.*;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +21,18 @@ public class SchedulerService {
      * @param execution List of all required executions
      * @return
      */
-    public Schedule createScheduleProactive(Benchmark benchmark, ScheduleRepresentation execution) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
+    public Schedule createScheduleProactive(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
         Map<Job, Integer> earliestStartTime = new HashMap<>();
+
+        Map<JobMode, Integer> modeDurations = new HashMap<>();
+        List<JobMode> jobModeList = execution.toJobMode(benchmark.getProject());
+        for (int i = 0; i < jobModeList.size(); i++) {
+            JobMode jobMode = jobModeList.get(i);
+            boolean isDummyMode = i == 0 | i == jobModeList.size() - 1;
+            modeDurations.put(jobMode, isDummyMode || uncertaintyModel == null ? jobMode.getMode().getDuration() : uncertaintyModel.computeActualDuration(jobMode.getMode().getDuration()));
+        }
 
         // Creates initial allocation map
         benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
@@ -37,7 +44,7 @@ public class SchedulerService {
         schedule.setScheduleRepresentation(execution);
 
         // Iterating through the JobMode combinations
-        for (JobMode jobMode : execution.toJobMode(benchmark.getProject())) {
+        for (JobMode jobMode : jobModeList) {
             Mode currentMode = jobMode.getMode();
 
             // Create initial interval
@@ -51,7 +58,7 @@ public class SchedulerService {
                     Resource currentModeResource = entry.getKey();
                     Integer currentModeAmount = entry.getValue();
 
-                    int finalUpperBound = determineUpperBound(currentMode, potentialLowerBound, currentModeResource, benchmark.getHorizon());
+                    int finalUpperBound = determineUpperBound(modeDurations.get(jobMode), potentialLowerBound, currentModeResource, benchmark.getHorizon());
 
                     // potential new interval that needs to be checked
                     Interval potentialInterval = new Interval(potentialLowerBound,
@@ -111,13 +118,14 @@ public class SchedulerService {
                 }
             }
 
-            this.addInterval(jobMode, resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
+            this.addInterval(jobMode, modeDurations.get(jobMode), resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
         }
 
         return schedule;
     }
 
     private void addInterval(JobMode jobMode,
+                             int duration,
                              Map<Resource, List<Interval>> resourcePlan,
                              Map<Job, Integer> earliestStartTime,
                              int horizon,
@@ -127,7 +135,7 @@ public class SchedulerService {
             Resource resource = entry.getKey();
             Integer amount = entry.getValue();
 
-            int actualUpperBound = determineUpperBound(currentMode, actualLowerBound, resource, horizon);
+            int actualUpperBound = determineUpperBound(duration, actualLowerBound, resource, horizon);
 
             Interval newInterval = new Interval(actualLowerBound,
                     actualUpperBound,
@@ -147,8 +155,8 @@ public class SchedulerService {
         }
     }
 
-    private int determineUpperBound(Mode currentMode, int lowerBound, Resource requestedResource, int horizon) {
-        int finalUpperBound = lowerBound + currentMode.getDuration() - 1;
+    private int determineUpperBound(int duration, int lowerBound, Resource requestedResource, int horizon) {
+        int finalUpperBound = lowerBound + duration - 1;
         if (requestedResource instanceof NonRenewableResource)
             finalUpperBound = horizon;
         return finalUpperBound;

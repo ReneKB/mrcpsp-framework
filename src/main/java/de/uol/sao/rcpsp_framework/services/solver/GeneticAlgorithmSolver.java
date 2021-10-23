@@ -2,8 +2,9 @@ package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRepresentation;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,9 @@ public class GeneticAlgorithmSolver implements Solver {
     RandomSolver randomSolver;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel) {
         int populationSize = 50;
-        List<Schedule> population = this.initialPopulation(benchmark, populationSize);
+        List<Schedule> population = this.initialPopulation(benchmark, populationSize, uncertaintyModel);
 
         for (int i = 0; i < iterations; i++) {
             List<ScheduleRepresentation> parents = this.selectParents(population.stream().map(Schedule::getScheduleRepresentation).collect(Collectors.toList()));
@@ -62,10 +63,10 @@ public class GeneticAlgorithmSolver implements Solver {
         return null;
     }
 
-    private List<Schedule> initialPopulation(Benchmark benchmark, int amount) {
+    private List<Schedule> initialPopulation(Benchmark benchmark, int amount, UncertaintyModel uncertaintyModel) {
         List<Schedule> population = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
-            population.add(randomSolver.algorithm(benchmark, 1));
+            population.add(randomSolver.algorithm(benchmark, 1, uncertaintyModel));
         }
         return population;
     }

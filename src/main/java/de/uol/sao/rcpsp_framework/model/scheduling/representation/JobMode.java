@@ -1,4 +1,4 @@
-package de.uol.sao.rcpsp_framework.model.scheduling;
+package de.uol.sao.rcpsp_framework.model.scheduling.representation;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Mode;

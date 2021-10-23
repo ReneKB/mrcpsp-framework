@@ -4,13 +4,16 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
-import de.uol.sao.rcpsp_framework.services.metrics.Metric;
-import de.uol.sao.rcpsp_framework.services.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metric;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The schedule helper containing helpful functions which are related to schedule and their information of a project
@@ -29,7 +32,7 @@ public class ScheduleHelper {
         ScheduleRepresentation scheduleRepresentation = schedule.getScheduleRepresentation();
         List<JobMode> jobModeList = scheduleRepresentation.toJobMode(schedule.getBenchmark().getProject());
         Project project = schedule.getBenchmark().getProject();
-        List<Job> jobs = project.getJobs();
+        List<Job> jobs = jobModeList.stream().map(JobMode::getJob).collect(Collectors.toList());
 
         Map<Job, Integer> leastFinishingTime = scheduleRelationInfo.getLeastFinishingTime();
         Map<Job, Integer> leastStartingTime = scheduleRelationInfo.getLeastStartingTime();
@@ -37,17 +40,11 @@ public class ScheduleHelper {
         Map<Job, Integer> earliestStartingTime = scheduleRelationInfo.getEarliestStartingTime();
 
         // Beginning job is always a dummy one
-        leastFinishingTime.put(jobs.get(0), 0);
-        leastStartingTime.put(jobs.get(0), 0);
         earliestFinishingTime.put(jobs.get(0), 0);
         earliestStartingTime.put(jobs.get(0), 0);
 
         // last Job is always a dummy one
-        int makespan = schedule.computeMetric(Metrics.MAKESPAN) - 1;
-        leastFinishingTime.put(jobs.get(jobs.size() - 1), makespan);
-        leastStartingTime.put(jobs.get(jobs.size() - 1), makespan);
-        earliestFinishingTime.put(jobs.get(jobs.size() - 1), makespan);
-        earliestStartingTime.put(jobs.get(jobs.size() - 1), makespan);
+        int makespan = schedule.computeMetric(Metrics.MAKESPAN);
 
         // Computation of EST and EFT
         for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
@@ -61,14 +58,19 @@ public class ScheduleHelper {
                 earliestStartingTime.put(job, beginning);
 
                 int ending = earliestFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
-                ending = Math.min(interval.getUpperBound(), ending);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
                 earliestFinishingTime.put(job, ending);
             }
         }
 
+        if (!schedule.isPartialSchedule()) {
+            earliestFinishingTime.put(jobs.get(jobs.size() - 1), makespan);
+            earliestStartingTime.put(jobs.get(jobs.size() - 1), makespan);
+        }
+
         // Computation of LST and LFT
-        for (int i = project.getJobs().size() - 1; i > 0; i--) {
-            Job job = project.getJobs().get(i);
+        for (int i = jobs.size() - 1; i >= 0; i--) {
+            Job job = jobs.get(i);
             JobMode selectedMode = jobModeList.stream().filter(jobMode -> jobMode.getJob().getJobId() == job.getJobId()).findFirst().get();
             int duration = selectedMode.getMode().getDuration();
 
@@ -79,7 +81,11 @@ public class ScheduleHelper {
             else {
                 // Get the minimum of the successors
                 for (Job successorJob : successorJobs) {
-                    latestEndPoint = Math.min(leastStartingTime.get(successorJob), latestEndPoint);
+                    try {
+                        latestEndPoint = Math.min(leastStartingTime.getOrDefault(successorJob, makespan), latestEndPoint);
+                    } catch (Exception ex) {
+                        System.out.println();
+                    }
                 }
             }
 
@@ -131,5 +137,19 @@ public class ScheduleHelper {
                         schedule.getScheduleRepresentation()));
             }
         }
+    }
+
+    public static boolean compareSchedule(Schedule schedule, Schedule currentBestSchedule, ScheduleComparator scheduleComparator) {
+        if (schedule == null)
+            return false;
+        else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
+            return true;
+        } else if(scheduleComparator == ScheduleComparator.MAKESPAN_AND_RM &&
+                (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
+                (currentBestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1)))        {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.model.scheduling;
 
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
