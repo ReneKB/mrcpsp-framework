@@ -8,7 +8,11 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
-import de.uol.sao.rcpsp_framework.model.heuristics.ActivityLFTModeLRSHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
+import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.JobMode;
@@ -22,6 +26,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -184,9 +189,13 @@ public class TabuSearchSolver implements Solver {
                 initialSolutionTries++;
                 if (initialSolutionTries > 10000)
                     throw new GiveUpException();
-                ScheduleRepresentation representation = new ActivityLFTModeLRSHeuristic().buildScheduleRepresentation(benchmark);
+                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(benchmark,
+                        Heuristic.builder()
+                                .modeHeuristic(LRSHeuristic.class)
+                                .activityHeuristic(RandomActivityHeuristic.class)
+                                .build());
                 schedule = this.schedulerService.createScheduleProactive(benchmark, representation);
-            } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException e) {
+            } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException ignored) {
 
             }
         }

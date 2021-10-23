@@ -2,7 +2,10 @@ package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.RandomHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
+import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.LTRUHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
@@ -23,11 +26,14 @@ public class RandomSolver implements Solver {
     @Override
     public Schedule algorithm(Benchmark benchmark, int iterations) {
         Schedule bestSchedule = null;
-        Heuristic heuristic = new RandomHeuristic();
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createScheduleProactive(benchmark, heuristic.buildScheduleRepresentation(benchmark));
+                schedule = schedulerService.createScheduleProactive(benchmark, HeuristicDirector.constructScheduleRepresentation(benchmark,
+                        Heuristic.builder()
+                            .modeHeuristic(RandomModeHeuristic.class)
+                            .activityHeuristic(RandomActivityHeuristic.class)
+                            .build()));
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }

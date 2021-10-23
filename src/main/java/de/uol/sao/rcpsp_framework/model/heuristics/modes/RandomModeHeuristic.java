@@ -1,34 +1,16 @@
-package de.uol.sao.rcpsp_framework.model.heuristics;
+package de.uol.sao.rcpsp_framework.model.heuristics.modes;
 
-import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-/**
- * Actual no heuristic however similar to the heuristics. Mainly this heuristic takes the "reservation" of needed modes
- * into account
- */
-public class RandomHeuristic extends Heuristic {
+public class RandomModeHeuristic extends ModeHeuristic {
 
     @Override
-    double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        return new Random().nextInt(10000);
-    }
-
-    @Override
-    double determineModePriorityValue(Job job,
-                                   Mode mode,
-                                   List<Job> scheduledJobs,
-                                   List<Mode> scheduledModes,
-                                   Map<Job, List<Mode>> reservation,
-                                   Map<Resource, Integer> reservedResources,
-                                   Map<Resource, Integer> nonRenewableResourcesLeft,
-                                   Benchmark benchmark) {
-
+    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark) {
         // If a reservation for the job is determined, than these should be focused. Means for this algorithmus:
         // Every non-reserved modes from a reserved job will be removed
         if (reservation.containsKey(job)) {
@@ -44,7 +26,7 @@ public class RandomHeuristic extends Heuristic {
                 int reservedResourcesAmount = reservedResources.getOrDefault(possibleRequestedResource, 0);
                 if (reservation.containsKey(job))
                     reservedResourcesAmount = 0;
-                
+
                 if (possibleRequestedAmount > nonRenewableResourcesLeft.get(possibleRequestedResource) - reservedResourcesAmount)
                     return Double.MAX_VALUE;
             } else if (possibleRequestedResource instanceof RenewableResource) {
@@ -55,5 +37,9 @@ public class RandomHeuristic extends Heuristic {
 
         // In the end, mode should be selected randomly (generate an arbitrary random no)
         return new Random().nextInt(10000);
+    }
+
+    public RandomModeHeuristic() {
+        this.heuristicSelection = HeuristicSelection.MIN;
     }
 }

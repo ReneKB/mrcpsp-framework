@@ -35,7 +35,7 @@ public class ExperimentService {
         List<Integer> iterations = new ArrayList<>();
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
-        int experiment = 8;
+        int experiment = 1;
 
         iterations.add(5000);
         solvers.add("TabuSearchSolver");
