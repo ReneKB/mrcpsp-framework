@@ -45,9 +45,7 @@ public class LSTHeuristic extends ActivityHeuristic {
 
             int leastFinishedTime = scheduleRelationInfo.getLeastFinishingTime().get(job);
             priorityValue = Math.max(leastFinishedTime - jobSelectedMode.getDuration(), priorityValue);
-        } catch (NoNonRenewableResourcesLeftException e) {
-            return Integer.MAX_VALUE;
-        } catch (RenewableResourceNotEnoughException e) {
+        } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException e) {
             return Integer.MAX_VALUE;
         }
 
