@@ -15,42 +15,40 @@ import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class LFTHeuristic extends ActivityHeuristic {
 
     @Override
-    public double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    public double determineActivityPriorityValue(Job job, Mode jobSelectedMode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         List<Job> possibleScheduledJobs = new ArrayList<>(scheduledJobs);
         possibleScheduledJobs.add(job);
 
         int priorityValue = 0;
-        for (Mode mode : job.getModes()) {
-            int duration = mode.getDuration();
 
-            List<Mode> possibleScheduledModes = new ArrayList<>(scheduledModes);
-            possibleScheduledModes.add(mode);
+        int duration = jobSelectedMode.getDuration();
 
-            int[] scheduledJobsArray = ArrayUtils.toPrimitive(possibleScheduledJobs.stream().map(Job::getJobId).toArray(Integer[]::new));
-            int[] scheduledModesArray = ArrayUtils.toPrimitive(possibleScheduledModes.stream().map(Mode::getModeId).toArray(Integer[]::new));
+        List<Mode> possibleScheduledModes = new ArrayList<>(scheduledModes);
+        possibleScheduledModes.add(jobSelectedMode);
 
-            ScheduleRepresentation scheduleRepresentation = new ActivityListSchemeRepresentation(
-                scheduledJobsArray,
-                scheduledModesArray
-            );
+        int[] scheduledJobsArray = ArrayUtils.toPrimitive(possibleScheduledJobs.stream().map(Job::getJobId).toArray(Integer[]::new));
+        int[] scheduledModesArray = ArrayUtils.toPrimitive(possibleScheduledModes.stream().map(Mode::getModeId).toArray(Integer[]::new));
 
-            try {
-                Schedule partialSchedule = new SchedulerService().createScheduleProactive(benchmark, scheduleRepresentation, null);
-                ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
+        ScheduleRepresentation scheduleRepresentation = new ActivityListSchemeRepresentation(
+            scheduledJobsArray,
+            scheduledModesArray
+        );
 
-                int leastFinishedTime = scheduleRelationInfo.getLeastFinishingTime().get(job);
-                priorityValue = Math.max(leastFinishedTime, priorityValue);
-            } catch (NoNonRenewableResourcesLeftException e) {
-                return Integer.MAX_VALUE;
-            } catch (RenewableResourceNotEnoughException e) {
-                return Integer.MAX_VALUE;
-            }
+        try {
+            Schedule partialSchedule = new SchedulerService().createScheduleProactive(benchmark, scheduleRepresentation, null);
+            ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
+
+            int leastFinishedTime = scheduleRelationInfo.getLeastFinishingTime().get(job);
+            priorityValue = Math.max(leastFinishedTime, priorityValue);
+        } catch (NoNonRenewableResourcesLeftException e) {
+            return Integer.MAX_VALUE;
+        } catch (RenewableResourceNotEnoughException e) {
+            return Integer.MAX_VALUE;
         }
 
         return priorityValue;

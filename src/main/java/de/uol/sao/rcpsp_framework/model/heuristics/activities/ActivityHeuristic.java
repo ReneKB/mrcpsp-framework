@@ -13,7 +13,8 @@ public abstract class ActivityHeuristic {
     protected HeuristicSelection heuristicSelection;
 
     public abstract double determineActivityPriorityValue(Job job,
-                                                   List<Job> scheduledJobs,
-                                                   List<Mode> scheduledModes,
-                                                   Benchmark benchmark);
+                                                          Mode jobSelectedMode,
+                                                          List<Job> scheduledJobs,
+                                                          List<Mode> scheduledModes,
+                                                          Benchmark benchmark);
 }

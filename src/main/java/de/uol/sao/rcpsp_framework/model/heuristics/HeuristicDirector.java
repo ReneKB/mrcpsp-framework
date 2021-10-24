@@ -12,10 +12,10 @@ import java.util.*;
 
 public class HeuristicDirector {
 
-    private static Map<Job, Double> computePriorityValueForJobs(ActivityHeuristic activityHeuristic, List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    private static Map<Job, Double> computePriorityValueForJobs(ActivityHeuristic activityHeuristic, Map<Job, Mode> jobsModes, List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         Map<Job, Double> jobWithPriorityValue = new HashMap<>();
         jobs.forEach(job ->
-            jobWithPriorityValue.put(job, activityHeuristic.determineActivityPriorityValue(job, scheduledJobs, scheduledModes, benchmark))
+            jobWithPriorityValue.put(job, activityHeuristic.determineActivityPriorityValue(job, jobsModes.get(job), scheduledJobs, scheduledModes, benchmark))
         );
         return jobWithPriorityValue;
     }
@@ -89,8 +89,16 @@ public class HeuristicDirector {
 
         // First schedule the activities
         while (!possibleJobs.isEmpty()) {
+            // Compute the modes for all possible jobs
+            Map<Job, Mode> modes = new HashMap<>();
+            for (Job possibleJob : possibleJobs) {
+                Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleJob, activityScheduled, modesScheduled, reservation, benchmark);
+                Mode selectedMode = HeuristicDirector.samplingMinMax(modesPriorityValues, modeHeuristic.getHeuristicSelection());
+                modes.put(possibleJob, selectedMode);
+            }
+
             // Compute all possible activities acc. to the heuristic alg
-            Map<Job, Double> activityPriorityValues = HeuristicDirector.computePriorityValueForJobs(activityHeuristic, possibleJobs, activityScheduled, modesScheduled, benchmark);
+            Map<Job, Double> activityPriorityValues = HeuristicDirector.computePriorityValueForJobs(activityHeuristic, modes, possibleJobs, activityScheduled, modesScheduled, benchmark);
             Job selectedJob = HeuristicDirector.samplingMinMax(activityPriorityValues, activityHeuristic.getHeuristicSelection());
 
             // Compute all possible modes acc. to the heuristic alg

@@ -7,6 +7,7 @@ import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.LFTHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.LPSRDHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;

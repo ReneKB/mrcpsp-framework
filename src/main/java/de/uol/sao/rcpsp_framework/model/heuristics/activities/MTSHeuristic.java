@@ -10,7 +10,7 @@ import java.util.List;
 public class MTSHeuristic extends ActivityHeuristic {
 
     @Override
-    public double determineActivityPriorityValue(Job job, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    public double determineActivityPriorityValue(Job job, Mode jobSelectedMode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         return job.getSuccessor().size();
     }
 

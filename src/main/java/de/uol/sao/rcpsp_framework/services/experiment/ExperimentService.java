@@ -41,7 +41,7 @@ public class ExperimentService {
         UncertaintyModel uncertaintyModel = new UncertaintyModel(new BinomialDistribution(10, 0.0));
         int experiment = 8;
 
-        iterations.add(100000);
+        iterations.add(100);
         solvers.add("RandomSolver");
         // solvers.add("TabuSearch");
         // solvers.add("GeneticAlgorithm");
