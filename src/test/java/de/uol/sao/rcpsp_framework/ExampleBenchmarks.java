@@ -13,4 +13,8 @@ public class ExampleBenchmarks {
         return new BenchmarkPSPLIBMultiModeLoader().loadBenchmark("j20.mm/j203_2.mm");
     }
 
+    public static Benchmark loadBenchmarkJ30_78() {
+        return new BenchmarkPSPLIBMultiModeLoader().loadBenchmark("j30.mm/j307_8.mm");
+    }
+
 }

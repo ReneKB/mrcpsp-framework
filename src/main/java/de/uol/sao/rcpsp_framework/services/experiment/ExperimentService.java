@@ -39,12 +39,11 @@ public class ExperimentService {
         List<String> solvers = new ArrayList<>();
         Metric<Integer> robustnessMetric = Metrics.RM1;
         UncertaintyModel uncertaintyModel = new UncertaintyModel(new BinomialDistribution(10, 0.0));
-        int experiment = 8;
+        int experiment = 4;
 
-        iterations.add(100);
-        solvers.add("RandomSolver");
-        // solvers.add("TabuSearch");
-        // solvers.add("GeneticAlgorithm");
+        iterations.add(10000);
+        solvers.add("TabuSearch");
+        // solvers.add("RandomSolver");
 
         // Prework
         for (String beginningOption : options) {

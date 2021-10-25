@@ -75,7 +75,7 @@ public class HeuristicDirector {
         Map<T, Double> objectWithProbability = new HashMap<>();
 
         double lowestPriorityValue = objectWithPriorityValue.values().stream().sorted((o1, o2) -> (int) (o1 - o2)).findFirst().get();
-        double highestPriorityValue = objectWithPriorityValue.values().stream().sorted((o1, o2) -> (int) (o2 - o1)).findFirst().get();
+        double highestPriorityValue = objectWithPriorityValue.values().stream().sorted((o1, o2) -> (int) (o1 - o2)).reduce((aDouble, aDouble2) -> aDouble2).stream().findFirst().get();
 
         // Calculation of v' acc. to literature
         if (selection == HeuristicSelection.MIN) {
@@ -89,13 +89,16 @@ public class HeuristicDirector {
         }
 
         // Calculation of v'' acc. to literature
-        double epsilon = 1;
-        double alpha = 1.5;
+        double epsilon = 1; // Math.max(lowestPriorityValue, 0.001);
+        double alpha = 1;
 
         for (Map.Entry<T, Double> entry : objectWithRegrets.entrySet()) {
             T t = entry.getKey();
-            Double r_j = entry.getValue();
-            objectWithRegrets.put(t, Math.pow(r_j + epsilon, alpha));  // acc. Drexl 1992
+            Double r_j = Math.pow(entry.getValue() + epsilon, alpha);
+            if (Double.isInfinite(r_j))
+                r_j = Double.MAX_VALUE;
+
+            objectWithRegrets.put(t, r_j);  // acc. Drexl 1992
         }
 
         // Calculation of p acc. to literature
@@ -190,6 +193,39 @@ public class HeuristicDirector {
         return new ActivityListSchemeRepresentation(
             activityScheduled.stream().mapToInt(Job::getJobId).toArray(),
             modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
+        );
+    }
+
+    public static ScheduleRepresentation constructScheduleRepresentationWithExistingActivities(List<Job> activities, Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        ModeHeuristic modeHeuristic = heuristic.getModeHeuristic().getDeclaredConstructor().newInstance();
+
+        List<Job> activityScheduled = new ArrayList<>(activities);
+        List<Mode> modesScheduled = new ArrayList<>();
+        Map<Job, List<Mode>> reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
+
+        List<Job> possibleJobs = new ArrayList<>();
+        possibleJobs.add(benchmark.getProject().getJobs().get(0));
+
+        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
+        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
+            if (resource instanceof NonRenewableResource) {
+                nonRenewableResourcesLeft.put(resource, amount);
+            }
+        });
+
+        activities.forEach(job -> {
+            // Compute the modes for all possible jobs
+            Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, job, activityScheduled, modesScheduled, reservation, benchmark);
+            Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
+                    HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getHeuristicSelection()) :
+                    HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getHeuristicSelection());
+
+            modesScheduled.add(selectedMode);
+        });
+
+        return new ActivityListSchemeRepresentation(
+                activityScheduled.stream().mapToInt(Job::getJobId).toArray(),
+                modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
         );
     }
 }

@@ -146,7 +146,7 @@ public class ScheduleHelper {
             return true;
         } else if(scheduleComparator == ScheduleComparator.MAKESPAN_AND_RM &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                (currentBestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1)))        {
+                (currentBestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1))) {
             return true;
         }
 
