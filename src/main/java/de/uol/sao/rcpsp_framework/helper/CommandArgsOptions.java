@@ -12,8 +12,10 @@ public enum CommandArgsOptions {
     SOURCE("source"),
     ITERATIONS("iterations"),
     SOLVERS("solvers"),
+    EXPERIMENT_N("n"),
     EXPERIMENT("experiment"),
     METRIC("metric"),
+    ROBUST("robust"),
     NONE("none");
 
     @Getter

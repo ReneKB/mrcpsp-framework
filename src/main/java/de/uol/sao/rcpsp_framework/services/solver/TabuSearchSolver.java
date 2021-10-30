@@ -113,7 +113,7 @@ public class TabuSearchSolver implements Solver {
         handledJobs.add(jobList.get(0));
 
         // Adds for the same activity list mode neighbours
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < Math.floor(Math.sqrt(jobList.size())); i++) {
             int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
             int[] neighbourModes = Arrays.copyOf(modes, modes.length);
 
@@ -140,6 +140,9 @@ public class TabuSearchSolver implements Solver {
 
                 flipNeighbourModes(jobList, neighbourModes);
                 neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
+
+                flipNeighbourModes(jobList, neighbourModes);
+                neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
             }
             handledJobs.add(currentJob);
         }
@@ -151,7 +154,10 @@ public class TabuSearchSolver implements Solver {
         Mode newSelectedMode = null;
         int newSelectedModeIndex = 0;
 
-        while (newSelectedMode == null) {
+        int completeModesAmount = initialJobList.stream().map(Job::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
+        boolean singleMode = completeModesAmount == initialJobList.size();
+
+        while (newSelectedMode == null && !singleMode) {
             int randomIndex = new Random().nextInt(initialJobList.size());
             int currentMode = neighbourModes[randomIndex];
 
@@ -165,7 +171,8 @@ public class TabuSearchSolver implements Solver {
             }
         }
 
-        neighbourModes[newSelectedModeIndex] = newSelectedMode.getModeId();
+        if (!singleMode)
+            neighbourModes[newSelectedModeIndex] = newSelectedMode.getModeId();
     }
 
     public Schedule createInitialSolution(Benchmark benchmark, UncertaintyModel uncertaintyModel) throws GiveUpException {
@@ -176,11 +183,11 @@ public class TabuSearchSolver implements Solver {
         while (schedule == null) {
             try {
                 initialSolutionTries++;
-                if (initialSolutionTries > 10000)
+                if (initialSolutionTries > 100)
                     throw new GiveUpException();
                 ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(benchmark,
                         Heuristic.builder()
-                            .modeHeuristic(LTRUHeuristic.class)
+                            .modeHeuristic(LRSHeuristic.class)
                             .activityHeuristic(MSLKHeuristic.class)
                             .build(),
                         HeuristicSampling.REGRET_BASED_BIAS);

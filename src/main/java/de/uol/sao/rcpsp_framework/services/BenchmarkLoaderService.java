@@ -2,17 +2,19 @@ package de.uol.sao.rcpsp_framework.services;
 
 import de.uol.sao.rcpsp_framework.exceptions.UnsupportedBenchmarkException;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
+import de.uol.sao.rcpsp_framework.model.benchmark.OptimumReference;
 import de.uol.sao.rcpsp_framework.services.benchmark.BenchmarkLoader;
 import de.uol.sao.rcpsp_framework.services.benchmark.BenchmarkPSPLIBMultiModeLoader;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Service
 @Log4j2
-public class BenchmarkLoaderService {
+public class BenchmarkLoaderService implements BenchmarkLoader {
 
     /**
      * Available Benchmark Loaders needs to be defined here. According to the file ending, the proper loader
@@ -42,7 +44,14 @@ public class BenchmarkLoaderService {
      * @return The generalized Benchmark object
      */
     @SneakyThrows
+    @Override
     public Benchmark loadBenchmark(String file) {
         return selectBenchmarkLoader(file).loadBenchmark(file);
+    }
+
+    @Override
+    @SneakyThrows
+    public OptimumReference loadOptimum(Benchmark benchmark) throws IOException {
+        return selectBenchmarkLoader(benchmark.getName()).loadOptimum(benchmark);
     }
 }

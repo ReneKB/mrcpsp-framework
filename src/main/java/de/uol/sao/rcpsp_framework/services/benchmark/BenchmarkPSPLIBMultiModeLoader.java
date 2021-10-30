@@ -6,9 +6,8 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 @Log4j2
@@ -48,7 +47,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
         Project project = new Project();
         Benchmark benchmark = new Benchmark();
         benchmark.setProject(project);
-        benchmark.setName(file.replace(".mm", ""));
+        benchmark.setName(file);
         List<Job> jobs = new ArrayList<>();
         Map<Resource, Integer> availableResources = new HashMap<>();
 
@@ -212,8 +211,91 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
         project.setJobs(jobs);
         project.setAvailableResources(availableResources);
 
-        log.info(String.format("Loaded Benchmark: %s (Jobs: %d, Horizon: %d) ", benchmark.getName(), benchmark.getNumberJobs(), benchmark.getHorizon()));
+        // log.info(String.format("Loaded Benchmark: %s (Jobs: %d, Horizon: %d) ", benchmark.getName(), benchmark.getNumberJobs(), benchmark.getHorizon()));
         return benchmark;
+    }
+
+    @SneakyThrows
+    @Override
+    public OptimumReference loadOptimum(Benchmark benchmark) throws IOException {
+        String filename = benchmark.getName();
+        URL filenameUrl = BenchmarkPSPLIBMultiModeLoader.class.getClassLoader().getResource(filename);
+        File file = new File(filenameUrl.toURI());
+        InputStream inputStream = null;
+
+        OptimumReference optimumReference = new OptimumReference();
+        optimumReference.setBenchmark(benchmark);
+
+        int parameter = 0;
+        int instance = 0;
+
+        if (file.exists()) {
+            boolean isFixedOptimum = true;
+            File[] optimumFiles = file.getParentFile().listFiles(pathname -> pathname.getPath().contains("opt"));
+            File[] heuristicFiles = file.getParentFile().listFiles(pathname -> pathname.getPath().contains("hrs"));
+
+            if (optimumFiles.length > 0)
+                inputStream = new FileInputStream(optimumFiles[0]);
+            else if(heuristicFiles.length > 0) {
+                inputStream = new FileInputStream(heuristicFiles[0]);
+                isFixedOptimum = false;
+            }
+
+            String replacedName = benchmark.getName().replaceAll(".*(/|\\\\)|.mm", "");
+            String benchmarkname = benchmark.getName().replaceAll(".mm(/|\\\\).*", "");
+            String parameterInstanceString = replacedName.replaceAll(benchmarkname, "");
+            String[] paramInstanceArray = parameterInstanceString.split("_");
+            parameter = Integer.parseInt(paramInstanceArray[0]);
+            instance = Integer.parseInt(paramInstanceArray[1]);
+
+            int currentSegmentStateIndex = 0;
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+            String strLine;
+
+            if (isFixedOptimum) {
+                while ((strLine = br.readLine()) != null) {
+                    if (currentSegmentStateIndex == 1) {
+                        List<Double> numbersOfLine = this.getDoublesByTrialErrorParsing(strLine);
+                        double curParameter = numbersOfLine.get(0);
+                        double curInstance = numbersOfLine.get(1);
+                        double curMakespan = numbersOfLine.get(2);
+                        double curDuration = numbersOfLine.get(3);
+
+                        if (curParameter == parameter && curInstance == instance) {
+                            optimumReference.setMakespan(curMakespan);
+                            optimumReference.setSeconds(curDuration);
+                            return optimumReference;
+                        }
+                    }
+
+                    if (strLine.contains("------")) {
+                        currentSegmentStateIndex++;
+                    }
+                }
+            } else {
+                while ((strLine = br.readLine()) != null) {
+                    if (currentSegmentStateIndex == 2) {
+                        List<Double> numbersOfLine = this.getDoublesByTrialErrorParsing(strLine);
+                        double curParameter = numbersOfLine.get(0);
+                        double curInstance = numbersOfLine.get(1);
+                        double curMakespan = numbersOfLine.get(2);
+
+                        if (curParameter == parameter && curInstance == instance) {
+                            optimumReference.setMakespan(curMakespan);
+                            return optimumReference;
+                        }
+                    }
+
+                    if (strLine.contains("======")) {
+                        currentSegmentStateIndex++;
+                    }
+                }
+            }
+        }
+
+        // log.info(String.format("Loaded Benchmark: %s (Jobs: %d, Horizon: %d) ", benchmark.getName(), benchmark.getNumberJobs(), benchmark.getHorizon()));
+        return optimumReference;
     }
 
     public int getNumberAfterColon(String line) {
@@ -234,5 +316,20 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
             }
         });
         return integerList;
+    }
+
+    public List<Double> getDoublesByTrialErrorParsing(String line) {
+        List<Double> doubleList = new ArrayList<>();
+        String[] split = line.replaceAll("\t", " ").split(" ");
+
+        // Trial-and-error parsing. In the end we have 6 integers
+        Arrays.stream(split).forEach(possibleDouble -> {
+            try {
+                doubleList.add(Double.parseDouble(possibleDouble));
+            } catch (Exception ex) {
+                // ignore
+            }
+        });
+        return doubleList;
     }
 }

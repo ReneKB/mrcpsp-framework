@@ -89,8 +89,8 @@ public class HeuristicDirector {
         }
 
         // Calculation of v'' acc. to literature
-        double epsilon = 1; // Math.max(lowestPriorityValue, 0.001);
-        double alpha = 1;
+        double epsilon = Math.max(lowestPriorityValue, 0.001);
+        double alpha = 4;
 
         for (Map.Entry<T, Double> entry : objectWithRegrets.entrySet()) {
             T t = entry.getKey();
