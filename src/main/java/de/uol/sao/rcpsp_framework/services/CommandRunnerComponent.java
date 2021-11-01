@@ -53,7 +53,8 @@ public class CommandRunnerComponent implements ApplicationRunner {
         experiments.forEach(experiment -> {
             log.info(String.format("Run Experiment %s", experiment.getClass().getSimpleName()));
             experiment.runExperiments(args, benchmarks);
-            log.info(String.format("Finished Experiment %s! \n", experiment.getClass().getSimpleName()));
+            log.info(String.format("Finished Experiment %s! ", experiment.getClass().getSimpleName()));
+            log.info("");
         });
         log.info("All experiments have been finished! ");
     }
@@ -73,16 +74,16 @@ public class CommandRunnerComponent implements ApplicationRunner {
             }
         }
 
-        List<Benchmark> benchmarks;
-        File file = null;
+        List<Benchmark> benchmarks = null;
         try {
-            file = new File(CommandRunnerComponent.class.getClassLoader().getResource(defaultBenchmarkUri).toURI());
-        } catch (URISyntaxException e) { }
-
-        if (file.isDirectory())
-            benchmarks = this.loadBenchmarkSetFromArgs(defaultBenchmarkUri);
-        else
+            File file = new File(CommandRunnerComponent.class.getClassLoader().getResource(defaultBenchmarkUri).toURI());
+            if (file.isDirectory())
+                benchmarks = this.loadBenchmarkSetFromArgs(defaultBenchmarkUri);
+            else
+                benchmarks = Collections.singletonList(benchmarkLoaderService.loadBenchmark(defaultBenchmarkUri));
+        } catch (Exception e) {
             benchmarks = Collections.singletonList(benchmarkLoaderService.loadBenchmark(defaultBenchmarkUri));
+        }
 
         return benchmarks;
     }
@@ -93,10 +94,9 @@ public class CommandRunnerComponent implements ApplicationRunner {
         File file = new File(CommandRunnerComponent.class.getClassLoader().getResource(defaultPath).getPath());
 
         if (file.exists()) {
-            String finalDefaultPath = defaultPath;
             Arrays.stream(file.listFiles()).parallel().forEach(benchmarkFile -> {
                 try {
-                    benchmarks.add(benchmarkLoaderService.loadBenchmark(finalDefaultPath + File.separatorChar + benchmarkFile.getName()));
+                    benchmarks.add(benchmarkLoaderService.loadBenchmark(defaultPath + File.separatorChar + benchmarkFile.getName()));
                 } catch (Exception exception) { }
             });
         }

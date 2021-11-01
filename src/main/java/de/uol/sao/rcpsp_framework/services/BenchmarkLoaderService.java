@@ -51,7 +51,7 @@ public class BenchmarkLoaderService implements BenchmarkLoader {
 
     @Override
     @SneakyThrows
-    public OptimumReference loadOptimum(Benchmark benchmark) throws IOException {
+    public OptimumReference loadOptimum(Benchmark benchmark) {
         return selectBenchmarkLoader(benchmark.getName()).loadOptimum(benchmark);
     }
 }

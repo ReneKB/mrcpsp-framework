@@ -263,7 +263,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         double curDuration = numbersOfLine.get(3);
 
                         if (curParameter == parameter && curInstance == instance) {
-                            optimumReference.setMakespan(curMakespan);
+                            optimumReference.setMakespan((int) curMakespan);
                             optimumReference.setSeconds(curDuration);
                             return optimumReference;
                         }
@@ -282,7 +282,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         double curMakespan = numbersOfLine.get(2);
 
                         if (curParameter == parameter && curInstance == instance) {
-                            optimumReference.setMakespan(curMakespan);
+                            optimumReference.setMakespan((int) curMakespan);
                             return optimumReference;
                         }
                     }
