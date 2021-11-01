@@ -19,6 +19,17 @@ public class ActivityListSchemeRepresentation implements ScheduleRepresentation 
     int[] activities; // equals λ acc. to literature
     int[] modes; // equals µ acc. to literature
 
+    public ActivityListSchemeRepresentation(List<JobMode> jobModes) {
+        this.activities = new int[jobModes.size()];
+        this.modes = new int[jobModes.size()];
+
+        for (int i = 0; i < jobModes.size(); i++) {
+            JobMode jobMode = jobModes.get(i);
+            this.activities[i] = jobMode.getJob().getJobId();
+            this.modes[i] = jobMode.getMode().getModeId();
+        }
+    }
+
     @Override
     public void validityScheme() {
 
