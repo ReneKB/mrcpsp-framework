@@ -70,14 +70,14 @@ public class TabuSearchSolver implements Solver {
                     currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation, uncertaintyModel);
                 } catch (Exception ex) { }
 
-                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, ScheduleComparator.MAKESPAN_AND_RM)) {
+                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {
                     neighbourhoodFavorite = currentSchedule;
                 }
             }
 
             if (neighbourhoodFavorite != null) {
                 tabuSchedule = neighbourhoodFavorite;
-                if (ScheduleHelper.compareSchedule(tabuSchedule, bestSchedule, ScheduleComparator.MAKESPAN_AND_RM)) {
+                if (ScheduleHelper.compareSchedule(tabuSchedule, bestSchedule, robustnessFunction)) {
                     bestSchedule = neighbourhoodFavorite;
                 }
 
@@ -153,22 +153,34 @@ public class TabuSearchSolver implements Solver {
         // must be a feasible solution
         Schedule schedule = null;
 
-        int initialSolutionTries = 0;
+        int giveUpCounter = 0;
         while (schedule == null) {
-            try {
-                initialSolutionTries++;
-                if (initialSolutionTries > 100)
-                    throw new GiveUpException();
-                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(benchmark,
-                        Heuristic.builder()
-                            .modeHeuristic(LRSHeuristic.class)
-                            .activityHeuristic(MSLKHeuristic.class)
-                            .build(),
-                        HeuristicSampling.REGRET_BASED_BIAS);
-                schedule = this.schedulerService.createScheduleProactive(benchmark, representation, uncertaintyModel);
-            } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException ignored) {
-                // ignored.printStackTrace();
+            if (giveUpCounter > 50)
+                throw new GiveUpException();
+
+            for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
+                if (schedule != null)
+                    break;
+                for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
+                    if (schedule != null)
+                        break;
+
+                    try {
+                        ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
+                                benchmark,
+                                Heuristic.builder()
+                                        .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
+                                        .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
+                                        .build(),
+                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
+
+                        schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
+                    } catch (Exception ex) {
+                    }
+                }
             }
+
+            giveUpCounter++;
         }
 
         return schedule;

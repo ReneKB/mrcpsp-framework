@@ -23,7 +23,6 @@ public abstract class ActivityHeuristic {
         LFTHeuristic.class,
         LSTHeuristic.class,
         MSLKHeuristic.class,
-        MSLKHeuristic.class,
         MTSHeuristic.class,
         RandomActivityHeuristic.class
     };

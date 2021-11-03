@@ -41,7 +41,7 @@ public class RandomSolver implements Solver {
                 // ignore as it will be considered as worst result
             }
 
-            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, ScheduleComparator.MAKESPAN_AND_RM))
+            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, robustnessFunction))
                 bestSchedule = schedule;
         }
         return bestSchedule;

@@ -139,14 +139,14 @@ public class ScheduleHelper {
         }
     }
 
-    public static boolean compareSchedule(Schedule schedule, Schedule currentBestSchedule, ScheduleComparator scheduleComparator) {
+    public static boolean compareSchedule(Schedule schedule, Schedule currentBestSchedule, Metric<?> robustnessMeasure) {
         if (schedule == null)
             return false;
         else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
             return true;
-        } else if(scheduleComparator == ScheduleComparator.MAKESPAN_AND_RM &&
+        } else if(robustnessMeasure != null &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                (currentBestSchedule.computeMetric(Metrics.RM1) < schedule.computeMetric(Metrics.RM1))) {
+                ((int) currentBestSchedule.computeMetric(robustnessMeasure) < (int) schedule.computeMetric(robustnessMeasure))) {
             return true;
         }
 

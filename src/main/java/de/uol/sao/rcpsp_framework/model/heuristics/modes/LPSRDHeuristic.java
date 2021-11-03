@@ -9,10 +9,7 @@ import java.util.Map;
 public class LPSRDHeuristic extends ModeHeuristic {
 
     @Override
-    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark) {
-        boolean filtered = filterNonPossibleModes(job, mode, reservation, reservedResources, nonRenewableResourcesLeft, benchmark);
-        if (filtered) return Double.MAX_VALUE;
-
+    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         double sumNonRenewableResources = 0;
         for (Map.Entry<Resource, Integer> entry : mode.getRequestedResources().entrySet()) {
             Resource resource = entry.getKey();

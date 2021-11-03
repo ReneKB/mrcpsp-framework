@@ -1,27 +1,23 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
-import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.helper.SolverHelper;
-import de.uol.sao.rcpsp_framework.model.benchmark.*;
+import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
+import de.uol.sao.rcpsp_framework.model.benchmark.Job;
+import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
+import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.activities.MSLKHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -46,6 +42,7 @@ public class GeneticAlgorithmSolver implements Solver {
 
     int mu = 40;
     int lambda = 50;
+    double sigma = 0.06;
 
     @Data
     @AllArgsConstructor
@@ -71,7 +68,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 population.add(solution);
             }
 
-            List<Solution> newPopulation = this.select(population, mu, 0);
+            List<Solution> newPopulation = this.select(population, mu, 50);
             if (newPopulation.size() > 2)
                 population = newPopulation;
 
@@ -81,8 +78,13 @@ public class GeneticAlgorithmSolver implements Solver {
                 Schedule generationBestSolution = schedulerService.createScheduleProactive(benchmark,
                         population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get().getScheduleRepresentation(),
                         null);
-                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, ScheduleComparator.MAKESPAN_AND_RM))
+
+                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, robustnessFunction)) {
                     scheduleBestSolution = generationBestSolution;
+                    sigma = sigma * Math.pow(Math.exp(1 - (double) (1/5)), 0.05);
+                } else {
+                    sigma = sigma * Math.pow(Math.exp(0 - (double) (1/5)), 0.05);
+                }
             } catch (Exception e) { }
         }
 
@@ -186,7 +188,7 @@ public class GeneticAlgorithmSolver implements Solver {
             Job job = jobList.get(i).getJob();
             int size = job.getModes().size();
 
-            if (size != 1 && Math.random() <= 0.04) {
+            if (size != 1 && Math.random() <= sigma) {
                 int finalI = i;
                 List<Mode> selectedMode = job.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
                 Collections.shuffle(selectedMode);
@@ -223,30 +225,9 @@ public class GeneticAlgorithmSolver implements Solver {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
-        for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
-            for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
-                try {
-                    ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
-                            benchmark,
-                            Heuristic.builder()
-                                    .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
-                                    .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
-                                    .build(),
-                            HeuristicSampling.SINGLE);
-
-                    Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
-                    if (schedule != null)
-                        population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
-                } catch (Exception ex) { }
-            }
-        }
-
-        // Heuristics: Regret based bias (25 tries for each )
-        int amountTries = 10;
-        for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
-            for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
-                int i = 0;
-                while (i < amountTries) {
+        while (population.size() < amount) {
+            for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
+                for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
                     try {
                         ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
                                 benchmark,
@@ -254,35 +235,16 @@ public class GeneticAlgorithmSolver implements Solver {
                                         .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
                                         .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
                                         .build(),
-                                HeuristicSampling.REGRET_BASED_BIAS);
+                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
 
                         Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
                         if (schedule != null)
-                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));                    } catch (Exception ex) { }
-                    i++;
+                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
+                    } catch (Exception ex) { }
                 }
             }
         }
 
-        // Heuristics: Rest LRS/MSLK
-        for (int i = population.size(); i < amount; i++) {
-            Schedule schedule = null;
-            while (schedule == null) {
-                try {
-                    ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
-                            benchmark,
-                            Heuristic.builder()
-                                    .activityHeuristic(MSLKHeuristic.class)
-                                    .modeHeuristic(LRSHeuristic.class).build(),
-                            HeuristicSampling.REGRET_BASED_BIAS
-                    );
-
-                    schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
-                } catch (Exception ex) { }
-            }
-
-            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
-        }
         Collections.shuffle(population);
         return population.stream().limit(amount).collect(Collectors.toList());
     }

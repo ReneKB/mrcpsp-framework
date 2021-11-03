@@ -20,34 +20,25 @@ public class HeuristicDirector {
         return jobWithPriorityValue;
     }
 
-    private static Map<Mode, Double> computeModePriorityValues(ModeHeuristic modeHeuristic, Job selectedJob, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Benchmark benchmark) {
+    private static Map<Mode, Double> computeModePriorityValues(ModeHeuristic modeHeuristic, Job selectedJob, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
         Map<Mode, Double> jobWithPriorityValue = new HashMap<>();
-
-        // Remove already scheduled reservation and compute the amount of non-renewable resources reservation acc. to the reservation map
-        scheduledJobs.forEach(reservation::remove);
-        Map<Resource, Integer> reservedResources = ProjectHelper.getReservationAmountOfNonRenewableResources(reservation);
-
-        // Compute the non-renewable resources left and reservation. Required for several mode selection heuristics
-        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            if (resource instanceof NonRenewableResource) {
-                nonRenewableResourcesLeft.put(resource, amount);
-            }
-        });
-
-        // Calculate
-        for (Mode scheduledMode : scheduledModes) {
-            scheduledMode.getRequestedResources().forEach((scheduledModeResource, scheduledModeAmount) -> {
-                Integer resourceLeftAmount = nonRenewableResourcesLeft.get(scheduledModeResource);
-                if (resourceLeftAmount != null) {
-                    nonRenewableResourcesLeft.put(scheduledModeResource, resourceLeftAmount - scheduledModeAmount);
+        selectedJob.getModes().forEach(mode -> {
+            boolean infeasibleRenewableResources = false;
+            for (Map.Entry<Resource, Integer> entry : mode.getRequestedResources().entrySet()) {
+                Resource possibleRequestedResource = entry.getKey();
+                Integer possibleRequestedAmount = entry.getValue();
+                if (possibleRequestedResource instanceof RenewableResource) {
+                    if (possibleRequestedAmount > benchmark.getProject().getAvailableResources().get(possibleRequestedResource))
+                        infeasibleRenewableResources = true;
                 }
-            });
-        }
+            }
 
-        selectedJob.getModes().forEach(mode ->
-            jobWithPriorityValue.put(mode, modeHeuristic.determineModePriorityValue(selectedJob, mode, scheduledJobs, scheduledModes, reservation, reservedResources, nonRenewableResourcesLeft, benchmark))
-        );
+            if (!infeasibleRenewableResources)
+                jobWithPriorityValue.put(mode, modeHeuristic.determineModePriorityValue(selectedJob, mode, scheduledJobs, scheduledModes, benchmark));
+            else
+                jobWithPriorityValue.put(mode, Double.MAX_VALUE);
+
+        });
         return jobWithPriorityValue;
     }
 
@@ -90,7 +81,7 @@ public class HeuristicDirector {
 
         // Calculation of v'' acc. to literature
         double epsilon = Math.max(lowestPriorityValue, 0.001);
-        double alpha = 4;
+        double alpha = 10;
 
         for (Map.Entry<T, Double> entry : objectWithRegrets.entrySet()) {
             T t = entry.getKey();
@@ -145,19 +136,12 @@ public class HeuristicDirector {
         List<Job> possibleJobs = new ArrayList<>();
         possibleJobs.add(benchmark.getProject().getJobs().get(0));
 
-        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            if (resource instanceof NonRenewableResource) {
-                nonRenewableResourcesLeft.put(resource, amount);
-            }
-        });
-
         // First schedule the activities
         while (!possibleJobs.isEmpty()) {
             // Compute the modes for all possible jobs
             Map<Job, Mode> modes = new HashMap<>();
             for (Job possibleJob : possibleJobs) {
-                Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleJob, activityScheduled, modesScheduled, reservation, benchmark);
+                Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleJob, activityScheduled, modesScheduled, benchmark);
                 Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
                     HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getHeuristicSelection()) :
                     HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getHeuristicSelection());
@@ -206,16 +190,9 @@ public class HeuristicDirector {
         List<Job> possibleJobs = new ArrayList<>();
         possibleJobs.add(benchmark.getProject().getJobs().get(0));
 
-        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            if (resource instanceof NonRenewableResource) {
-                nonRenewableResourcesLeft.put(resource, amount);
-            }
-        });
-
         activities.forEach(job -> {
             // Compute the modes for all possible jobs
-            Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, job, activityScheduled, modesScheduled, reservation, benchmark);
+            Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, job, activityScheduled, modesScheduled, benchmark);
             Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
                     HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getHeuristicSelection()) :
                     HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getHeuristicSelection());

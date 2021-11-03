@@ -109,7 +109,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
                         if (bestSchedule != null) {
                             // Afterwork;
-                            if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), ScheduleComparator.MAKESPAN_AND_RM)) {
+                            if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
                                 bestOverallSchedule.set(bestSchedule);
                             }
                         }
@@ -120,7 +120,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             // Determine the mean makespan of the current benchmark
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
             double meanMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : this.getMeanMetric(experimentSolverResultMap, Metrics.MAKESPAN, true);
-            double bestMakespan = bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN);
+            double bestMakespan = bestOverallSchedule.get() != null ? bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) : 0;
 
             // Compute the list of values of the best solver result
             Map<SolverPerformanceResultEntry, List<Integer>> makespanValues = new HashMap<>();

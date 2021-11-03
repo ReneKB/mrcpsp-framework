@@ -53,7 +53,7 @@ public class HeuristicsTest {
         Assertions.assertNotNull(schedule);
 
         // b) this is rather a worse case
-        Assertions.assertEquals(11, schedule.computeMetric(Metrics.MAKESPAN));
+        Assertions.assertEquals(9, schedule.computeMetric(Metrics.MAKESPAN));
     }
 
     @Test

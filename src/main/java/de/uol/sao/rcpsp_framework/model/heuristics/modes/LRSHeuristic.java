@@ -3,15 +3,30 @@ package de.uol.sao.rcpsp_framework.model.heuristics.modes;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class LRSHeuristic extends ModeHeuristic {
 
     @Override
-    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark) {
-        boolean filtered = filterNonPossibleModes(job, mode, reservation, reservedResources, nonRenewableResourcesLeft, benchmark);
-        if (filtered) return Double.MAX_VALUE;
+    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
+        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
+            if (resource instanceof NonRenewableResource) {
+                nonRenewableResourcesLeft.put(resource, amount);
+            }
+        });
+
+        // Calculate
+        for (Mode scheduledMode : scheduledModes) {
+            scheduledMode.getRequestedResources().forEach((scheduledModeResource, scheduledModeAmount) -> {
+                Integer resourceLeftAmount = nonRenewableResourcesLeft.get(scheduledModeResource);
+                if (resourceLeftAmount != null) {
+                    nonRenewableResourcesLeft.put(scheduledModeResource, resourceLeftAmount - scheduledModeAmount);
+                }
+            });
+        }
 
         double sumNonRenewableResources = 0;
         for (Map.Entry<Resource, Integer> entry : mode.getRequestedResources().entrySet()) {
