@@ -2,6 +2,7 @@ package de.uol.sao.rcpsp_framework.model.heuristics.modes;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.model.heuristics.activities.*;
 import lombok.Getter;
 
 import java.util.List;
@@ -20,6 +21,13 @@ public abstract class ModeHeuristic {
                                                       Map<Resource, Integer> nonRenewableResourcesLeft,
                                                       Benchmark benchmark);
 
+    public static Class<?>[] availableModeHeuristics = new Class<?>[] {
+            LPSRDHeuristic.class,
+            LRSHeuristic.class,
+            LTRUHeuristic.class,
+            RandomActivityHeuristic.class,
+            SFMHeuristic.class
+    };
 
     protected boolean filterNonPossibleModes(Job job, Mode mode, Map<Job, List<Mode>> reservation, Map<Resource, Integer> reservedResources, Map<Resource, Integer> nonRenewableResourcesLeft, Benchmark benchmark) {
         // If a reservation for the job is determined, than these should be focused. Means for this algorithmus:

@@ -93,7 +93,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule bestSchedule;
                         try {
-                            bestSchedule = solver.algorithm(benchmark, iteration, null);
+                            bestSchedule = solver.algorithm(benchmark, iteration, null, robustnessMetric);
                         } catch (GiveUpException e) {
                             log.info(String.format("Gave up on experiment task %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
                             continue;
@@ -120,6 +120,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             // Determine the mean makespan of the current benchmark
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
             double meanMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : this.getMeanMetric(experimentSolverResultMap, Metrics.MAKESPAN, true);
+            double bestMakespan = bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN);
 
             // Compute the list of values of the best solver result
             Map<SolverPerformanceResultEntry, List<Integer>> makespanValues = new HashMap<>();
@@ -300,6 +301,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
             log.info(solverPerformanceResultEntry + ": [Mean]: " + new StatisticValue(robustnessMeanMean, robustnessMeanStd)  + " [Std]: " + new StatisticValue(robustnessStdMean, robustnessStdStd));
         });
+        log.info("");
     }
 
     private double getMeanMetric(Map<Integer,

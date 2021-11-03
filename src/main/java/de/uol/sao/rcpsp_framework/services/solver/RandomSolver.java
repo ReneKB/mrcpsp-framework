@@ -5,15 +5,11 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
-import de.uol.sao.rcpsp_framework.model.heuristics.activities.LFTHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.modes.LPSRDHeuristic;
-import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
+import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +26,7 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) {
         Schedule bestSchedule = null;
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;

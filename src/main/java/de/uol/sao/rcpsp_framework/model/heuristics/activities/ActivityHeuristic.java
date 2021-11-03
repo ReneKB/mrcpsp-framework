@@ -17,4 +17,14 @@ public abstract class ActivityHeuristic {
                                                           List<Job> scheduledJobs,
                                                           List<Mode> scheduledModes,
                                                           Benchmark benchmark);
+
+    public static Class<?>[] availableActivityHeuristics = new Class<?>[] {
+        GRPWHeuristic.class,
+        LFTHeuristic.class,
+        LSTHeuristic.class,
+        MSLKHeuristic.class,
+        MSLKHeuristic.class,
+        MTSHeuristic.class,
+        RandomActivityHeuristic.class
+    };
 }
