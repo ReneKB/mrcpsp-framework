@@ -69,11 +69,14 @@ public class SchedulerService {
                     int resourceAvailableGeneral = benchmark.getProject().getAvailableResources().get(currentModeResource);
                     int resourceAvailableOnInterval = resourceAvailableGeneral;
 
+                    int earliestConflictEnding = benchmark.getHorizon();
                     // determine the actual resource availability on the given interval
                     for (Interval intervalToCheck : resourcePlan.get(currentModeResource)) {
                         boolean conflict = potentialInterval.conflictInterval(intervalToCheck);
-                        if (conflict)
+                        if (conflict) {
                             resourceAvailableOnInterval -= intervalToCheck.getAmount();
+                            earliestConflictEnding = Math.min(earliestConflictEnding, intervalToCheck.getUpperBound());
+                        }
                     }
 
                     // Check if the schedule can be actually scheduled
@@ -84,40 +87,10 @@ public class SchedulerService {
                         throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
-                        potentialLowerBound++;
+                        potentialLowerBound = earliestConflictEnding + 1;
                     }
-
-                    /*
-                    // Check if match globally and get the new possible solution
-                    if (solutionFound) {
-                        for (Map.Entry<Resource, List<Interval>> resourceListEntry : resourcePlan.entrySet()) {
-                            Resource resource = entry.getKey();
-                            List<Interval> intervals = resourceListEntry.getValue();
-
-                            if (resource instanceof RenewableResource) {
-                                // Only take a look at the "other" renewable resources
-                                boolean alreadyConsidered = false;
-                                for (Resource alreadyConsideredResource : currentMode.getRequestedResources().keySet()) {
-                                    if (alreadyConsideredResource.toString().equals(resource.toString())) {
-                                        alreadyConsidered = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!alreadyConsidered) {
-                                    for (Interval interval : intervals) {
-                                        if (interval.conflictInterval(potentialInterval)) {
-                                            solutionFound = false;
-                                            potentialLowerBound++;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }*/
                 }
             }
-
             this.addInterval(jobMode, modeDurations.get(jobMode), resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
         }
 

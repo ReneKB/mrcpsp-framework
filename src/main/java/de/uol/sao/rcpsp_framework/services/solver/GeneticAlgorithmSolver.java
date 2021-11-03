@@ -1,6 +1,10 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
+import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
+import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
@@ -8,6 +12,7 @@ import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.MSLKHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
@@ -53,6 +58,7 @@ public class GeneticAlgorithmSolver implements Solver {
     @Override
     public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) {
         List<Solution> population = this.initialPopulation(benchmark, mu, uncertaintyModel, robustnessFunction);
+        Schedule scheduleBestSolution = null;
 
         int i = 0;
         while (i < iterations) {
@@ -70,16 +76,15 @@ public class GeneticAlgorithmSolver implements Solver {
                 population = newPopulation;
 
             i += lambda;
+
+            try {
+                Schedule generationBestSolution = schedulerService.createScheduleProactive(benchmark,
+                        population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get().getScheduleRepresentation(),
+                        null);
+                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, ScheduleComparator.MAKESPAN_AND_RM))
+                    scheduleBestSolution = generationBestSolution;
+            } catch (Exception e) { }
         }
-
-        Solution bestSolution = population.isEmpty() ? null : population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get();
-
-        Schedule scheduleBestSolution = null;
-        try {
-            scheduleBestSolution = schedulerService.createScheduleProactive(benchmark,
-                    bestSolution.getScheduleRepresentation(),
-                    null);
-        } catch (Exception ex) { }
 
         return scheduleBestSolution;
     }
@@ -177,8 +182,16 @@ public class GeneticAlgorithmSolver implements Solver {
         }
 
         // Swap one random mode
-        for (int i = 0; i < 1; i++) {
-            SolverHelper.flipNeighbourModes(jobList.stream().map(JobMode::getJob).collect(Collectors.toList()), modes);
+        for (int i = 0; i < modes.length; i++) {
+            Job job = jobList.get(i).getJob();
+            int size = job.getModes().size();
+
+            if (size != 1 && Math.random() <= 0.04) {
+                int finalI = i;
+                List<Mode> selectedMode = job.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
+                Collections.shuffle(selectedMode);
+                modes[i] = selectedMode.get(0).getModeId();
+            }
         }
 
         return new ActivityListSchemeRepresentation(jobs, modes);
