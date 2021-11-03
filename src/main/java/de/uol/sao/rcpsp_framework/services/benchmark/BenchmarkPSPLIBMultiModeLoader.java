@@ -239,6 +239,8 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
             else if(heuristicFiles.length > 0) {
                 inputStream = new FileInputStream(heuristicFiles[0]);
                 isFixedOptimum = false;
+            } else {
+                return optimumReference;
             }
 
             String replacedName = benchmark.getName().replaceAll(".*(/|\\\\)|.mm", "");
