@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.helper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
@@ -145,6 +146,12 @@ public class ScheduleHelper {
         else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
             return true;
         } else if(robustnessMeasure != null &&
+                robustnessMeasure.getOptimum() == HeuristicSelection.MIN &&
+                (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
+                ((int) currentBestSchedule.computeMetric(robustnessMeasure) > (int) schedule.computeMetric(robustnessMeasure))) {
+            return true;
+        } else if(robustnessMeasure != null &&
+                robustnessMeasure.getOptimum() == HeuristicSelection.MAX &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
                 ((int) currentBestSchedule.computeMetric(robustnessMeasure) < (int) schedule.computeMetric(robustnessMeasure))) {
             return true;

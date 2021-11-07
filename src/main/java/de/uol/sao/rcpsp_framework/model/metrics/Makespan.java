@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.model.metrics;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.RenewableResource;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,5 +19,10 @@ public class Makespan extends Metric<Integer> {
                 intervals.forEach(interval -> makespan.set(Math.max(interval.getUpperBound() + 1, makespan.get())));
         });
         return makespan.get();
+    }
+
+    @Override
+    public HeuristicSelection getOptimum() {
+        return HeuristicSelection.MIN;
     }
 }

@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service("UncertaintyRobustnessMeasurementExperiment")
-public class UncertaintyRobustnessMeasurementExperiment implements Experiment {
+@Service("UncertaintyReactiveExperiment")
+public class UncertaintyReactiveExperiment implements Experiment {
 
     @Override
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {

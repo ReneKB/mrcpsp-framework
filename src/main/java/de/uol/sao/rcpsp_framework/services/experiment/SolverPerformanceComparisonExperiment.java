@@ -1,10 +1,7 @@
 package de.uol.sao.rcpsp_framework.services.experiment;
 
 import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
-import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
-import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
-import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
+import de.uol.sao.rcpsp_framework.helper.*;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.OptimumReference;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
@@ -55,17 +52,6 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                 return String.format("[Benchmark: %s, Solver: %s, Iterations: %d]", benchmark.getName(), solver, iterations);
             else
                 return String.format("[Solver: %s, Iterations: %d]", solver, iterations);
-        }
-    }
-
-    @Data
-    @AllArgsConstructor
-    class StatisticValue {
-        double mean;
-        double stddev;
-
-        public String toString() {
-            return String.format("%.2f (± %.3f)", mean, stddev);
         }
     }
 

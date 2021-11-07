@@ -20,4 +20,7 @@ public class UncertaintyModel {
         return duration + modeDelayDistribution.sample();
     }
 
+    public String toString() {
+        return String.format("Uncertainty p=%.2f", modeDelayDistribution.getProbabilityOfSuccess());
+    }
 }

@@ -9,6 +9,7 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSampling;
+import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
@@ -205,8 +206,9 @@ public class GeneticAlgorithmSolver implements Solver {
         try {
             Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
             int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-            int robustness = robustnessFunction != null ? (int) schedule.computeMetric(robustnessFunction) : 0;
-            fitness = makespan - (double) robustness / 100;
+            double robustness = robustnessFunction != null ? Double.parseDouble(schedule.computeMetric(robustnessFunction).toString()) *
+                    (robustnessFunction.getOptimum() == HeuristicSelection.MAX ? 1 : -1) : 0;
+            fitness = makespan - robustness / 100;
         } catch (Exception ex) { }
 
         return new Solution(generation, scheduleRepresentation, fitness);
