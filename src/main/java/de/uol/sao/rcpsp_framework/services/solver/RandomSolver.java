@@ -1,6 +1,5 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
@@ -9,7 +8,6 @@ import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeur
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +24,7 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) {
         Schedule bestSchedule = null;
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
@@ -36,7 +34,7 @@ public class RandomSolver implements Solver {
                             .modeHeuristic(RandomModeHeuristic.class)
                             .activityHeuristic(RandomActivityHeuristic.class)
                             .build()),
-                        uncertaintyModel);
+                        null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }

@@ -16,7 +16,7 @@ public class UncertaintyProactiveExperiment extends UncertaintyExperiment {
 
     @Override
     public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null, null);
+        return solver.algorithm(benchmark, iterations, null);
     }
 
     @Override

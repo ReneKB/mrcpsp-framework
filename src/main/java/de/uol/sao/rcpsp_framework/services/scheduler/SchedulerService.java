@@ -97,6 +97,83 @@ public class SchedulerService {
         return schedule;
     }
 
+
+    public Schedule createScheduleReactive(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
+        Schedule schedule = new Schedule();
+        Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
+        Map<Job, Integer> earliestStartTime = new HashMap<>();
+
+        Map<JobMode, Integer> modeDurations = new HashMap<>();
+        List<JobMode> jobModeList = execution.toJobMode(benchmark.getProject());
+        for (int i = 0; i < jobModeList.size(); i++) {
+            JobMode jobMode = jobModeList.get(i);
+            boolean isDummyMode = i == 0 | i == jobModeList.size() - 1;
+            modeDurations.put(jobMode, isDummyMode || uncertaintyModel == null ? jobMode.getMode().getDuration() : uncertaintyModel.computeActualDuration(jobMode.getMode().getDuration()));
+        }
+
+        // Creates initial allocation map
+        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
+            resourcePlan.put(resource, new ArrayList<>());
+        });
+
+        schedule.setBenchmark(benchmark);
+        schedule.setResourcePlans(resourcePlan);
+        schedule.setScheduleRepresentation(execution);
+
+        // Iterating through the JobMode combinations
+        for (JobMode jobMode : jobModeList) {
+            Mode currentMode = jobMode.getMode();
+
+            // Create initial interval
+            int potentialLowerBound = earliestStartTime.getOrDefault(jobMode.getJob(), 0);
+
+            // Construct the solution according the execution
+            boolean solutionFound = false;
+            while (!solutionFound) {
+                solutionFound = true;
+                for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
+                    Resource currentModeResource = entry.getKey();
+                    Integer currentModeAmount = entry.getValue();
+
+                    int finalUpperBound = determineUpperBound(modeDurations.get(jobMode), potentialLowerBound, currentModeResource, benchmark.getHorizon());
+
+                    // potential new interval that needs to be checked
+                    Interval potentialInterval = new Interval(potentialLowerBound,
+                            finalUpperBound,
+                            currentModeAmount,
+                            jobMode);
+
+                    int resourceAvailableGeneral = benchmark.getProject().getAvailableResources().get(currentModeResource);
+                    int resourceAvailableOnInterval = resourceAvailableGeneral;
+
+                    int earliestConflictEnding = benchmark.getHorizon();
+                    // determine the actual resource availability on the given interval
+                    for (Interval intervalToCheck : resourcePlan.get(currentModeResource)) {
+                        boolean conflict = potentialInterval.conflictInterval(intervalToCheck);
+                        if (conflict) {
+                            resourceAvailableOnInterval -= intervalToCheck.getAmount();
+                            earliestConflictEnding = Math.min(earliestConflictEnding, intervalToCheck.getUpperBound());
+                        }
+                    }
+
+                    // Check if the schedule can be actually scheduled
+                    if (currentModeAmount > resourceAvailableGeneral) {
+                        throw new RenewableResourceNotEnoughException();
+                    } else if (currentModeAmount > resourceAvailableOnInterval &&
+                            currentModeResource instanceof NonRenewableResource) {
+                        throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
+                    } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
+                        solutionFound = false;
+                        potentialLowerBound = earliestConflictEnding + 1;
+                    }
+                }
+            }
+            this.addInterval(jobMode, modeDurations.get(jobMode), resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
+        }
+
+        return schedule;
+    }
+
     private void addInterval(JobMode jobMode,
                              int duration,
                              Map<Resource, List<Interval>> resourcePlan,

@@ -15,7 +15,6 @@ import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
@@ -54,8 +53,8 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) {
-        List<Solution> population = this.initialPopulation(benchmark, mu, uncertaintyModel, robustnessFunction);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) {
+        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction);
         Schedule scheduleBestSolution = null;
 
         int i = 0;
@@ -223,7 +222,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 .collect(Collectors.toList());
     }
 
-    private List<Solution> initialPopulation(Benchmark benchmark, int amount, UncertaintyModel uncertaintyModel, Metric<?> robustnessMeasurement) {
+    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement) {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
@@ -239,7 +238,7 @@ public class GeneticAlgorithmSolver implements Solver {
                                         .build(),
                                 Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
 
-                        Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
+                        Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
                         if (schedule != null)
                             population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
                     } catch (Exception ex) { }

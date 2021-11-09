@@ -1,10 +1,7 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
-import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
-import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
@@ -29,7 +26,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,8 +41,8 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) throws GiveUpException {
-        Schedule tabuSchedule = this.createInitialSolution(benchmark, uncertaintyModel);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
+        Schedule tabuSchedule = this.createInitialSolution(benchmark);
         Schedule bestSchedule = tabuSchedule;
 
         int tabuListSize = (int) Math.sqrt(benchmark.getNumberJobs() - 2);
@@ -67,7 +63,7 @@ public class TabuSearchSolver implements Solver {
                 Schedule currentSchedule = null;
 
                 try {
-                    currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation, uncertaintyModel);
+                    currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation, null);
                 } catch (Exception ex) { }
 
                 if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {
@@ -149,7 +145,7 @@ public class TabuSearchSolver implements Solver {
         return neighbourhood;
     }
 
-    public Schedule createInitialSolution(Benchmark benchmark, UncertaintyModel uncertaintyModel) throws GiveUpException {
+    public Schedule createInitialSolution(Benchmark benchmark) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 
@@ -174,7 +170,7 @@ public class TabuSearchSolver implements Solver {
                                         .build(),
                                 Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
 
-                        schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, uncertaintyModel);
+                        schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
                     } catch (Exception ex) {
                     }
                 }

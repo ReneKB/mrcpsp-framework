@@ -1,7 +1,6 @@
 package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
@@ -9,7 +8,6 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +33,13 @@ public class GreedySolver implements Solver {
     boolean completed = false;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, UncertaintyModel uncertaintyModel, Metric<?> robustnessFunction) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) {
         Schedule bestSchedule = null;
-        Project project = benchmark.getProject();
 
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark), uncertaintyModel);
+                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark), null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
