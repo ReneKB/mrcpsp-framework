@@ -14,12 +14,12 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
 
     @Override
     public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null);
+        return solver.algorithm(benchmark, iterations, null, null);
     }
 
     @Override
     @SneakyThrows
     public Schedule buildUncertaintySolution(Schedule plannedSolution, Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction, UncertaintyModel uncertaintyModel) {
-        return super.schedulerService.createScheduleProactive(benchmark, plannedSolution.getScheduleRepresentation(), uncertaintyModel);
+        return super.schedulerService.createScheduleReactive(benchmark, plannedSolution, uncertaintyModel, solver, iterations, robustnessFunction);
     }
 }

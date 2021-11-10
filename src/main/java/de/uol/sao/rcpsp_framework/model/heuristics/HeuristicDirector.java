@@ -5,10 +5,12 @@ import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HeuristicDirector {
 
@@ -122,19 +124,17 @@ public class HeuristicDirector {
     }
 
     public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        return HeuristicDirector.constructScheduleRepresentation(benchmark, heuristic, HeuristicSampling.SINGLE);
+        return HeuristicDirector.constructScheduleRepresentation(benchmark, heuristic, HeuristicSampling.SINGLE, null);
     }
 
-    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling, List<JobMode> alreadyScheduled) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         ActivityHeuristic activityHeuristic = heuristic.getActivityHeuristic().getDeclaredConstructor().newInstance();
         ModeHeuristic modeHeuristic = heuristic.getModeHeuristic().getDeclaredConstructor().newInstance();
 
-        List<Job> activityScheduled = new ArrayList<>();
-        List<Mode> modesScheduled = new ArrayList<>();
-        Map<Job, List<Mode>> reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
+        List<Job> activityScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(JobMode::getJob).collect(Collectors.toList());
+        List<Mode> modesScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(JobMode::getMode).collect(Collectors.toList());
 
-        List<Job> possibleJobs = new ArrayList<>();
-        possibleJobs.add(benchmark.getProject().getJobs().get(0));
+        List<Job> possibleJobs = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
 
         // First schedule the activities
         while (!possibleJobs.isEmpty()) {
@@ -158,20 +158,7 @@ public class HeuristicDirector {
             modesScheduled.add(modes.get(selectedJob));
 
             // Remove from list and add the possible successors
-            possibleJobs.remove(selectedJob);
-
-            selectedJob.getSuccessor().forEach(successorJob -> {
-                Set<Job> successorsPredecessors = ProjectHelper.getPredecessorsOfJob(benchmark.getProject(), successorJob);
-                // Check if all are already scheduled if yes, add them to possible succesors
-                boolean possible = true;
-                for (Job successorsPredecessor : successorsPredecessors) {
-                    if (!activityScheduled.contains(successorsPredecessor))
-                        possible = false;
-                }
-
-                if (possible && !activityScheduled.contains(successorJob))
-                    possibleJobs.add(successorJob);
-            });
+            possibleJobs = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
         }
 
         return new ActivityListSchemeRepresentation(

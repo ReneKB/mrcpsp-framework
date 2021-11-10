@@ -71,7 +71,7 @@ public class HeuristicsTest {
 
         for (int tryNo = 0; tryNo < 100; tryNo++) {
             try {
-                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs, HeuristicSampling.REGRET_BASED_BIAS);
+                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs, HeuristicSampling.REGRET_BASED_BIAS, null);
                 Schedule schedule = schedulerService.createScheduleProactive(test, representation, null);
                 if (schedule != null && !scheduleFound) {
                     scheduleFound = true;

@@ -79,7 +79,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule bestSchedule;
                         try {
-                            bestSchedule = solver.algorithm(benchmark, iteration, robustnessMetric);
+                            bestSchedule = solver.algorithm(benchmark, iteration, robustnessMetric, null);
                         } catch (GiveUpException e) {
                             log.info(String.format("Gave up on experiment task %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
                             continue;

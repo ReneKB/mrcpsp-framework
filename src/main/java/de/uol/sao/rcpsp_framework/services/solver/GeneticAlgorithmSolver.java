@@ -53,8 +53,8 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) {
-        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) {
+        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction, fixedJobModeList);
         Schedule scheduleBestSolution = null;
 
         int i = 0;
@@ -62,7 +62,7 @@ public class GeneticAlgorithmSolver implements Solver {
             for (int offspring = 0; offspring < lambda; offspring++) {
                 List<ScheduleRepresentation> parents = this.selectParents(population.stream().map(Solution::getScheduleRepresentation).collect(Collectors.toList()));
                 ScheduleRepresentation crossovered = this.crossover(benchmark.getProject(), parents);
-                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered);
+                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered, fixedJobModeList);
                 Solution solution = this.fitness(benchmark, 0, mutation, robustnessFunction);
 
                 population.add(solution);
@@ -143,7 +143,7 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListSchemeRepresentation(daughter);
     }
 
-    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring) {
+    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring, List<JobMode> fixedJobModeList) {
         List<JobMode> jobList = offspring.toJobMode(project);
         List<List<JobMode>> swappableJobModes = new ArrayList<>();
 
@@ -163,6 +163,24 @@ public class GeneticAlgorithmSolver implements Solver {
                 swappableJobModes.add(swappable);
             }
             handledJobs.add(currentJob);
+        }
+
+        // For reactive solutions: Don't swap already planned jobmodes
+        if (fixedJobModeList != null) {
+            Set<List<JobMode>> removingIndices = new HashSet<>();
+            for (JobMode fixedJobMode : fixedJobModeList) {
+                Job fixedJob = fixedJobMode.getJob();
+
+                for (List<JobMode> swappableJobModeList : swappableJobModes) {
+                    for (JobMode swappableJobMode : swappableJobModeList) {
+                        if (swappableJobMode.getJob().equals(fixedJob))
+                            removingIndices.add(swappableJobModeList);
+                    }
+                }
+            }
+
+            if (!removingIndices.isEmpty())
+                swappableJobModes.removeAll(removingIndices);
         }
 
         // Swap one JobModes with each other
@@ -188,7 +206,17 @@ public class GeneticAlgorithmSolver implements Solver {
             Job job = jobList.get(i).getJob();
             int size = job.getModes().size();
 
-            if (size != 1 && Math.random() <= sigma) {
+            boolean isAlreadyScheduled = false;
+            if (fixedJobModeList != null) {
+                for (JobMode jobMode : fixedJobModeList) {
+                    if (job.equals(jobMode.getJob())) {
+                        isAlreadyScheduled = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isAlreadyScheduled && size != 1 && Math.random() <= sigma) {
                 int finalI = i;
                 List<Mode> selectedMode = job.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
                 Collections.shuffle(selectedMode);
@@ -222,7 +250,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 .collect(Collectors.toList());
     }
 
-    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement) {
+    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement, List<JobMode> alreadyScheduled) {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
@@ -236,7 +264,8 @@ public class GeneticAlgorithmSolver implements Solver {
                                         .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
                                         .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
                                         .build(),
-                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
+                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
+                                alreadyScheduled);
 
                         Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
                         if (schedule != null)

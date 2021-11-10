@@ -124,7 +124,7 @@ public abstract class UncertaintyExperiment implements Experiment {
                 Map<UncertaintyModel, List<Integer>> actualExecutionResultsMakespan = new LinkedHashMap<>();
                 Map<UncertaintyModel, List<Double>> actualExecutionResultsRobustness = new LinkedHashMap<>();
                 schedules.parallelStream().forEach(schedule -> uncertaintyModels.forEach(uncertaintyModel -> {
-                    for (int i = 0; i < uncertaintyExperiments; i++) {
+                    IntStream.range(0, uncertaintyExperiments).parallel().forEach(experimentNo -> {
                         try {
                             Schedule uncertaintySchedule = this.buildUncertaintySolution(schedule,
                                     benchmark,
@@ -141,7 +141,8 @@ public abstract class UncertaintyExperiment implements Experiment {
                             robustnessValues.add(Double.valueOf(uncertaintySchedule.computeMetric(robustnessMetric).toString()));
                             actualExecutionResultsRobustness.put(uncertaintyModel, robustnessValues);
                         } catch (Exception ignored) { }
-                    }
+
+                    });
                 }));
 
                 // Calculate mean and std of results

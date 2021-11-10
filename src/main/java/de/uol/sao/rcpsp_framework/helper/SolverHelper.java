@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 public class SolverHelper {
 
     public static void flipNeighbourModes(List<Job> initialJobList, int[] neighbourModes) {
+        if (initialJobList.isEmpty())
+            return;
+
+        int gap = neighbourModes.length - initialJobList.size();
+
         Mode newSelectedMode = null;
         int newSelectedModeIndex = 0;
 
@@ -19,7 +24,7 @@ public class SolverHelper {
 
         while (newSelectedMode == null && !singleMode) {
             int randomIndex = new Random().nextInt(initialJobList.size());
-            int currentMode = neighbourModes[randomIndex];
+            int currentMode = neighbourModes[randomIndex + gap];
 
             Job job = initialJobList.get(randomIndex);
             int size = job.getModes().size();
@@ -32,7 +37,7 @@ public class SolverHelper {
         }
 
         if (!singleMode)
-            neighbourModes[newSelectedModeIndex] = newSelectedMode.getModeId();
+            neighbourModes[newSelectedModeIndex + gap] = newSelectedMode.getModeId();
     }
 
 }

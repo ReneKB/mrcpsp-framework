@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.helper;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.*;
@@ -159,5 +160,48 @@ public class ProjectHelper {
         Set<Job> availableJobs = project.getJobs().stream().filter(job -> alreadyScheduledJobs.containsAll(ProjectHelper.getPredecessorsOfJob(project, job))).collect(Collectors.toSet());
         availableJobs.removeAll(alreadyScheduledJobs);
         return availableJobs;
+    }
+
+    public static Benchmark getDeepCopyOfBenchmark(Benchmark benchmark) {
+        Benchmark deepBenchmark = new Benchmark();
+        Project deepProject = new Project();
+        List<Job> deepActivities = new ArrayList<>();
+
+        deepBenchmark.setName(benchmark.getName());
+        deepBenchmark.setHorizon(benchmark.getHorizon());
+        deepBenchmark.setNumberJobs(benchmark.getNumberJobs());
+        deepBenchmark.setProject(deepProject);
+
+        deepProject.setAvailableResources(new HashMap<>(benchmark.getProject().getAvailableResources()));
+        deepProject.setProjectId(benchmark.getProject().getProjectId());
+        deepProject.setJobs(deepActivities);
+
+        // Deep copy
+        for (Job job : benchmark.getProject().getJobs()) {
+            List<Mode> modes = new ArrayList<>();
+            for (Mode mode : job.getModes()) {
+                modes.add(new Mode(mode.getModeId(), mode.getDuration(), new HashMap<>(mode.getRequestedResources())));
+            }
+            deepActivities.add(new Job(job.getJobId(), modes, new ArrayList<>()));
+        }
+
+        // Add the relationships
+        int i = 0;
+        for (Job job : benchmark.getProject().getJobs()) {
+            List<Job> successors = job.getSuccessor().stream().map(Job::getJobId).map(successorJobId ->
+                    ProjectHelper.getJobFromProject(deepProject, successorJobId).get()).collect(Collectors.toList());
+            deepActivities.get(i).setSuccessor(successors);
+            i++;
+        }
+
+        return deepBenchmark;
+    }
+
+    public static List<JobMode> getDeepCopyOfJobModeList(Benchmark deepCopyBenchmark, List<JobMode> mainJobModeList) {
+        return mainJobModeList.stream().map(jobMode -> {
+            Job selectedJob = ProjectHelper.getJobFromProject(deepCopyBenchmark.getProject(), jobMode.getJob().getJobId()).get();
+            Mode selectedMode = ProjectHelper.getModeFromJob(selectedJob, jobMode.getMode().getModeId()).get();
+            return new JobMode(selectedJob, selectedMode);
+        }).collect(Collectors.toList());
     }
 }

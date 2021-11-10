@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.model.scheduling;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
+import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,5 +31,9 @@ public class Schedule {
 
     public boolean isPartialSchedule() {
         return scheduleRepresentation.toJobMode(benchmark.getProject()).size() != this.getBenchmark().getProject().getJobs().size();
+    }
+
+    public String toString() {
+        return String.format("[Makespan = %d] %s", this.computeMetric(Metrics.MAKESPAN), scheduleRepresentation);
     }
 }

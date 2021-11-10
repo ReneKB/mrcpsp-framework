@@ -1,11 +1,17 @@
 package de.uol.sao.rcpsp_framework.services.scheduler;
 
+import de.uol.sao.rcpsp_framework.exceptions.GiveUpException;
 import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
 import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
+import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
+import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
+import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.services.solver.Solver;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -97,81 +103,66 @@ public class SchedulerService {
         return schedule;
     }
 
+    @SneakyThrows
+    public Schedule createScheduleReactive(Benchmark benchmark,
+                                           Schedule plannedSchedule,
+                                           UncertaintyModel uncertaintyModel,
+                                           Solver solver,
+                                           int iterations,
+                                           Metric<?> robustnessFunction) {
+        Benchmark subbenchmark = ProjectHelper.getDeepCopyOfBenchmark(benchmark);
 
-    public Schedule createScheduleReactive(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
-        Schedule schedule = new Schedule();
-        Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
-        Map<Job, Integer> earliestStartTime = new HashMap<>();
+        ScheduleRepresentation plannedScheduleScheduleRepresentation = plannedSchedule.getScheduleRepresentation();
+        List<JobMode> plannedJobModeList = plannedScheduleScheduleRepresentation.toJobMode(subbenchmark.getProject());
 
-        Map<JobMode, Integer> modeDurations = new HashMap<>();
-        List<JobMode> jobModeList = execution.toJobMode(benchmark.getProject());
-        for (int i = 0; i < jobModeList.size(); i++) {
-            JobMode jobMode = jobModeList.get(i);
-            boolean isDummyMode = i == 0 | i == jobModeList.size() - 1;
-            modeDurations.put(jobMode, isDummyMode || uncertaintyModel == null ? jobMode.getMode().getDuration() : uncertaintyModel.computeActualDuration(jobMode.getMode().getDuration()));
-        }
+        int lastActivityId = plannedJobModeList.stream().map(JobMode::getJob).map(Job::getJobId).sorted((o1, o2) -> o2 - o1).findFirst().get();
 
-        // Creates initial allocation map
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            resourcePlan.put(resource, new ArrayList<>());
-        });
+        List<JobMode> buildingJobModeList = new ArrayList<>();
+        Map<JobMode, Integer> delayedDurations = new HashMap<>();
 
-        schedule.setBenchmark(benchmark);
-        schedule.setResourcePlans(resourcePlan);
-        schedule.setScheduleRepresentation(execution);
+        while (buildingJobModeList.size() < plannedJobModeList.size()) {
+            for (JobMode jobMode : plannedJobModeList) {
+                Job job = jobMode.getJob();
+                Mode mode = jobMode.getMode();
 
-        // Iterating through the JobMode combinations
-        for (JobMode jobMode : jobModeList) {
-            Mode currentMode = jobMode.getMode();
+                int plannedDuration = mode.getDuration();
+                boolean isDummyMode = job.getJobId() == 1 | job.getJobId() == lastActivityId;
+                boolean alreadyScheduled = buildingJobModeList.contains(jobMode);
 
-            // Create initial interval
-            int potentialLowerBound = earliestStartTime.getOrDefault(jobMode.getJob(), 0);
+                if (!alreadyScheduled)
+                    buildingJobModeList.add(jobMode);
 
-            // Construct the solution according the execution
-            boolean solutionFound = false;
-            while (!solutionFound) {
-                solutionFound = true;
-                for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
-                    Resource currentModeResource = entry.getKey();
-                    Integer currentModeAmount = entry.getValue();
-
-                    int finalUpperBound = determineUpperBound(modeDurations.get(jobMode), potentialLowerBound, currentModeResource, benchmark.getHorizon());
-
-                    // potential new interval that needs to be checked
-                    Interval potentialInterval = new Interval(potentialLowerBound,
-                            finalUpperBound,
-                            currentModeAmount,
-                            jobMode);
-
-                    int resourceAvailableGeneral = benchmark.getProject().getAvailableResources().get(currentModeResource);
-                    int resourceAvailableOnInterval = resourceAvailableGeneral;
-
-                    int earliestConflictEnding = benchmark.getHorizon();
-                    // determine the actual resource availability on the given interval
-                    for (Interval intervalToCheck : resourcePlan.get(currentModeResource)) {
-                        boolean conflict = potentialInterval.conflictInterval(intervalToCheck);
-                        if (conflict) {
-                            resourceAvailableOnInterval -= intervalToCheck.getAmount();
-                            earliestConflictEnding = Math.min(earliestConflictEnding, intervalToCheck.getUpperBound());
-                        }
-                    }
-
-                    // Check if the schedule can be actually scheduled
-                    if (currentModeAmount > resourceAvailableGeneral) {
-                        throw new RenewableResourceNotEnoughException();
-                    } else if (currentModeAmount > resourceAvailableOnInterval &&
-                            currentModeResource instanceof NonRenewableResource) {
-                        throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
-                    } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
-                        solutionFound = false;
-                        potentialLowerBound = earliestConflictEnding + 1;
+                if (!isDummyMode && !alreadyScheduled) {
+                    int actualDuration = uncertaintyModel.computeActualDuration(mode.getDuration());
+                    if (actualDuration > plannedDuration) {
+                        delayedDurations.put(jobMode, actualDuration);
+                        mode.setDuration(actualDuration);
+                        break;
                     }
                 }
             }
-            this.addInterval(jobMode, modeDurations.get(jobMode), resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
+
+            // Prepare the benchmark with the actual durations
+            delayedDurations.forEach((jobMode, delayedDuration) -> {
+                int jobId = jobMode.getJob().getJobId();
+                int modeId = jobMode.getMode().getModeId();
+
+                Job job = ProjectHelper.getJobFromProject(subbenchmark.getProject(), jobId).get();
+                Mode mode = ProjectHelper.getModeFromJob(job, modeId).get();
+                mode.setDuration(delayedDuration);
+            });
+
+            Schedule potentialSchedule = null;
+            try {
+                potentialSchedule = solver.algorithm(subbenchmark, iterations / 10, null, buildingJobModeList);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
+
+            plannedJobModeList = potentialSchedule.getScheduleRepresentation().toJobMode(subbenchmark.getProject());
         }
 
-        return schedule;
+        return this.createScheduleProactive(subbenchmark, new ActivityListSchemeRepresentation(buildingJobModeList), null);
     }
 
     private void addInterval(JobMode jobMode,

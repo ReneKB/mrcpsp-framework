@@ -41,8 +41,8 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        Schedule tabuSchedule = this.createInitialSolution(benchmark);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) throws GiveUpException {
+        Schedule tabuSchedule = this.createInitialSolution(benchmark, fixedJobModeList);
         Schedule bestSchedule = tabuSchedule;
 
         int tabuListSize = (int) Math.sqrt(benchmark.getNumberJobs() - 2);
@@ -53,7 +53,7 @@ public class TabuSearchSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = this.getNeighbourhood(benchmark, representation);
+            List<ScheduleRepresentation> neighbourhood = this.getNeighbourhood(benchmark, representation, fixedJobModeList);
             neighbourhood.removeIf(tabuList::contains);
 
             Schedule neighbourhoodFavorite = null;
@@ -82,19 +82,22 @@ public class TabuSearchSolver implements Solver {
                     tabuList.remove(tabuListSize - 1);
             }
 
-            i += neighbourhood.size();
+            i += Math.max(neighbourhood.size(), 1);
         }
         return bestSchedule;
     }
 
     @SneakyThrows
-    public List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation) {
+    public List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<JobMode> fixedJobMode) {
         List<JobMode> jobModes = scheduleRepresentation.toJobMode(benchmark.getProject());
-
         List<ScheduleRepresentation> neighbourhood = new ArrayList<>();
 
         List<Job> jobList = jobModes.stream().map(JobMode::getJob).collect(Collectors.toList());
         List<Mode> modeList = jobModes.stream().map(JobMode::getMode).collect(Collectors.toList());
+
+        List<Job> changeableModes = fixedJobMode != null ? jobList.stream()
+                .filter(job -> !fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toList()).contains(job))
+                .collect(Collectors.toList()) : new ArrayList<>(jobList);
 
         int[] jobs = new int[jobList.size()];
         int[] modes = new int[modeList.size()];
@@ -105,18 +108,21 @@ public class TabuSearchSolver implements Solver {
         }
 
         Set<Job> handledJobs = new HashSet<>();
-        handledJobs.add(jobList.get(0));
+        if (fixedJobMode != null) {
+            handledJobs.addAll(fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toSet()));
+        } else
+            handledJobs.add(jobList.get(0));
 
         // Adds for the same activity list mode neighbours
         for (int i = 0; i < 2; i++) {
             int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
             int[] neighbourModes = Arrays.copyOf(modes, modes.length);
 
-            SolverHelper.flipNeighbourModes(jobList, neighbourModes);
+            SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
             neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
         }
 
-        for (int i = 1; i < jobList.size(); i++) {
+        for (int i = fixedJobMode != null ? fixedJobMode.size() + 1 : 1; i < jobList.size(); i++) {
             Job previousJob = jobList.get(i - 1);
             Job currentJob = jobList.get(i);
 
@@ -133,10 +139,10 @@ public class TabuSearchSolver implements Solver {
                 neighbourModes[i-1] = neighbourModes[i];
                 neighbourModes[i] = tmp;
 
-                SolverHelper.flipNeighbourModes(jobList, neighbourModes);
+                SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
                 neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
 
-                SolverHelper.flipNeighbourModes(jobList, neighbourModes);
+                SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
                 neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
             }
             handledJobs.add(currentJob);
@@ -145,7 +151,7 @@ public class TabuSearchSolver implements Solver {
         return neighbourhood;
     }
 
-    public Schedule createInitialSolution(Benchmark benchmark) throws GiveUpException {
+    public Schedule createInitialSolution(Benchmark benchmark, List<JobMode> alreadyScheduled) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 
@@ -168,7 +174,8 @@ public class TabuSearchSolver implements Solver {
                                         .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
                                         .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
                                         .build(),
-                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
+                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
+                                alreadyScheduled);
 
                         schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
                     } catch (Exception ex) {
