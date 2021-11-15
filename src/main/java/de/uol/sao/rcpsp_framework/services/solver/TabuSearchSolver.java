@@ -42,8 +42,9 @@ public class TabuSearchSolver implements Solver {
 
     @Override
     public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) throws GiveUpException {
-        Schedule tabuSchedule = this.createInitialSolution(benchmark, fixedJobModeList);
+        Schedule tabuSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedJobModeList);
         Schedule bestSchedule = tabuSchedule;
+        Schedule bestOverallSchedule = bestSchedule;
 
         int tabuListSize = (int) Math.sqrt(benchmark.getNumberJobs() - 2);
         List<ScheduleRepresentation> tabuList = new LinkedList<>();
@@ -53,7 +54,7 @@ public class TabuSearchSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = this.getNeighbourhood(benchmark, representation, fixedJobModeList);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedJobModeList);
             neighbourhood.removeIf(tabuList::contains);
 
             Schedule neighbourhoodFavorite = null;
@@ -83,110 +84,11 @@ public class TabuSearchSolver implements Solver {
             }
 
             i += Math.max(neighbourhood.size(), 1);
+
+            if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestOverallSchedule, robustnessFunction))
+                bestOverallSchedule = neighbourhoodFavorite;
         }
-        return bestSchedule;
-    }
-
-    @SneakyThrows
-    public List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<JobMode> fixedJobMode) {
-        List<JobMode> jobModes = scheduleRepresentation.toJobMode(benchmark.getProject());
-        List<ScheduleRepresentation> neighbourhood = new ArrayList<>();
-
-        List<Job> jobList = jobModes.stream().map(JobMode::getJob).collect(Collectors.toList());
-        List<Mode> modeList = jobModes.stream().map(JobMode::getMode).collect(Collectors.toList());
-
-        List<Job> changeableModes = fixedJobMode != null ? jobList.stream()
-                .filter(job -> !fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toList()).contains(job))
-                .collect(Collectors.toList()) : new ArrayList<>(jobList);
-
-        int[] jobs = new int[jobList.size()];
-        int[] modes = new int[modeList.size()];
-
-        for (int i = 0; i < jobs.length; i++) {
-            jobs[i] = jobList.get(i).getJobId();
-            modes[i] = modeList.get(i).getModeId();
-        }
-
-        Set<Job> handledJobs = new HashSet<>();
-        if (fixedJobMode != null) {
-            handledJobs.addAll(fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toSet()));
-        } else
-            handledJobs.add(jobList.get(0));
-
-        // Adds for the same activity list mode neighbours
-        for (int i = 0; i < 2; i++) {
-            int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
-            int[] neighbourModes = Arrays.copyOf(modes, modes.length);
-
-            SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-            neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
-        }
-
-        for (int i = fixedJobMode != null ? fixedJobMode.size() + 1 : 1; i < jobList.size(); i++) {
-            Job previousJob = jobList.get(i - 1);
-            Job currentJob = jobList.get(i);
-
-            Set<Job> requiredJobs = ProjectHelper.getPredecessorsOfJob(benchmark.getProject(), currentJob);
-            if (handledJobs.containsAll(requiredJobs) && !requiredJobs.contains(previousJob)) { // Can be swapped
-                int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
-                int[] neighbourModes = Arrays.copyOf(modes, modes.length);
-
-                int tmp = neighbourJobs[i-1];
-                neighbourJobs[i-1] = neighbourJobs[i];
-                neighbourJobs[i] = tmp;
-
-                tmp = neighbourModes[i-1];
-                neighbourModes[i-1] = neighbourModes[i];
-                neighbourModes[i] = tmp;
-
-                SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-                neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
-
-                SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-                neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
-            }
-            handledJobs.add(currentJob);
-        }
-
-        return neighbourhood;
-    }
-
-    public Schedule createInitialSolution(Benchmark benchmark, List<JobMode> alreadyScheduled) throws GiveUpException {
-        // must be a feasible solution
-        Schedule schedule = null;
-
-        int giveUpCounter = 0;
-        while (schedule == null) {
-            if (giveUpCounter > 50)
-                throw new GiveUpException();
-
-            for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
-                if (schedule != null)
-                    break;
-                for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
-                    if (schedule != null)
-                        break;
-
-                    try {
-                        ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
-                                benchmark,
-                                Heuristic.builder()
-                                        .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
-                                        .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
-                                        .build(),
-                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
-                                alreadyScheduled);
-
-                        schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
-                    } catch (Exception ex) {
-                    }
-                }
-            }
-
-            giveUpCounter++;
-        }
-
-        return schedule;
+        return bestOverallSchedule;
     }
 
 }

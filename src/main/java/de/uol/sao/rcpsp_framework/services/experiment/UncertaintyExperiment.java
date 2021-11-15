@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 @Log4j2
@@ -70,15 +71,23 @@ public abstract class UncertaintyExperiment implements Experiment {
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         // Experiment Design
-        int uncertaintyExperiments = 5;
+        int uncertaintyExperiments = 3;
         List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
-        int trials = 5;
+        int trials = 1;
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.15)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.50)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.75)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 1.00)));
+        /*
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.15)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
-
+*/
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
         List<String> solvers = ExperimentHelper.getSolversFromArguments(args, Collections.singletonList("TabuSearch"));
@@ -121,8 +130,14 @@ public abstract class UncertaintyExperiment implements Experiment {
 
             experimentSolverResultMap.forEach((solverIterationTuple, schedules) -> {
                 // Simulate uncertainty
-                Map<UncertaintyModel, List<Integer>> actualExecutionResultsMakespan = new LinkedHashMap<>();
-                Map<UncertaintyModel, List<Double>> actualExecutionResultsRobustness = new LinkedHashMap<>();
+                Map<UncertaintyModel, List<Integer>> actualExecutionResultsMakespan = Collections.synchronizedMap(new LinkedHashMap<>());
+                Map<UncertaintyModel, List<Double>> actualExecutionResultsRobustness = Collections.synchronizedMap(new LinkedHashMap<>());
+
+                schedules.forEach(schedule -> uncertaintyModels.forEach(uncertaintyModel -> {
+                    actualExecutionResultsMakespan.put(uncertaintyModel, Collections.synchronizedList(new ArrayList<>()));
+                    actualExecutionResultsRobustness.put(uncertaintyModel, Collections.synchronizedList(new ArrayList<>()));
+                }));
+
                 schedules.parallelStream().forEach(schedule -> uncertaintyModels.forEach(uncertaintyModel -> {
                     IntStream.range(0, uncertaintyExperiments).parallel().forEach(experimentNo -> {
                         try {
@@ -133,15 +148,14 @@ public abstract class UncertaintyExperiment implements Experiment {
                                     robustnessMetric,
                                     uncertaintyModel);
 
-                            List<Integer> makespanValues = actualExecutionResultsMakespan.getOrDefault(uncertaintyModel, new ArrayList<>());
+                            List<Integer> makespanValues = actualExecutionResultsMakespan.get(uncertaintyModel);
                             makespanValues.add(uncertaintySchedule.computeMetric(Metrics.MAKESPAN));
                             actualExecutionResultsMakespan.put(uncertaintyModel, makespanValues);
 
-                            List<Double> robustnessValues = actualExecutionResultsRobustness.getOrDefault(uncertaintyModel, new ArrayList<>());
+                            List<Double> robustnessValues = actualExecutionResultsRobustness.get(uncertaintyModel);
                             robustnessValues.add(Double.valueOf(uncertaintySchedule.computeMetric(robustnessMetric).toString()));
                             actualExecutionResultsRobustness.put(uncertaintyModel, robustnessValues);
                         } catch (Exception ignored) { }
-
                     });
                 }));
 

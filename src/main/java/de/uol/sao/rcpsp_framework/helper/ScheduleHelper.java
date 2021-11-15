@@ -127,10 +127,10 @@ public class ScheduleHelper {
         }
         else {
             if (robustnessMetric != null) {
-                log.info(String.format("Makespan: %d - %s: %d - %s",
+                log.info(String.format("Makespan: %d - %s: %s - %s",
                         schedule.computeMetric(Metrics.MAKESPAN),
                         robustnessMetric.getClass().getSimpleName(),
-                        schedule.computeMetric(robustnessMetric),
+                        schedule.computeMetric(robustnessMetric).toString(),
                         schedule.getScheduleRepresentation()));
             } else {
                 log.info(String.format("Makespan: %d - %s",
@@ -148,12 +148,12 @@ public class ScheduleHelper {
         } else if(robustnessMeasure != null &&
                 robustnessMeasure.getOptimum() == HeuristicSelection.MIN &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                ((int) currentBestSchedule.computeMetric(robustnessMeasure) > (int) schedule.computeMetric(robustnessMeasure))) {
+                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) > Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         } else if(robustnessMeasure != null &&
                 robustnessMeasure.getOptimum() == HeuristicSelection.MAX &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                ((int) currentBestSchedule.computeMetric(robustnessMeasure) < (int) schedule.computeMetric(robustnessMeasure))) {
+                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) < Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         }
 

@@ -103,68 +103,6 @@ public class SchedulerService {
         return schedule;
     }
 
-    @SneakyThrows
-    public Schedule createScheduleReactive(Benchmark benchmark,
-                                           Schedule plannedSchedule,
-                                           UncertaintyModel uncertaintyModel,
-                                           Solver solver,
-                                           int iterations,
-                                           Metric<?> robustnessFunction) {
-        Benchmark subbenchmark = ProjectHelper.getDeepCopyOfBenchmark(benchmark);
-
-        ScheduleRepresentation plannedScheduleScheduleRepresentation = plannedSchedule.getScheduleRepresentation();
-        List<JobMode> plannedJobModeList = plannedScheduleScheduleRepresentation.toJobMode(subbenchmark.getProject());
-
-        int lastActivityId = plannedJobModeList.stream().map(JobMode::getJob).map(Job::getJobId).sorted((o1, o2) -> o2 - o1).findFirst().get();
-
-        List<JobMode> buildingJobModeList = new ArrayList<>();
-        Map<JobMode, Integer> delayedDurations = new HashMap<>();
-
-        while (buildingJobModeList.size() < plannedJobModeList.size()) {
-            for (JobMode jobMode : plannedJobModeList) {
-                Job job = jobMode.getJob();
-                Mode mode = jobMode.getMode();
-
-                int plannedDuration = mode.getDuration();
-                boolean isDummyMode = job.getJobId() == 1 | job.getJobId() == lastActivityId;
-                boolean alreadyScheduled = buildingJobModeList.contains(jobMode);
-
-                if (!alreadyScheduled)
-                    buildingJobModeList.add(jobMode);
-
-                if (!isDummyMode && !alreadyScheduled) {
-                    int actualDuration = uncertaintyModel.computeActualDuration(mode.getDuration());
-                    if (actualDuration > plannedDuration) {
-                        delayedDurations.put(jobMode, actualDuration);
-                        mode.setDuration(actualDuration);
-                        break;
-                    }
-                }
-            }
-
-            // Prepare the benchmark with the actual durations
-            delayedDurations.forEach((jobMode, delayedDuration) -> {
-                int jobId = jobMode.getJob().getJobId();
-                int modeId = jobMode.getMode().getModeId();
-
-                Job job = ProjectHelper.getJobFromProject(subbenchmark.getProject(), jobId).get();
-                Mode mode = ProjectHelper.getModeFromJob(job, modeId).get();
-                mode.setDuration(delayedDuration);
-            });
-
-            Schedule potentialSchedule = null;
-            try {
-                potentialSchedule = solver.algorithm(subbenchmark, iterations / 10, null, buildingJobModeList);
-            } catch (Throwable throwable) {
-                throwable.printStackTrace();
-            }
-
-            plannedJobModeList = potentialSchedule.getScheduleRepresentation().toJobMode(subbenchmark.getProject());
-        }
-
-        return this.createScheduleProactive(subbenchmark, new ActivityListSchemeRepresentation(buildingJobModeList), null);
-    }
-
     private void addInterval(JobMode jobMode,
                              int duration,
                              Map<Resource, List<Interval>> resourcePlan,

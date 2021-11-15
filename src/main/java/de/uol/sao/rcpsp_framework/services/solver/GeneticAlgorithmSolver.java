@@ -2,6 +2,7 @@ package de.uol.sao.rcpsp_framework.services.solver;
 
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
+import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
@@ -232,10 +233,7 @@ public class GeneticAlgorithmSolver implements Solver {
         double fitness = benchmark.getHorizon();
         try {
             Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
-            int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-            double robustness = robustnessFunction != null ? Double.parseDouble(schedule.computeMetric(robustnessFunction).toString()) *
-                    (robustnessFunction.getOptimum() == HeuristicSelection.MAX ? 1 : -1) : 0;
-            fitness = makespan - robustness / 100;
+            fitness = SolverHelper.calculateFitness(schedule, robustnessFunction);
         } catch (Exception ex) { }
 
         return new Solution(generation, scheduleRepresentation, fitness);

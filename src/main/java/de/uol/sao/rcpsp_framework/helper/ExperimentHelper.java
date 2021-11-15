@@ -88,7 +88,7 @@ public class ExperimentHelper {
                     else {
                         try {
                             robustMeasureFunction = Metrics.getMetricByName(robustnessMeasurements.get(0));
-                            Assert.isNull(robustMeasureFunction, "Robustness Measurement unknown");
+                            Assert.notNull(robustMeasureFunction, "Robustness Measurement unknown");
                         } catch (Throwable ex) {
                             log.warn(String.format("Robustness Measurement unknown. %s will be used. " +
                                     "Usage: --%s=RobustMeasure1", defaultValue, commandStr));
