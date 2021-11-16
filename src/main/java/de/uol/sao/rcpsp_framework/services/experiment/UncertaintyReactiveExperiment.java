@@ -77,7 +77,7 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
 
             Schedule potentialSchedule = null;
             try {
-                potentialSchedule = solver.algorithm(subbenchmark, iterations / 10, null, buildingJobModeList);
+                potentialSchedule = solver.algorithm(subbenchmark, iterations / 5, null, buildingJobModeList);
                 if (potentialSchedule == null)
                     potentialSchedule = plannedSolution;
                 else if (!this.verifySolver(buildingJobModeList, potentialSchedule)) {

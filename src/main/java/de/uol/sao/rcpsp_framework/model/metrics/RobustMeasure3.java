@@ -9,22 +9,16 @@ import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
 import java.util.Map;
 
 /**
- * Robust Measurement function that returns the minimum of the free slacks
+ * Robust Measurement function that uses binary slacks.
  */
-public class RobustMeasure2 extends Metric<Double> {
+public class RobustMeasure3 extends Metric<Integer> {
 
     @Override
-    public Double computeMetric(Schedule schedule) {
+    public Integer computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
         Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
 
-        double minimalValue = Double.MAX_VALUE;
-        for (Integer value : slack.values()) {
-            if (minimalValue > value)
-                minimalValue = value;
-        }
-
-        return minimalValue;
+        return slack.keySet().stream().map(job -> slack.get(job) > 0 ? 1 : 0).reduce(Integer::sum).get();
     }
 
     @Override

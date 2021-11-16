@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.model.metrics;
 
+import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
@@ -9,22 +10,16 @@ import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
 import java.util.Map;
 
 /**
- * Robust Measurement function that returns the minimum of the free slacks
+ * Robust Measurement function that sums the slacks of all jobs weighed with the direct successors.
  */
-public class RobustMeasure2 extends Metric<Double> {
+public class RobustMeasure4 extends Metric<Integer> {
 
     @Override
-    public Double computeMetric(Schedule schedule) {
+    public Integer computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
         Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
 
-        double minimalValue = Double.MAX_VALUE;
-        for (Integer value : slack.values()) {
-            if (minimalValue > value)
-                minimalValue = value;
-        }
-
-        return minimalValue;
+        return slack.keySet().stream().map(job -> slack.get(job) * job.getSuccessor().size()).reduce(Integer::sum).get();
     }
 
     @Override

@@ -99,11 +99,38 @@ public class ScheduleHelper {
     }
 
     /**
-     * Computes the slack S for every job. Relevant for a lot of robustness calculations.
+     * Computes the free slack S for every job. Relevant for a lot of robustness calculations.
      * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
      * @return The map of all job slacks
      */
-    public static Map<Job, Integer> computeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
+    public static Map<Job, Integer> computeFreeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
+        Map<Job, Integer> slack = new HashMap<>();
+
+        for (Map.Entry<Job, Integer> entry : scheduleRelationInfo.getLeastFinishingTime().entrySet()) {
+            Job job = entry.getKey();
+
+            int earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
+
+            if (job.getSuccessor().isEmpty())
+                slack.put(job, 0);
+            else {
+                int earliestStartOfNextActivity = Integer.MAX_VALUE;
+                for (Job successor : job.getSuccessor()) {
+                    earliestStartOfNextActivity = Math.min(earliestStartOfNextActivity, scheduleRelationInfo.getEarliestStartingTime().get(successor));
+                }
+                slack.put(job, earliestStartOfNextActivity - earliestFinishingTime);
+            }
+        }
+
+        return slack;
+    }
+
+    /**
+     * Computes the total slack TS for every job. Relevant for a lot of robustness calculations.
+     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
+     * @return The map of all job slacks
+     */
+    public static Map<Job, Integer> computeTotalSlacks(ScheduleRelationInfo scheduleRelationInfo) {
         Map<Job, Integer> slack = new HashMap<>();
 
         for (Map.Entry<Job, Integer> entry : scheduleRelationInfo.getLeastFinishingTime().entrySet()) {

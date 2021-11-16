@@ -53,6 +53,23 @@ public class ProjectHelper {
     }
 
     /**
+     * Get all predecessors of a job
+     * @param project The project containing all jobs
+     * @param job The job of relevance
+     * @return A set of direct predecessors of a job
+     */
+    public static Set<Job> getAllPredecessorsOfJob(Project project, Job job) {
+        Set<Job> jobs = new HashSet<>();
+
+        for (Job predecessor : ProjectHelper.getPredecessorsOfJob(project, job)) {
+            jobs.addAll(new HashSet<>(ProjectHelper.getAllPredecessorsOfJob(project, predecessor)));
+        }
+
+        jobs.addAll(ProjectHelper.getPredecessorsOfJob(project, job));
+        return jobs;
+    }
+
+    /**
      * Some benchmarks mandatory requires non-renewable resources as there is no mode alternative in an activity.
      * Solvers might need information about these Modes and need to be executed these.
      *
