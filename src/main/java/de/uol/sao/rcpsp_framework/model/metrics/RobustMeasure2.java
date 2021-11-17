@@ -16,7 +16,7 @@ public class RobustMeasure2 extends Metric<Double> {
     @Override
     public Double computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
+        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(schedule, scheduleRelationInfo);
 
         double minimalValue = Double.MAX_VALUE;
         for (Integer value : slack.values()) {
@@ -29,6 +29,6 @@ public class RobustMeasure2 extends Metric<Double> {
 
     @Override
     public HeuristicSelection getOptimum() {
-        return HeuristicSelection.MIN;
+        return HeuristicSelection.MAX;
     }
 }

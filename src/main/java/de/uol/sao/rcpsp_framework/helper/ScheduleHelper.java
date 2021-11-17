@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.helper;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
+import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
 import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
@@ -11,6 +12,7 @@ import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +37,8 @@ public class ScheduleHelper {
         Project project = schedule.getBenchmark().getProject();
         List<Job> jobs = jobModeList.stream().map(JobMode::getJob).collect(Collectors.toList());
 
-        Map<Job, Integer> leastFinishingTime = scheduleRelationInfo.getLeastFinishingTime();
-        Map<Job, Integer> leastStartingTime = scheduleRelationInfo.getLeastStartingTime();
+        Map<Job, Integer> latestFinishingTime = scheduleRelationInfo.getLatestFinishingTime();
+        Map<Job, Integer> latestStartingTime = scheduleRelationInfo.getLatestStartingTime();
         Map<Job, Integer> earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
         Map<Job, Integer> earliestStartingTime = scheduleRelationInfo.getEarliestStartingTime();
 
@@ -48,51 +50,36 @@ public class ScheduleHelper {
         int makespan = schedule.computeMetric(Metrics.MAKESPAN);
 
         // Computation of EST and EFT
-        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
-            Resource resource = entry.getKey();
-            List<Interval> intervals = entry.getValue();
-
-            for (Interval interval : intervals) {
-                Job job = interval.getSource().getJob();
-                int beginning = earliestStartingTime.getOrDefault(job, Integer.MIN_VALUE);
-                beginning = Math.max(interval.getLowerBound(), beginning);
-                earliestStartingTime.put(job, beginning);
-
-                int ending = earliestFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
-                ending = Math.min(interval.getUpperBound() + 1, ending);
-                earliestFinishingTime.put(job, ending);
-            }
-        }
-
-        if (!schedule.isPartialSchedule()) {
-            earliestFinishingTime.put(jobs.get(jobs.size() - 1), makespan);
-            earliestStartingTime.put(jobs.get(jobs.size() - 1), makespan);
-        }
-
-        // Computation of LST and LFT
-        for (int i = jobs.size() - 1; i >= 0; i--) {
-            Job job = jobs.get(i);
-            JobMode selectedMode = jobModeList.stream().filter(jobMode -> jobMode.getJob().getJobId() == job.getJobId()).findFirst().get();
-            int duration = selectedMode.getMode().getDuration();
-
-            int latestEndPoint = Integer.MAX_VALUE;
-            List<Job> successorJobs = job.getSuccessor();
-            if (successorJobs.isEmpty())
-                latestEndPoint = makespan;
-            else {
-                // Get the minimum of the successors
-                for (Job successorJob : successorJobs) {
-                    try {
-                        latestEndPoint = Math.min(leastStartingTime.getOrDefault(successorJob, makespan), latestEndPoint);
-                    } catch (Exception ex) {
-                        System.out.println();
-                    }
+        for (Job job : project.getJobs()) {
+            Mode lowestMode = job.getModes().stream().min(Comparator.comparingInt(Mode::getDuration)).get();
+            int duration = lowestMode.getDuration();
+            int predecessorEF = 0;
+            if (job.getJobId() != 1) {
+                for (Job predecessorJob : ProjectHelper.getPredecessorsOfJob(project, job)) {
+                    predecessorEF = Math.max(earliestFinishingTime.get(predecessorJob), predecessorEF);
                 }
             }
 
-            int latestStartPoint = latestEndPoint - duration;
-            leastStartingTime.put(job, latestStartPoint);
-            leastFinishingTime.put(job, latestEndPoint);
+            if (predecessorEF < 0 || predecessorEF + duration < 0)
+                System.out.println("?");
+
+            earliestStartingTime.put(job, predecessorEF);
+            earliestFinishingTime.put(job, predecessorEF + duration);
+        }
+
+        // Computation of LST and LFT
+        for (Job job : project.getJobs().stream().sorted((o1, o2) -> o2.getJobId() - o1.getJobId()).collect(Collectors.toList())) {
+            Mode highestMode = job.getModes().stream().min(Comparator.comparingInt(Mode::getDuration)).get();
+            int duration = highestMode.getDuration();
+            int successorLF = makespan;
+            if (job.getJobId() != project.getJobs().get(project.getJobs().size() - 1).getJobId()) {
+                for (Job successorJob : job.getSuccessor()) {
+                    successorLF = Math.min(latestStartingTime.get(successorJob), successorLF);
+                }
+            }
+
+            latestFinishingTime.put(job, successorLF);
+            latestStartingTime.put(job, successorLF - duration);
         }
 
         return scheduleRelationInfo;
@@ -103,41 +90,51 @@ public class ScheduleHelper {
      * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
      * @return The map of all job slacks
      */
-    public static Map<Job, Integer> computeFreeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
+    public static Map<Job, Integer> computeFreeSlacks(Schedule schedule, ScheduleRelationInfo scheduleRelationInfo) {
         Map<Job, Integer> slack = new HashMap<>();
+        Map<Job, Integer> actualStartingTime = new HashMap<>();
+        Map<Job, Integer> actualFinishingTime = new HashMap<>();
+        List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
 
-        for (Map.Entry<Job, Integer> entry : scheduleRelationInfo.getLeastFinishingTime().entrySet()) {
-            Job job = entry.getKey();
+        actualStartingTime.put(jobs.get(0), 0);
+        actualFinishingTime.put(jobs.get(0), 0);
 
-            int earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
+            List<Interval> intervals = entry.getValue();
 
-            if (job.getSuccessor().isEmpty())
-                slack.put(job, 0);
-            else {
-                int earliestStartOfNextActivity = Integer.MAX_VALUE;
-                for (Job successor : job.getSuccessor()) {
-                    earliestStartOfNextActivity = Math.min(earliestStartOfNextActivity, scheduleRelationInfo.getEarliestStartingTime().get(successor));
-                }
-                slack.put(job, earliestStartOfNextActivity - earliestFinishingTime);
+            for (Interval interval : intervals) {
+                Job job = interval.getSource().getJob();
+                int beginning = actualStartingTime.getOrDefault(job, Integer.MIN_VALUE);
+                beginning = Math.max(interval.getLowerBound(), beginning);
+                actualStartingTime.put(job, beginning);
+
+                int ending = actualFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
+                actualFinishingTime.put(job, ending);
             }
         }
 
-        return slack;
-    }
+        actualStartingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
+        actualFinishingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
 
-    /**
-     * Computes the total slack TS for every job. Relevant for a lot of robustness calculations.
-     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
-     * @return The map of all job slacks
-     */
-    public static Map<Job, Integer> computeTotalSlacks(ScheduleRelationInfo scheduleRelationInfo) {
-        Map<Job, Integer> slack = new HashMap<>();
-
-        for (Map.Entry<Job, Integer> entry : scheduleRelationInfo.getLeastFinishingTime().entrySet()) {
+        for (Map.Entry<Job, Integer> entry : actualStartingTime.entrySet()) {
             Job job = entry.getKey();
-            int latestFinishingTime = entry.getValue();
-            int earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
-            slack.put(job, latestFinishingTime - earliestFinishingTime);
+            int actualEndingTime = actualFinishingTime.get(job);
+
+            int latestStartOfActivity = Integer.MAX_VALUE;
+            if (!job.getSuccessor().isEmpty()) {
+                for (Job successor : job.getSuccessor()) {
+                    latestStartOfActivity = Math.min(latestStartOfActivity, actualStartingTime.get(successor));
+                }
+            } else {
+                latestStartOfActivity = actualEndingTime;
+            }
+
+            int jobSlack = latestStartOfActivity - actualEndingTime;
+            if (jobSlack < 0)
+                System.out.println(jobSlack);
+
+            slack.put(job, jobSlack);
         }
 
         return slack;

@@ -43,7 +43,7 @@ public class LSTHeuristic extends ActivityHeuristic {
             Schedule partialSchedule = new SchedulerService().createScheduleProactive(benchmark, scheduleRepresentation, null);
             ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
 
-            int leastFinishedTime = scheduleRelationInfo.getLeastFinishingTime().get(job);
+            int leastFinishedTime = scheduleRelationInfo.getLatestFinishingTime().get(job);
             priorityValue = Math.max(leastFinishedTime - jobSelectedMode.getDuration(), priorityValue);
         } catch (NoNonRenewableResourcesLeftException | RenewableResourceNotEnoughException e) {
             return Integer.MAX_VALUE;

@@ -16,13 +16,13 @@ public class RobustMeasure3 extends Metric<Integer> {
     @Override
     public Integer computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
+        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(schedule, scheduleRelationInfo);
 
         return slack.keySet().stream().map(job -> slack.get(job) > 0 ? 1 : 0).reduce(Integer::sum).get();
     }
 
     @Override
     public HeuristicSelection getOptimum() {
-        return HeuristicSelection.MIN;
+        return HeuristicSelection.MAX;
     }
 }

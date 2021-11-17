@@ -12,8 +12,8 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduleRelationInfo {
-    Map<Job, Integer> leastFinishingTime = new HashMap<>();
-    Map<Job, Integer> leastStartingTime = new HashMap<>();
+    Map<Job, Integer> latestFinishingTime = new HashMap<>();
+    Map<Job, Integer> latestStartingTime = new HashMap<>();
     Map<Job, Integer> earliestFinishingTime = new HashMap<>();
     Map<Job, Integer> earliestStartingTime = new HashMap<>();
 }

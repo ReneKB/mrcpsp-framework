@@ -43,7 +43,7 @@ public class MSLKHeuristic extends ActivityHeuristic {
             Schedule partialSchedule = new SchedulerService().createScheduleProactive(benchmark, scheduleRepresentation, null);
             ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
 
-            int leastFinishedTime = scheduleRelationInfo.getLeastFinishingTime().get(job);
+            int leastFinishedTime = scheduleRelationInfo.getLatestFinishingTime().get(job);
             int earliestFinishedTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
             priorityValue = Math.max(leastFinishedTime - earliestFinishedTime, priorityValue);
         } catch (NoNonRenewableResourcesLeftException e) {

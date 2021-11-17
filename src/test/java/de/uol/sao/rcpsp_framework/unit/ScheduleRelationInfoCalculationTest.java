@@ -39,8 +39,8 @@ public class ScheduleRelationInfoCalculationTest {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
 
         // assert that every latest ending time minus latest starting time equals the duration
-        scheduleRelationInfo.getLeastFinishingTime().forEach((job, leastFinishingTimeLFT) -> {
-            int leastStartingTime = scheduleRelationInfo.getLeastStartingTime().get(job);
+        scheduleRelationInfo.getLatestFinishingTime().forEach((job, leastFinishingTimeLFT) -> {
+            int leastStartingTime = scheduleRelationInfo.getLatestStartingTime().get(job);
 
             int durationComputed = leastFinishingTimeLFT - leastStartingTime;
             int durationExpected = jobModeList.stream().filter(jobMode -> jobMode.getJob().getJobId() == job.getJobId()).findFirst().get().getMode().getDuration();
@@ -70,14 +70,14 @@ public class ScheduleRelationInfoCalculationTest {
         Assertions.assertEquals(scheduleRelationInfo.getEarliestStartingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestStartingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 0);
 
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 0);
 
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
 
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
     }
 
     @Test
@@ -102,19 +102,19 @@ public class ScheduleRelationInfoCalculationTest {
         Assertions.assertEquals(scheduleRelationInfo.getEarliestStartingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 0);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestStartingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 2);
 
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 0);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 1);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastStartingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 3);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 1);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestStartingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 3);
 
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 2);
         Assertions.assertEquals(scheduleRelationInfo.getEarliestFinishingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 4);
 
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 3);
-        Assertions.assertEquals(scheduleRelationInfo.getLeastFinishingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 5);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 1).get()), (Integer) 0);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 2).get()), (Integer) 5);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 3).get()), (Integer) 3);
+        Assertions.assertEquals(scheduleRelationInfo.getLatestFinishingTime().get(ProjectHelper.getJobFromProject(project, 5).get()), (Integer) 5);
     }
 }

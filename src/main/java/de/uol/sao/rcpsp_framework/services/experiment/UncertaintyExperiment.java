@@ -71,13 +71,14 @@ public abstract class UncertaintyExperiment implements Experiment {
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         // Experiment Design
-        int uncertaintyExperiments = 3;
+        int uncertaintyExperiments = 10;
         List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
         int trials = 1;
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.30)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.50)));
         /*
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
