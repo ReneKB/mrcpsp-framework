@@ -90,10 +90,12 @@ public class ScheduleHelper {
      * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
      * @return The map of all job slacks
      */
-    public static Map<Job, Integer> computeFreeSlacks(Schedule schedule, ScheduleRelationInfo scheduleRelationInfo) {
+    public static Map<Job, Integer> computeFreeSlacks(Schedule schedule, Schedule backwardRecursion, ScheduleRelationInfo scheduleRelationInfo) {
         Map<Job, Integer> slack = new HashMap<>();
         Map<Job, Integer> actualStartingTime = new HashMap<>();
         Map<Job, Integer> actualFinishingTime = new HashMap<>();
+        Map<Job, Integer> latestStartingTime = new HashMap<>();
+        Map<Job, Integer> latestFinishingTime = new HashMap<>();
         List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
 
         actualStartingTime.put(jobs.get(0), 0);
@@ -114,28 +116,31 @@ public class ScheduleHelper {
             }
         }
 
-        actualStartingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
-        actualFinishingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
+        int lowestBound = Integer.MAX_VALUE;
+        for (Map.Entry<Resource, List<Interval>> entry : backwardRecursion.getResourcePlans().entrySet()) {
+            List<Interval> intervals = entry.getValue();
 
-        for (Map.Entry<Job, Integer> entry : actualStartingTime.entrySet()) {
-            Job job = entry.getKey();
-            int actualEndingTime = actualFinishingTime.get(job);
+            for (Interval interval : intervals) {
+                Job job = interval.getSource().getJob();
+                int beginning = actualStartingTime.getOrDefault(job, Integer.MIN_VALUE);
+                beginning = Math.max(interval.getLowerBound(), beginning);
+                latestStartingTime.put(job, beginning);
 
-            int latestStartOfActivity = Integer.MAX_VALUE;
-            if (!job.getSuccessor().isEmpty()) {
-                for (Job successor : job.getSuccessor()) {
-                    latestStartOfActivity = Math.min(latestStartOfActivity, actualStartingTime.get(successor));
-                }
-            } else {
-                latestStartOfActivity = actualEndingTime;
+                int ending = actualFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
+                latestFinishingTime.put(job, ending);
+
+                lowestBound = Math.min(lowestBound, beginning);
             }
-
-            int jobSlack = latestStartOfActivity - actualEndingTime;
-            if (jobSlack < 0)
-                System.out.println(jobSlack);
-
-            slack.put(job, jobSlack);
         }
+
+        latestFinishingTime.put(jobs.get(0), lowestBound);
+        latestStartingTime.put(jobs.get(0), lowestBound);
+
+        // Calculate the slack now
+        latestStartingTime.forEach((job, integer) -> {
+            slack.put(job, integer - actualStartingTime.get(job));
+        });
 
         return slack;
     }

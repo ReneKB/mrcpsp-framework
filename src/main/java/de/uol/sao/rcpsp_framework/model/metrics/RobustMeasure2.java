@@ -5,6 +5,8 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
+import lombok.SneakyThrows;
 
 import java.util.Map;
 
@@ -14,9 +16,11 @@ import java.util.Map;
 public class RobustMeasure2 extends Metric<Double> {
 
     @Override
+    @SneakyThrows
     public Double computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(schedule, scheduleRelationInfo);
+        Map<Job, Integer> slack = null;
+        slack = ScheduleHelper.computeFreeSlacks(schedule, new SchedulerService().createScheduleBackward(schedule), scheduleRelationInfo);
 
         double minimalValue = Double.MAX_VALUE;
         for (Integer value : slack.values()) {
