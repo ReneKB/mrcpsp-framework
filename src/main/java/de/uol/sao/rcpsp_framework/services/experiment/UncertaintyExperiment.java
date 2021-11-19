@@ -6,11 +6,13 @@ import de.uol.sao.rcpsp_framework.helper.MathHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.StatisticValue;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
+import de.uol.sao.rcpsp_framework.model.benchmark.OptimumReference;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.BenchmarkLoaderService;
+import de.uol.sao.rcpsp_framework.services.LatexService;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import de.uol.sao.rcpsp_framework.services.solver.Solver;
@@ -24,8 +26,15 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 @Log4j2
@@ -41,22 +50,21 @@ public abstract class UncertaintyExperiment implements Experiment {
     SchedulerService schedulerService;
 
     @Autowired
+    LatexService latexService;
+
+    @Autowired
     BeanFactory beans;
 
     @Data
     @AllArgsConstructor
-    @EqualsAndHashCode(exclude = {"benchmark", "schedule"})
-    static class ExperimentResult {
-        Benchmark benchmark;
+    @EqualsAndHashCode
+    public static class ExperimentResult {
         int iterations;
         String solver;
-        Schedule schedule;
+        UncertaintyModel uncertaintyModel;
 
         public String toString() {
-            if (benchmark != null)
-                return String.format("[Benchmark: %s, Solver: %s, Iterations: %d]", benchmark.getName(), solver, iterations);
-            else
-                return String.format("[Solver: %s, Iterations: %d]", solver, iterations);
+            return String.format("[Solver: %s, Iterations: %d, Uncertainty: %s]", solver, iterations, uncertaintyModel.toString());
         }
     }
 
@@ -71,30 +79,29 @@ public abstract class UncertaintyExperiment implements Experiment {
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         // Experiment Design
-        int uncertaintyExperiments = 400;
-        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
+        int uncertaintyExperiments = 15;
         int trials = 1;
+
+        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.30)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.50)));
-        /*
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.15)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
-*/
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 1.0)));
+
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
         List<String> solvers = ExperimentHelper.getSolversFromArguments(args, Collections.singletonList("TabuSearch"));
         int experiment = ExperimentHelper.getExperimentFromArguments(args, 4);
         Metric<?> robustnessMetric = ExperimentHelper.getRobustMeasureFunctionFromArgs(args, Metrics.RM1);
 
+        Map<ExperimentResult, List<Double>> benchmarkMakespanResults = new HashMap<>();
+
         // Actual Execution
         for (Benchmark benchmark : benchmarks) {
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment, uncertaintyModels, uncertaintyExperiments);
+            AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
             Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new HashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
@@ -121,10 +128,17 @@ public abstract class UncertaintyExperiment implements Experiment {
                         if (bestSchedule != null) {
                             solverPerformanceResultEntries.add(bestSchedule);
                             experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
+
+                            if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                bestOverallSchedule.set(bestSchedule);
+                            }
                         }
                     }
                 }
             });
+
+            OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
+            double optimalMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN);
 
             experimentSolverResultMap.forEach((solverIterationTuple, schedules) -> {
                 // Simulate uncertainty
@@ -164,6 +178,12 @@ public abstract class UncertaintyExperiment implements Experiment {
                     if (list != null && !list.isEmpty()) {
                         double mean = MathHelper.calculateMeanFromIntegerList(list);
                         double stddev = MathHelper.calculateStdDevFromIntegerList(list, mean);
+
+                        ExperimentResult experimentResult = new ExperimentResult(solverIterationTuple.getIterations(), solverIterationTuple.getSolver(), uncertaintyModel);
+                        List<Double> makespanStdDev = benchmarkMakespanResults.getOrDefault(experimentResult, new ArrayList<>());
+                        makespanStdDev.add(MathHelper.calculateStdDevFromIntegerList(list, optimalMakespan));
+                        benchmarkMakespanResults.put(experimentResult, makespanStdDev);
+
                         statisticalResultsMakespan.put(uncertaintyModel, new StatisticValue(mean, stddev));
                     }
                 });
@@ -183,6 +203,35 @@ public abstract class UncertaintyExperiment implements Experiment {
 
             log.info("");
         }
+
+        Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults = new HashMap<>();
+        benchmarkMakespanResults.forEach((experimentResult, makespanStds) -> {
+            double mean = MathHelper.calculateMeanFromDoubleList(makespanStds);
+            double std = MathHelper.calculateStdDevFromDoubleList(makespanStds, mean);
+            benchmarkOverallMakespanResults.put(experimentResult, new StatisticValue(mean, std));
+        });
+
+        // Output in latex
+        this.logLatex(benchmarks, uncertaintyModels, iterations, solvers, benchmarkOverallMakespanResults);
+    }
+
+    private void logLatex(List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
+        String latex = latexService.printLatexTableUncertainty(
+                "latex/uncertainty_experiment.latex",
+                benchmarkOverallMakespanResults,
+                solvers,
+                uncertaintyModels,
+                iterations);
+
+        Files.createDirectories(Paths.get("results"));
+
+        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        FileWriter fileWriter = new FileWriter(String.format("results/%s_%s_%s.log",
+                benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", ""),
+                this.getClass().getSimpleName(),
+                datetime));
+        fileWriter.write(latex);
+        fileWriter.close();
     }
 
     private void printBenchmarkStartInfo(Benchmark benchmark,

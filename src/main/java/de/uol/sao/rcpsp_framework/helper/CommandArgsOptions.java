@@ -16,6 +16,7 @@ public enum CommandArgsOptions {
     EXPERIMENT("experiment"),
     METRIC("metric"),
     ROBUST("robust"),
+    LIMIT("limit"),
     NONE("none");
 
     @Getter

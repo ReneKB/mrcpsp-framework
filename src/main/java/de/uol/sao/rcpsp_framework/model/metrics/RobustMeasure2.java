@@ -19,8 +19,9 @@ public class RobustMeasure2 extends Metric<Double> {
     @SneakyThrows
     public Double computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack = null;
-        slack = ScheduleHelper.computeFreeSlacks(schedule, new SchedulerService().createScheduleBackward(schedule), scheduleRelationInfo);
+        Map<Job, Integer> slack =  ScheduleHelper.computeFreeSlacks(schedule,
+                new SchedulerService().createScheduleBackward(schedule),
+                scheduleRelationInfo);
 
         double minimalValue = Double.MAX_VALUE;
         for (Integer value : slack.values()) {

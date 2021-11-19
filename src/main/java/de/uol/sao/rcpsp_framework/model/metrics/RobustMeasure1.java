@@ -22,8 +22,9 @@ public class RobustMeasure1 extends Metric<Integer> {
     @SneakyThrows
     public Integer computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack = null;
-        slack = ScheduleHelper.computeFreeSlacks(schedule, new SchedulerService().createScheduleBackward(schedule), scheduleRelationInfo);
+        Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(schedule,
+                new SchedulerService().createScheduleBackward(schedule),
+                scheduleRelationInfo);
 
         return slack.keySet().stream().map(slack::get).reduce(Integer::sum).get();
     }

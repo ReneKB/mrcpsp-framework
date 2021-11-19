@@ -74,6 +74,25 @@ public class ExperimentHelper {
         return experiments;
     }
 
+    public static int getLimitsFromArgs(ApplicationArguments args, int defaultValue) {
+        int limit = defaultValue;
+        Set<String> options = args.getOptionNames();
+        for (String beginningOption : options) {
+            switch (CommandArgsOptions.fromString(beginningOption)) {
+                case LIMIT:
+                    String commandStr = CommandArgsOptions.LIMIT.getCommandStr();
+                    List<String> limitValues = args.getOptionValues(commandStr);
+                    if (limitValues.size() != 1)
+                        log.warn(String.format("Limit not properly set. %d will run. " +
+                                "Usage: --%s=10", defaultValue, commandStr));
+                    else
+                        limit = Integer.parseInt(limitValues.get(0));
+            }
+        }
+
+        return limit;
+    }
+
     public static Metric<?> getRobustMeasureFunctionFromArgs(ApplicationArguments args, Metric<?> defaultValue) {
         Metric<?> robustMeasureFunction = defaultValue;
         Set<String> options = args.getOptionNames();

@@ -49,10 +49,13 @@ public class CommandRunnerComponent implements ApplicationRunner {
                 Collections.singletonList(beanFactory.getBean("SolverPerformanceComparisonExperiment", Experiment.class)),
                 beanFactory);
 
+        int limit = ExperimentHelper.getLimitsFromArgs(args, benchmarks.size());
+        List<Benchmark> splittedBenchmarks = benchmarks.subList(0, Math.min(benchmarks.size(), limit));
+
         Executors.newSingleThreadExecutor().execute(() -> runInputThread(benchmarks.get(0)));
         experiments.forEach(experiment -> {
             log.info(String.format("Run Experiment %s", experiment.getClass().getSimpleName()));
-            experiment.runExperiments(args, benchmarks);
+            experiment.runExperiments(args, splittedBenchmarks);
             log.info(String.format("Finished Experiment %s! ", experiment.getClass().getSimpleName()));
             log.info("");
         });
