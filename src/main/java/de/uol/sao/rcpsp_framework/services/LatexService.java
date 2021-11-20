@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.services;
 
+import de.uol.sao.rcpsp_framework.helper.FileHelper;
 import de.uol.sao.rcpsp_framework.helper.StatisticValue;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.experiment.UncertaintyExperiment;
@@ -7,7 +8,7 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ public class LatexService {
                                              List<String> solvers,
                                              List<UncertaintyModel> uncertaintyModels,
                                              List<Integer> iterations) {
-        String contentTemplate = Files.readString(Path.of(LatexService.class.getClassLoader().getResource(templateName).toURI()));
+        String contentTemplate = this.getFileTemplate(templateName);
         StringBuilder headerLine = new StringBuilder();
         StringBuilder body = new StringBuilder();
         StringBuilder tableStructure = new StringBuilder("r|");
@@ -77,4 +78,8 @@ public class LatexService {
         return builder.toString();
     }
 
+    @SneakyThrows
+    private String getFileTemplate(String templateName) {
+        return Files.readString(Paths.get(FileHelper.getFile(templateName).toURI()));
+    }
 }

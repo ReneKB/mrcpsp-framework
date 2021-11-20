@@ -10,6 +10,8 @@ import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Comparator;
@@ -30,7 +32,9 @@ public class ScheduleHelper {
      * @param schedule The schedule of relevance
      * @return The object {@link ScheduleRelationInfo} with the computed values
      */
+    @SneakyThrows
     public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
+        /*
         ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
         ScheduleRepresentation scheduleRepresentation = schedule.getScheduleRepresentation();
         List<JobMode> jobModeList = scheduleRepresentation.toJobMode(schedule.getBenchmark().getProject());
@@ -82,20 +86,14 @@ public class ScheduleHelper {
             latestStartingTime.put(job, successorLF - duration);
         }
 
-        return scheduleRelationInfo;
-    }
+         */
+        Schedule backwardRecursion = new SchedulerService().createScheduleBackward(schedule);
 
-    /**
-     * Computes the free slack S for every job. Relevant for a lot of robustness calculations.
-     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
-     * @return The map of all job slacks
-     */
-    public static Map<Job, Integer> computeFreeSlacks(Schedule schedule, Schedule backwardRecursion, ScheduleRelationInfo scheduleRelationInfo) {
-        Map<Job, Integer> slack = new HashMap<>();
-        Map<Job, Integer> actualStartingTime = new HashMap<>();
-        Map<Job, Integer> actualFinishingTime = new HashMap<>();
-        Map<Job, Integer> latestStartingTime = new HashMap<>();
-        Map<Job, Integer> latestFinishingTime = new HashMap<>();
+        ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
+        Map<Job, Integer> actualStartingTime = scheduleRelationInfo.getEarliestStartingTime();
+        Map<Job, Integer> actualFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
+        Map<Job, Integer> latestStartingTime = scheduleRelationInfo.getLatestStartingTime();
+        Map<Job, Integer> latestFinishingTime = scheduleRelationInfo.getLatestFinishingTime();
         List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
 
         actualStartingTime.put(jobs.get(0), 0);
@@ -137,9 +135,20 @@ public class ScheduleHelper {
         latestFinishingTime.put(jobs.get(0), lowestBound);
         latestStartingTime.put(jobs.get(0), lowestBound);
 
+        return scheduleRelationInfo;
+    }
+
+    /**
+     * Computes the free slack S for every job. Relevant for a lot of robustness calculations.
+     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
+     * @return The map of all job slacks
+     */
+    public static Map<Job, Integer> computeFreeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
+        Map<Job, Integer> slack = new HashMap<>();
+
         // Calculate the slack now
-        latestStartingTime.forEach((job, integer) -> {
-            slack.put(job, integer - actualStartingTime.get(job));
+        scheduleRelationInfo.getLatestStartingTime().forEach((job, integer) -> {
+            slack.put(job, integer - scheduleRelationInfo.getEarliestStartingTime().get(job));
         });
 
         return slack;

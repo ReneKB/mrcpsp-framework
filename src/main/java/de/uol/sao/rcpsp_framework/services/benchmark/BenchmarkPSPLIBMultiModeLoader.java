@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.services.benchmark;
 
+import de.uol.sao.rcpsp_framework.helper.FileHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +8,6 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 
 @Log4j2
@@ -40,7 +40,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
     @Override
     @SneakyThrows
     public Benchmark loadBenchmark(String file) {
-        InputStream inputStream = BenchmarkPSPLIBMultiModeLoader.class.getClassLoader().getResourceAsStream(file);
+        InputStream inputStream = new FileInputStream(FileHelper.getFile(file));
         if (inputStream == null)
             throw new RuntimeException("Benchmark " + file + " not found");
 
@@ -219,8 +219,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
     @Override
     public OptimumReference loadOptimum(Benchmark benchmark) throws IOException {
         String filename = benchmark.getName();
-        URL filenameUrl = BenchmarkPSPLIBMultiModeLoader.class.getClassLoader().getResource(filename);
-        File file = new File(filenameUrl.toURI());
+        File file = FileHelper.getFile(filename);
         InputStream inputStream = null;
 
         OptimumReference optimumReference = new OptimumReference();

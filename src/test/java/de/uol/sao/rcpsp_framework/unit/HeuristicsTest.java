@@ -18,6 +18,7 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,8 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.HashMap;
 import java.util.Map;
 
-@SpringBootTest
-@RunWith(SpringJUnit4ClassRunner.class)
+@Disabled
 @Log4j2
 public class HeuristicsTest {
 
@@ -35,6 +35,7 @@ public class HeuristicsTest {
     SchedulerService schedulerService;
 
     @Test
+    @Disabled
     @SneakyThrows
     public void testHeuristicLFT_LRS() {
         // prepare
@@ -57,6 +58,7 @@ public class HeuristicsTest {
     }
 
     @Test
+    @Disabled
     @SneakyThrows
     public void testHeuristicSampling() {
         // prepare
@@ -91,6 +93,7 @@ public class HeuristicsTest {
 
 
     @Test
+    @Disabled
     @SneakyThrows
     public void testSampleRegretBias() {
         // prepare

@@ -12,6 +12,8 @@ import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
+import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
@@ -168,30 +170,19 @@ public class GeneticAlgorithmSolver implements Solver {
 
         // For reactive solutions: Don't swap already planned jobmodes
         if (fixedJobModeList != null) {
-            Set<List<JobMode>> removingIndices = new HashSet<>();
-            for (JobMode fixedJobMode : fixedJobModeList) {
-                Job fixedJob = fixedJobMode.getJob();
-
-                for (List<JobMode> swappableJobModeList : swappableJobModes) {
-                    for (JobMode swappableJobMode : swappableJobModeList) {
-                        if (swappableJobMode.getJob().equals(fixedJob))
-                            removingIndices.add(swappableJobModeList);
-                    }
-                }
-            }
-
-            if (!removingIndices.isEmpty())
-                swappableJobModes.removeAll(removingIndices);
+            removeFromSwappableList(fixedJobModeList, swappableJobModes);
         }
 
         // Swap one JobModes with each other
-        if (!swappableJobModes.isEmpty()) {
-            Collections.shuffle(swappableJobModes);
+        while (!swappableJobModes.isEmpty()) {
             List<JobMode> swappingJobMode = swappableJobModes.get(0);
             int firstIndex = jobList.indexOf(swappingJobMode.get(0));
             int secondIndex = jobList.indexOf(swappingJobMode.get(1));
 
-            Collections.swap(jobList, firstIndex, secondIndex);
+            if (Math.random() <= sigma) {
+                Collections.swap(jobList, firstIndex, secondIndex);
+            }
+            removeFromSwappableList(swappingJobMode, swappableJobModes);
         }
 
         int[] jobs = new int[jobList.size()];
@@ -228,6 +219,23 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListSchemeRepresentation(jobs, modes);
     }
 
+    private void removeFromSwappableList(List<JobMode> removingItems, List<List<JobMode>> swappableJobModes) {
+        Set<List<JobMode>> removingIndices = new HashSet<>();
+        for (JobMode fixedJobMode : removingItems) {
+            Job fixedJob = fixedJobMode.getJob();
+
+            for (List<JobMode> swappableJobModeList : swappableJobModes) {
+                for (JobMode swappableJobMode : swappableJobModeList) {
+                    if (swappableJobMode.getJob().equals(fixedJob))
+                        removingIndices.add(swappableJobModeList);
+                }
+            }
+        }
+
+        if (!removingIndices.isEmpty())
+            swappableJobModes.removeAll(removingIndices);
+    }
+
     private Solution fitness(Benchmark benchmark, int generation, ScheduleRepresentation scheduleRepresentation, Metric<?> robustnessFunction) {
         // makespan + robustness (robustness / makespan)
         double fitness = benchmark.getHorizon();
@@ -252,18 +260,32 @@ public class GeneticAlgorithmSolver implements Solver {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
+        int iterations = 0;
         while (population.size() < amount) {
             for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
                 for (Class<?> availableModeHeuristic : ModeHeuristic.availableModeHeuristics) {
                     try {
-                        ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
-                                benchmark,
-                                Heuristic.builder()
-                                        .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
-                                        .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
-                                        .build(),
-                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
-                                alreadyScheduled);
+                        ScheduleRepresentation scheduleRepresentation;
+                        double ratio = population.size() / (double) ++iterations;
+                        if (iterations > 20 && ratio < 0.05) {
+                            scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
+                                    benchmark,
+                                    Heuristic.builder()
+                                            .modeHeuristic(LRSHeuristic.class)
+                                            .activityHeuristic(RandomActivityHeuristic.class)
+                                            .build(),
+                                    Math.random() < 0.2 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
+                                    alreadyScheduled);
+                        } else {
+                            scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
+                                    benchmark,
+                                    Heuristic.builder()
+                                            .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
+                                            .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
+                                            .build(),
+                                    Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
+                                    alreadyScheduled);
+                        }
 
                         Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
                         if (schedule != null)

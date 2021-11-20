@@ -14,6 +14,7 @@ import de.uol.sao.rcpsp_framework.services.benchmark.BenchmarkPSPLIBMultiModeLoa
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 public class ScheduleRelationInfoCalculationTest {
 
     @Test
+    @Disabled
     @SneakyThrows
     void testCompleteScheduleInfoCalculationCreation() {
         // prepare
@@ -50,6 +52,7 @@ public class ScheduleRelationInfoCalculationTest {
     }
 
     @Test
+    @Disabled
     @SneakyThrows
     void testPartialScheduleInfoCalculationCreation1() {
         // prepare
@@ -81,6 +84,7 @@ public class ScheduleRelationInfoCalculationTest {
     }
 
     @Test
+    @Disabled
     @SneakyThrows
     void testPartialScheduleInfoCalculationCreation2() {
         // prepare

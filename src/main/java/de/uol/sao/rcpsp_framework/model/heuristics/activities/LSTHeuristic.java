@@ -26,8 +26,6 @@ public class LSTHeuristic extends ActivityHeuristic {
 
         int priorityValue = 0;
 
-        int duration = jobSelectedMode.getDuration();
-
         List<Mode> possibleScheduledModes = new ArrayList<>(scheduledModes);
         possibleScheduledModes.add(jobSelectedMode);
 

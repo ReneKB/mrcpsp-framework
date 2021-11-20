@@ -2,12 +2,12 @@ package de.uol.sao.rcpsp_framework.services;
 
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
+import de.uol.sao.rcpsp_framework.helper.FileHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.services.experiment.Experiment;
-import de.uol.sao.rcpsp_framework.services.experiment.SolverPerformanceComparisonExperiment;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.SneakyThrows;
@@ -19,7 +19,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -79,7 +78,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
 
         List<Benchmark> benchmarks = null;
         try {
-            File file = new File(CommandRunnerComponent.class.getClassLoader().getResource(defaultBenchmarkUri).toURI());
+            File file = FileHelper.getFile(defaultBenchmarkUri);
             if (file.isDirectory())
                 benchmarks = this.loadBenchmarkSetFromArgs(defaultBenchmarkUri);
             else
@@ -94,7 +93,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
 
     private List<Benchmark> loadBenchmarkSetFromArgs(String defaultPath) {
         List<Benchmark> benchmarks = new ArrayList<>();
-        File file = new File(CommandRunnerComponent.class.getClassLoader().getResource(defaultPath).getPath());
+        File file = FileHelper.getFile(defaultPath);
 
         if (file.exists()) {
             Arrays.stream(file.listFiles()).parallel().forEach(benchmarkFile -> {

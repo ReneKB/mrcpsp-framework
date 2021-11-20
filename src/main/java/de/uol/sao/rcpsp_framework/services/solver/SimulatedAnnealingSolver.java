@@ -69,7 +69,7 @@ public class SimulatedAnnealingSolver implements Solver {
 
             if (ScheduleHelper.compareSchedule(bestSchedule, overallBestSolution, robustnessFunction))
                 overallBestSolution = bestSchedule;
-            i += neighbours.size();
+            i += neighboursRepresentations.size();
         }
 
         return overallBestSolution;
