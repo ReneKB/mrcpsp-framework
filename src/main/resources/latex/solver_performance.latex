@@ -3,9 +3,8 @@
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{#TABLESTRUCTURE}
 \cline{2-#COLUMN}
-\multicolumn{1}{l|}{} &
-  #SOLVERS_HEADER \\ \hline
- #SOLVERS_BODY
+\textbf{\begin{tabular}[c]{@{}r@{}}Benchmark: \\ #BENCHMARKNAME\end{tabular}} & #SOLVERS_HEADER \\ \hline
+#SOLVERS_BODY
 \end{tabular}%
 }
 \caption{}

@@ -10,6 +10,6 @@ public class StatisticValue {
     double stddev;
 
     public String toString() {
-        return String.format("%.2f (± %.3f)", mean, stddev);
+        return String.format("%.2f (± %.2f)", mean, stddev);
     }
 }

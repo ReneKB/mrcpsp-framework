@@ -7,7 +7,9 @@ import de.uol.sao.rcpsp_framework.model.benchmark.OptimumReference;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.BenchmarkLoaderService;
+import de.uol.sao.rcpsp_framework.services.LatexService;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
 import de.uol.sao.rcpsp_framework.services.solver.Solver;
 import lombok.AllArgsConstructor;
@@ -20,6 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -36,12 +43,15 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
     BenchmarkLoaderService benchmarkLoaderService;
 
     @Autowired
+    LatexService latexService;
+
+    @Autowired
     BeanFactory beans;
 
     @Data
     @AllArgsConstructor
     @EqualsAndHashCode(exclude = {"benchmark", "bestResult"})
-    class SolverPerformanceResultEntry {
+    public static class SolverPerformanceResultEntry {
         Benchmark benchmark;
         int iterations;
         String solver;
@@ -126,7 +136,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             outputBenchmarkResult(options, robustnessMetric, benchmark, bestOverallSchedule, makespanStatistic, robustnessStatistic);
         }
 
-        outputOverallAlgorithmSolutions(benchmarkMakespanResults, benchmarkRobustnessResults);
+        outputOverallAlgorithmSolutions(benchmarks, iterations, solvers, benchmarkMakespanResults, benchmarkRobustnessResults);
     }
 
     private void outputBenchmarkResult(Set<String> options,
@@ -245,11 +255,19 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         }
     }
 
-    private void outputOverallAlgorithmSolutions(Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults, 
-                                                 Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults) {
+    @SneakyThrows
+    private void outputOverallAlgorithmSolutions(
+            List<Benchmark> benchmarks,
+            List<Integer> iterations,
+            List<String> solvers,
+            Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults,
+            Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults) {
         log.info("");
         log.info("Overall Results: ");
         log.info("Makespan: ");
+        Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsMakespan = new HashMap<>();
+        Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsRobustness = new HashMap<>();
+
         benchmarkMakespanResults.forEach((solverPerformanceResultEntry, statisticValues) -> {
             double makespanMean = statisticValues.stream().map(StatisticValue::getStddev).reduce(Double::sum).orElse(0.0);
             makespanMean /= statisticValues.size();
@@ -260,7 +278,9 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             }
             makespanStd /= statisticValues.size();
 
-            log.info(solverPerformanceResultEntry + ": " + new StatisticValue(makespanMean, makespanStd));
+            StatisticValue statisticValue = new StatisticValue(makespanMean, makespanStd);
+            solverPerformanceResultsMakespan.put(solverPerformanceResultEntry, statisticValue);
+            log.info(solverPerformanceResultEntry + ": " + statisticValue);
         });
         log.info("");
         log.info("Robustness: ");
@@ -285,9 +305,13 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             robustnessMeanStd /= statisticValues.size();
             robustnessMeanStd = Math.sqrt(robustnessMeanStd);
 
-            log.info(solverPerformanceResultEntry + ": [Mean]: " + new StatisticValue(robustnessMeanMean, robustnessMeanStd)  + " [Std]: " + new StatisticValue(robustnessStdMean, robustnessStdStd));
+            StatisticValue statisticValue = new StatisticValue(robustnessMeanMean, robustnessMeanStd);
+            solverPerformanceResultsRobustness.put(solverPerformanceResultEntry, statisticValue);
+            log.info(solverPerformanceResultEntry + ": [Mean]: " + statisticValue + " [Std]: " + new StatisticValue(robustnessStdMean, robustnessStdStd));
         });
         log.info("");
+
+        this.logLatex(benchmarks, iterations, solvers, solverPerformanceResultsMakespan, solverPerformanceResultsRobustness);
     }
 
     private double getMeanMetric(Map<Integer,
@@ -318,5 +342,29 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         log.info("");
     }
 
+    private void logLatex(List<Benchmark> benchmarks,
+                          List<Integer> iterations,
+                          List<String> solvers,
+                          Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsMakespan,
+                          Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsRobustness) throws IOException {
+        String benchmarkName = benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", "");
+        String latex = latexService.printLatexTableSolverPerformance(
+                "latex/solver_performance.latex",
+                benchmarkName,
+                solverPerformanceResultsMakespan,
+                solverPerformanceResultsRobustness,
+                solvers,
+                iterations);
+
+        Files.createDirectories(Paths.get("results"));
+
+        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        FileWriter fileWriter = new FileWriter(String.format("results/%s_%s_%s.log",
+                benchmarkName,
+                this.getClass().getSimpleName(),
+                datetime));
+        fileWriter.write(latex);
+        fileWriter.close();
+    }
 
 }
