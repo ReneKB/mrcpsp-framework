@@ -86,9 +86,7 @@ public abstract class UncertaintyExperiment implements Experiment {
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.30)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.50)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 1.0)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.40)));
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));

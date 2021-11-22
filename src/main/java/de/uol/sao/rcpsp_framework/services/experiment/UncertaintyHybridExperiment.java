@@ -77,7 +77,7 @@ public class UncertaintyHybridExperiment extends UncertaintyExperiment {
 
             Schedule potentialSchedule = null;
             try {
-                potentialSchedule = solver.algorithm(subbenchmark, iterations / 5, robustnessFunction, buildingJobModeList);
+                potentialSchedule = solver.algorithm(subbenchmark, iterations, robustnessFunction, buildingJobModeList);
                 if (potentialSchedule == null)
                     potentialSchedule = plannedSolution;
                 else if (!this.verifySolver(buildingJobModeList, potentialSchedule)) {
