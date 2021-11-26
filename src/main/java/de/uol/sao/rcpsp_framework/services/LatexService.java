@@ -2,7 +2,9 @@ package de.uol.sao.rcpsp_framework.services;
 
 import de.uol.sao.rcpsp_framework.helper.FileHelper;
 import de.uol.sao.rcpsp_framework.helper.StatisticValue;
+import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
+import de.uol.sao.rcpsp_framework.services.experiment.RobustnessExperiment;
 import de.uol.sao.rcpsp_framework.services.experiment.SolverPerformanceComparisonExperiment;
 import de.uol.sao.rcpsp_framework.services.experiment.UncertaintyExperiment;
 import lombok.SneakyThrows;
@@ -133,6 +135,88 @@ public class LatexService {
                 StatisticValue robustnessStatistic = robustnessValues   .get(solverPerformanceResultEntry);
 
                 body.append(String.format(" & %s & %s", makespanStatistic, robustnessStatistic));
+            }
+            body.append(" \\\\");
+            if (i == iterations.size() - 1)
+                body.append(" \\hline");
+            body.append("\n");
+            i++;
+        }
+        builder.append(headerLine);
+        builder.append(body);
+        return builder.toString();
+    }
+
+
+    @SneakyThrows
+    public String printLatexTableRobustness(String templateName,
+                                             Map<RobustnessExperiment.ExperimentResult, StatisticValue> values,
+                                             List<String> solvers,
+                                             List<UncertaintyModel> uncertaintyModels,
+                                             List<Metric> robustnessMetrics,
+                                             List<Integer> iterations) {
+        String contentTemplate = this.getFileTemplate(templateName);
+        StringBuilder headerLine = new StringBuilder("\\multicolumn{1}{l|}{} &");
+        StringBuilder body = new StringBuilder();
+        StringBuilder tableStructure = new StringBuilder("r|");
+        StringBuilder subheader = new StringBuilder("\\multicolumn{1}{l|}{} &");
+
+        for (int i = 0; i < solvers.size(); i++) {
+            headerLine.append(String.format("\\multicolumn{%d}{c|}{\\textbf{%s}}", robustnessMetrics.size(), solvers.get(i)));
+            if (i != solvers.size() - 1)
+                headerLine.append(" & ");
+
+            for (int j = 0; j < robustnessMetrics.size(); j++) {
+                Metric robustnessMetric = robustnessMetrics.get(j);
+                subheader.append(String.format("\\multicolumn{1}{l|}{%s} ", robustnessMetric));
+                if (j != robustnessMetrics.size() - 1)
+                    subheader.append(" & ");
+            }
+
+            tableStructure.append("r".repeat(robustnessMetrics.size()));
+            tableStructure.append("|");
+        }
+
+        for (UncertaintyModel uncertaintyModel : uncertaintyModels) {
+            String bodyElement = this.printLatexTableRobustnessBlock(values, uncertaintyModel, solvers, iterations, robustnessMetrics);
+            body.append(bodyElement);
+        }
+
+        contentTemplate = contentTemplate.replace("#TABLESTRUCTURE", tableStructure.toString());
+        contentTemplate = contentTemplate.replace("#SUBHEADER", subheader.toString());
+        contentTemplate = contentTemplate.replace("#SOLVERS_HEADER", headerLine.toString());
+        contentTemplate = contentTemplate.replace("#SOLVERS_BODY", body.toString());
+        contentTemplate = contentTemplate.replace("#COLUMN", String.valueOf(solvers.size() * robustnessMetrics.size()  + 1));
+
+        return contentTemplate;
+    }
+
+
+    private String printLatexTableRobustnessBlock(Map<RobustnessExperiment.ExperimentResult, StatisticValue> values,
+                                                   UncertaintyModel uncertaintyModel,
+                                                   List<String> solvers,
+                                                   List<Integer> iterations,
+                                                   List<Metric> robustnessMetrics) {
+        StringBuilder builder = new StringBuilder();
+        StringBuilder headerLine = new StringBuilder();
+        StringBuilder body = new StringBuilder();
+
+        headerLine.append(String.format("\\multicolumn{1}{|r|}{\\textbf{Uncertainty %d\\%%}}", (int) (uncertaintyModel.getModeDelayDistribution().getProbabilityOfSuccess() * 100)));
+        headerLine.append(" & \\multicolumn{1}{r|}{}".repeat(solvers.size() * robustnessMetrics.size()));
+        headerLine.append(" \\\\ ");
+
+        int i = 0;
+        for (Integer iteration : iterations) {
+            body.append(String.format("\\multicolumn{1}{|r|}{n = %d} ", iteration));
+            for (String solver : solvers) {
+                for (Metric metric : robustnessMetrics) {
+                    RobustnessExperiment.ExperimentResult experimentResult = new RobustnessExperiment.ExperimentResult(iteration,
+                            solver,
+                            uncertaintyModel,
+                            metric);
+                    StatisticValue statisticValue = values.get(experimentResult);
+                    body.append(String.format(" & \\multicolumn{1}{r|}{%s} ", statisticValue));
+                }
             }
             body.append(" \\\\");
             if (i == iterations.size() - 1)

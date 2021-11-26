@@ -17,6 +17,7 @@ public enum CommandArgsOptions {
     METRIC("metric"),
     ROBUST("robust"),
     LIMIT("limit"),
+    SERVER("server"),
     NONE("none");
 
     @Getter
