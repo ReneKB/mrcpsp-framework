@@ -45,7 +45,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
         String defaultBenchmarkUri = "j30.mm/j307_8.mm";
         List<Benchmark> benchmarks = this.loadBenchmarksFromArgs(args, args.getOptionNames(), defaultBenchmarkUri);
         List<Experiment> experiments = ExperimentHelper.getExperimentsFromArguments(args,
-                Collections.singletonList(beanFactory.getBean("SolverPerformanceComparisonExperiment", Experiment.class)),
+                Collections.singletonList(beanFactory.getBean("SolverPerformanceExperiment", Experiment.class)),
                 beanFactory);
 
         int limit = ExperimentHelper.getLimitsFromArgs(args, benchmarks.size());

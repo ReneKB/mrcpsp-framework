@@ -38,7 +38,7 @@ import java.util.stream.IntStream;
 
 @Log4j2
 @Service("RobustnessExperiment")
-public class RobustnessExperiment extends UncertaintyProactiveExperiment implements Experiment {
+public class RobustnessExperiment extends UncertaintyPredictiveExperiment implements Experiment {
 
     @Autowired
     VisualizationService visualizationService;
@@ -96,6 +96,7 @@ public class RobustnessExperiment extends UncertaintyProactiveExperiment impleme
         robustnessMeasures.add(Metrics.RM2);
         robustnessMeasures.add(Metrics.RM3);
         robustnessMeasures.add(Metrics.RM4);
+        robustnessMeasures.add(Metrics.RM5);
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));

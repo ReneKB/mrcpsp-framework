@@ -34,68 +34,15 @@ public class ScheduleHelper {
      */
     @SneakyThrows
     public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
-        /*
-        ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
-        ScheduleRepresentation scheduleRepresentation = schedule.getScheduleRepresentation();
-        List<JobMode> jobModeList = scheduleRepresentation.toJobMode(schedule.getBenchmark().getProject());
-        Project project = schedule.getBenchmark().getProject();
-        List<Job> jobs = jobModeList.stream().map(JobMode::getJob).collect(Collectors.toList());
-
-        Map<Job, Integer> latestFinishingTime = scheduleRelationInfo.getLatestFinishingTime();
-        Map<Job, Integer> latestStartingTime = scheduleRelationInfo.getLatestStartingTime();
-        Map<Job, Integer> earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
-        Map<Job, Integer> earliestStartingTime = scheduleRelationInfo.getEarliestStartingTime();
-
-        // Beginning job is always a dummy one
-        earliestFinishingTime.put(jobs.get(0), 0);
-        earliestStartingTime.put(jobs.get(0), 0);
-
-        // last Job is always a dummy one
-        int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-
-        // Computation of EST and EFT
-        for (Job job : project.getJobs()) {
-            Mode lowestMode = job.getModes().stream().min(Comparator.comparingInt(Mode::getDuration)).get();
-            int duration = lowestMode.getDuration();
-            int predecessorEF = 0;
-            if (job.getJobId() != 1) {
-                for (Job predecessorJob : ProjectHelper.getPredecessorsOfJob(project, job)) {
-                    predecessorEF = Math.max(earliestFinishingTime.get(predecessorJob), predecessorEF);
-                }
-            }
-
-            if (predecessorEF < 0 || predecessorEF + duration < 0)
-                System.out.println("?");
-
-            earliestStartingTime.put(job, predecessorEF);
-            earliestFinishingTime.put(job, predecessorEF + duration);
-        }
-
-        // Computation of LST and LFT
-        for (Job job : project.getJobs().stream().sorted((o1, o2) -> o2.getJobId() - o1.getJobId()).collect(Collectors.toList())) {
-            Mode highestMode = job.getModes().stream().min(Comparator.comparingInt(Mode::getDuration)).get();
-            int duration = highestMode.getDuration();
-            int successorLF = makespan;
-            if (job.getJobId() != project.getJobs().get(project.getJobs().size() - 1).getJobId()) {
-                for (Job successorJob : job.getSuccessor()) {
-                    successorLF = Math.min(latestStartingTime.get(successorJob), successorLF);
-                }
-            }
-
-            latestFinishingTime.put(job, successorLF);
-            latestStartingTime.put(job, successorLF - duration);
-        }
-
-         */
         Schedule backwardRecursion = new SchedulerService().createScheduleBackward(schedule);
 
         ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
-        Map<Job, Integer> actualStartingTime = scheduleRelationInfo.getEarliestStartingTime();
-        Map<Job, Integer> actualFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
         Map<Job, Integer> latestStartingTime = scheduleRelationInfo.getLatestStartingTime();
         Map<Job, Integer> latestFinishingTime = scheduleRelationInfo.getLatestFinishingTime();
         List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
 
+        Map<Job, Integer> actualStartingTime = scheduleRelationInfo.getEarliestStartingTime();
+        Map<Job, Integer> actualFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
         actualStartingTime.put(jobs.get(0), 0);
         actualFinishingTime.put(jobs.get(0), 0);
 
@@ -136,6 +83,26 @@ public class ScheduleHelper {
         latestStartingTime.put(jobs.get(0), lowestBound);
 
         return scheduleRelationInfo;
+    }
+
+    public static Map<Job, Integer> getEarliestFinishingTime(Schedule schedule) {
+        List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
+        Map<Job, Integer> earliestFinishingTime = new HashMap<>();
+        earliestFinishingTime.put(jobs.get(0), 0);
+
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
+            List<Interval> intervals = entry.getValue();
+
+            for (Interval interval : intervals) {
+                Job job = interval.getSource().getJob();
+                int ending = earliestFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
+                earliestFinishingTime.put(job, ending);
+            }
+        }
+
+        earliestFinishingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
+        return earliestFinishingTime;
     }
 
     /**

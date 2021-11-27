@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@Service("SolverPerformanceComparisonExperiment")
+@Service("SolverPerformanceExperiment")
 @Log4j2
 public class SolverPerformanceComparisonExperiment implements Experiment {
 

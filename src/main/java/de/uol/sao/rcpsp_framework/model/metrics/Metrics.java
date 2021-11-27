@@ -7,6 +7,7 @@ public class Metrics {
     public static final Metric<Double> RM2 = new RobustMeasure2();
     public static final Metric<Integer> RM3 = new RobustMeasure3();
     public static final Metric<Integer> RM4 = new RobustMeasure4();
+    public static final Metric<Integer> RM5 = new RobustMeasure5();
 
     public static <T> Metric<T> getMetricByName(String name) {
         Metric<T> metric = null;
@@ -25,6 +26,9 @@ public class Metrics {
                 break;
             case "RobustMeasure4":
                 metric = (Metric<T>) RM4;
+                break;
+            case "RobustMeasure5":
+                metric = (Metric<T>) RM5;
                 break;
         }
         return metric;
