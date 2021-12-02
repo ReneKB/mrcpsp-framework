@@ -30,7 +30,7 @@ public class SimulatedAnnealingSolver implements Solver {
     SchedulerService schedulerService;
 
     double temperature = 1000.0;
-    double alpha = 0.98;
+    double alpha = 0.90;
 
     @Override
     @SneakyThrows
@@ -45,7 +45,7 @@ public class SimulatedAnnealingSolver implements Solver {
 
             for (ScheduleRepresentation neighbour : neighboursRepresentations) {
                 try {
-                    if (Math.random() < 0.4)
+                    if (Math.random() < 0.5)
                         neighbours.add(schedulerService.createScheduleProactive(benchmark, neighbour, null));
                 } catch (Exception ex) {}
             }

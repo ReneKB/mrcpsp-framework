@@ -37,7 +37,7 @@ public class ConcreteScheduleExperiment implements Experiment {
         );
 
         Schedule schedule = schedulerService.createScheduleProactive(benchmarks.get(0), activityListSchemeRepresentation, null);
-        ScheduleHelper.outputSchedule(schedule, Metrics.RM1);
+        ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
         Schedule backwardSchedule = schedulerService.createScheduleBackward(schedule);
 
         Map<Job, Integer> slacks = ScheduleHelper.computeFreeSlacks(ScheduleHelper.createScheduleRelationInfo(schedule));

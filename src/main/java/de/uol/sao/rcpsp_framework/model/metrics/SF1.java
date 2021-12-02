@@ -1,18 +1,22 @@
 package de.uol.sao.rcpsp_framework.model.metrics;
 
+import de.uol.sao.rcpsp_framework.exceptions.NoNonRenewableResourcesLeftException;
+import de.uol.sao.rcpsp_framework.exceptions.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 
 /**
- * Robust Measurement function that uses binary slacks with weight of succescors.
+ * Robust Measurement function that sums the slacks of all jobs.
  */
-public class RobustMeasure5 extends Metric<Integer> {
+public class SF1 extends Metric<Integer> {
 
     @Override
     @SneakyThrows
@@ -20,7 +24,7 @@ public class RobustMeasure5 extends Metric<Integer> {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
         Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
 
-        return slack.keySet().stream().map(job -> slack.get(job) > 0 ? job.getSuccessor().size() : 0).reduce(Integer::sum).get();
+        return slack.keySet().stream().map(slack::get).reduce(Integer::sum).get();
     }
 
     @Override

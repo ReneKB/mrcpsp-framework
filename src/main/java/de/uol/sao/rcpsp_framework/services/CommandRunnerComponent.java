@@ -133,7 +133,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
 
                 // Output Metrics and visualize
                 log.info("Custom Schedule successfully created! ");
-                ScheduleHelper.outputSchedule(schedule, Metrics.RM1);
+                ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
 
                 visualizationService.visualizeJobsBenchmark(benchmark);
                 visualizationService.visualizeResults(schedule);

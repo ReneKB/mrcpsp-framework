@@ -1,20 +1,18 @@
 package de.uol.sao.rcpsp_framework.model.metrics;
 
-import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
-import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.SneakyThrows;
 
 import java.util.Map;
 
 /**
- * Robust Measurement function that sums the slacks of all jobs weighed with the direct successors.
+ * Robust Measurement function that uses binary slacks with weight of succescors.
  */
-public class RobustMeasure4 extends Metric<Integer> {
+public class SF2_W1 extends Metric<Integer> {
 
     @Override
     @SneakyThrows
@@ -22,7 +20,7 @@ public class RobustMeasure4 extends Metric<Integer> {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
         Map<Job, Integer> slack = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
 
-        return slack.keySet().stream().map(job -> slack.get(job) * job.getSuccessor().size()).reduce(Integer::sum).get();
+        return slack.keySet().stream().map(job -> slack.get(job) > 0 ? job.getSuccessor().size() : 0).reduce(Integer::sum).get();
     }
 
     @Override

@@ -92,11 +92,15 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
 
         List<Metric> robustnessMeasures = new ArrayList<>();
         robustnessMeasures.add(null);
-        robustnessMeasures.add(Metrics.RM1);
-        robustnessMeasures.add(Metrics.RM2);
-        robustnessMeasures.add(Metrics.RM3);
-        robustnessMeasures.add(Metrics.RM4);
-        robustnessMeasures.add(Metrics.RM5);
+        robustnessMeasures.add(Metrics.SF1);
+        robustnessMeasures.add(Metrics.SF2);
+        robustnessMeasures.add(Metrics.SF3);
+        robustnessMeasures.add(Metrics.SF1_W1);
+        robustnessMeasures.add(Metrics.SF2_W1);
+        robustnessMeasures.add(Metrics.SF3_W1);
+        robustnessMeasures.add(Metrics.SF1_W9);
+        robustnessMeasures.add(Metrics.SF2_W9);
+        robustnessMeasures.add(Metrics.SF3_W9);
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));

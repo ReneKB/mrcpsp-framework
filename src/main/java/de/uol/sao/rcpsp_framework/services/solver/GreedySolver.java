@@ -40,7 +40,7 @@ public class GreedySolver implements Solver {
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark), null);
+                schedule = schedulerService.createScheduleProactive(benchmark, this.nextGreedySchemeRepresentation(benchmark, fixedJobModeList), null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
@@ -67,7 +67,7 @@ public class GreedySolver implements Solver {
         return current;
     }
 
-    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark) {
+    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark, List<JobMode> fixedJobModeList) {
         Project project = benchmark.getProject();
 
         if (positionActivityScheduled == null) {

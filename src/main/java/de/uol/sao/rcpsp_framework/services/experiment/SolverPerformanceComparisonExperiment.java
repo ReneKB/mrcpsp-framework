@@ -7,7 +7,6 @@ import de.uol.sao.rcpsp_framework.model.benchmark.OptimumReference;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.services.BenchmarkLoaderService;
 import de.uol.sao.rcpsp_framework.services.LatexService;
 import de.uol.sao.rcpsp_framework.services.VisualizationService;
@@ -71,7 +70,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
         List<String> solvers = ExperimentHelper.getSolversFromArguments(args, Collections.singletonList("TabuSearch"));
         int experiment = ExperimentHelper.getExperimentFromArguments(args, 4);
-        Metric<?> robustnessMetric = ExperimentHelper.getRobustMeasureFunctionFromArgs(args, Metrics.RM1);
+        Metric<?> robustnessMetric = ExperimentHelper.getRobustMeasureFunctionFromArgs(args, Metrics.SF1);
 
         Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults = new HashMap<>();
         Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults = new HashMap<>();

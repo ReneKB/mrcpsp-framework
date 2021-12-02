@@ -7,26 +7,27 @@ import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.ScheduleRelationInfo;
 import lombok.SneakyThrows;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Robust Measurement function that returns the minimum of the free slacks
+ * Robust Measurement function that sums up the minimum between the slack and the part of a activity duration
  */
-public class RobustMeasure2 extends Metric<Double> {
+public class SF3 extends Metric<Double> {
+
+    final double frac = .2;
 
     @Override
     @SneakyThrows
     public Double computeMetric(Schedule schedule) {
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slack =  ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
+        Map<Job, Integer> slacks = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
+        Map<Job, Integer> durations = new HashMap<>();
+        scheduleRelationInfo.getEarliestFinishingTime().forEach((job, earliestFinishingTime) -> {
+            durations.put(job, earliestFinishingTime - scheduleRelationInfo.getEarliestStartingTime().get(job));
+        });
 
-        double minimalValue = Double.MAX_VALUE;
-        for (Integer value : slack.values()) {
-            if (minimalValue > value)
-                minimalValue = value;
-        }
-
-        return minimalValue;
+        return slacks.keySet().stream().map(job -> Math.min((double) slacks.get(job), frac * durations.get(job))).reduce(Double::sum).get();
     }
 
     @Override

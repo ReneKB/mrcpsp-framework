@@ -73,17 +73,7 @@ public class SchedulerService {
                             jobMode);
 
                     int resourceAvailableGeneral = benchmark.getProject().getAvailableResources().get(currentModeResource);
-                    int resourceAvailableOnInterval = resourceAvailableGeneral;
-
-                    int earliestConflictEnding = benchmark.getHorizon();
-                    // determine the actual resource availability on the given interval
-                    for (Interval intervalToCheck : resourcePlan.get(currentModeResource)) {
-                        boolean conflict = potentialInterval.conflictInterval(intervalToCheck);
-                        if (conflict) {
-                            resourceAvailableOnInterval -= intervalToCheck.getAmount();
-                            earliestConflictEnding = Math.min(earliestConflictEnding, intervalToCheck.getUpperBound());
-                        }
-                    }
+                    int resourceAvailableOnInterval = this.computeAvailableResourcesOnInterval(resourcePlan, currentModeResource, potentialInterval, resourceAvailableGeneral);
 
                     // Check if the schedule can be actually scheduled
                     if (currentModeAmount > resourceAvailableGeneral) {
@@ -93,7 +83,7 @@ public class SchedulerService {
                         throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
-                        potentialLowerBound = earliestConflictEnding + 1;
+                        potentialLowerBound++;
                     }
                 }
             }
