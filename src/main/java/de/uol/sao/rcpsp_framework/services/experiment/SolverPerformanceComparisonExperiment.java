@@ -49,12 +49,14 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
     @Data
     @AllArgsConstructor
-    @EqualsAndHashCode(exclude = {"benchmark", "bestResult"})
+    @EqualsAndHashCode(exclude = {"benchmark", "bestResult", "feasible", "optimal"})
     public static class SolverPerformanceResultEntry {
         Benchmark benchmark;
         int iterations;
         String solver;
         Schedule bestResult;
+        int feasible;
+        int optimal;
 
         public String toString() {
             if (benchmark != null)
@@ -74,6 +76,8 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
         Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults = new HashMap<>();
         Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults = new HashMap<>();
+
+        List<SolverPerformanceResultEntry> feasibleOptimalList = new ArrayList<>();
 
         for (Benchmark benchmark : benchmarks) {
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment);
@@ -99,7 +103,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
                         // Add to list
                         List<SolverPerformanceResultEntry> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(experimentNo, new ArrayList<>());
-                        solverPerformanceResultEntries.add(new SolverPerformanceResultEntry(benchmark, iteration, solverStr, bestSchedule));
+                        solverPerformanceResultEntries.add(new SolverPerformanceResultEntry(benchmark, iteration, solverStr, bestSchedule, 0, 0));
                         experimentSolverResultMap.put(experimentNo, solverPerformanceResultEntries);
 
                         if (bestSchedule != null) {
@@ -114,7 +118,8 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
             // Determine the mean makespan of the current benchmark
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
-            double meanMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : this.getMeanMetric(experimentSolverResultMap, Metrics.MAKESPAN, true);
+            boolean optimumExists = optimumReference != null;
+            double meanMakespan = optimumExists && optimumReference.isSolvable() ? optimumReference.getMakespan() : this.getMeanMetric(experimentSolverResultMap, Metrics.MAKESPAN, true);
             double bestMakespan = bestOverallSchedule.get() != null ? bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) : 0;
 
             // Compute the list of values of the best solver result
@@ -130,12 +135,39 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             // Add the single benchmark results into the overall results
             fillOverallBenchmarkStatistic(benchmarkMakespanResults, makespanStatistic);
             fillOverallBenchmarkStatistic(benchmarkRobustnessResults, robustnessStatistic);
+            computeFeasibleAndOptimalAmount(feasibleOptimalList, optimumExists, meanMakespan, makespanValues, makespanStatistic);
 
             // Output the best benchmark results (in case the size equals 1)
             outputBenchmarkResult(options, robustnessMetric, benchmark, bestOverallSchedule, makespanStatistic, robustnessStatistic);
         }
 
-        outputOverallAlgorithmSolutions(benchmarks, iterations, solvers, benchmarkMakespanResults, benchmarkRobustnessResults);
+        outputOverallAlgorithmSolutions(benchmarks, iterations, solvers, benchmarkMakespanResults, benchmarkRobustnessResults, feasibleOptimalList);
+    }
+
+    private void computeFeasibleAndOptimalAmount(List<SolverPerformanceResultEntry> feasibleOptimalList, boolean optimumExists, double meanMakespan, Map<SolverPerformanceResultEntry, List<Integer>> makespanValues, Map<SolverPerformanceResultEntry, StatisticValue> makespanStatistic) {
+        makespanStatistic.keySet().forEach(key -> {
+            int index = feasibleOptimalList.indexOf(key);
+
+            SolverPerformanceResultEntry entry;
+            if (index == -1) {
+                entry = key;
+                feasibleOptimalList.add(key);
+            }
+            else
+                entry = feasibleOptimalList.get(index);
+
+            List<Integer> makespans = makespanValues.get(key);
+
+            // feasible if makespans list contains elements
+            if (!makespans.isEmpty()) {
+                entry.setFeasible(entry.getFeasible() + 1);
+
+                // optimal if a value of a solver experiment equals existing optimal
+                if (optimumExists && makespans.stream().sorted(Integer::compareTo).findFirst().get() == meanMakespan)
+                    entry.setOptimal(entry.getOptimal() + 1);
+            }
+            System.out.println(makespans);
+        });
     }
 
     private void outputBenchmarkResult(Set<String> options,
@@ -189,7 +221,8 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                 null,
                 solverPerformanceResultEntry.getIterations(),
                 solverPerformanceResultEntry.getSolver(),
-                null
+                null,
+                0, 0
         );
     }
 
@@ -260,7 +293,8 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             List<Integer> iterations,
             List<String> solvers,
             Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults,
-            Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults) {
+            Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults,
+            List<SolverPerformanceResultEntry> feasibleOptimalEntries) {
         log.info("");
         log.info("Overall Results: ");
         log.info("Makespan: ");
@@ -310,7 +344,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         });
         log.info("");
 
-        this.logLatex(benchmarks, iterations, solvers, solverPerformanceResultsMakespan, solverPerformanceResultsRobustness);
+        this.logLatex(benchmarks, iterations, solvers, solverPerformanceResultsMakespan, solverPerformanceResultsRobustness, feasibleOptimalEntries);
     }
 
     private double getMeanMetric(Map<Integer,
@@ -345,15 +379,18 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                           List<Integer> iterations,
                           List<String> solvers,
                           Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsMakespan,
-                          Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsRobustness) throws IOException {
+                          Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsRobustness,
+                          List<SolverPerformanceResultEntry> feasibleOptimalEntries) throws IOException {
         String benchmarkName = benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", "");
         String latex = latexService.printLatexTableSolverPerformance(
                 "latex/solver_performance.latex",
                 benchmarkName,
                 solverPerformanceResultsMakespan,
                 solverPerformanceResultsRobustness,
+                feasibleOptimalEntries,
                 solvers,
-                iterations);
+                iterations,
+                benchmarks.size());
 
         Files.createDirectories(Paths.get("results"));
 

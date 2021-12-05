@@ -39,7 +39,7 @@ public class RandomSolver implements Solver {
                             .activityHeuristic(RandomActivityHeuristic.class)
                             .build(),
                         HeuristicSampling.SINGLE,
-                            fixedJobModeList),
+                        fixedJobModeList),
                         null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result

@@ -87,6 +87,21 @@ public class LatexService {
                                                    String benchmarkname,
                                                    Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> makespanValues,
                                                    Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> robustnessValues,
+                                                   List<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry> feasibleOptimalEntries,
+                                                   List<String> solvers,
+                                                   List<Integer> iterations,
+                                                   int amountBenchmarks) {
+
+        return this.printLatexTableSolverPerformanceMakespanRobustnessTable(templateName, benchmarkname, makespanValues, robustnessValues, solvers, iterations) + "\n\n" +
+               this.printLatexTableSolverPerformanceFeasibleOptimumTable(templateName, benchmarkname, feasibleOptimalEntries, solvers, iterations, amountBenchmarks);
+    }
+
+
+    @SneakyThrows
+    public String printLatexTableSolverPerformanceMakespanRobustnessTable(String templateName,
+                                                   String benchmarkname,
+                                                   Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> makespanValues,
+                                                   Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> robustnessValues,
                                                    List<String> solvers,
                                                    List<Integer> iterations) {
         String contentTemplate = this.getFileTemplate(templateName);
@@ -95,14 +110,14 @@ public class LatexService {
         StringBuilder tableStructure = new StringBuilder("r|");
 
         for (int i = 0; i < solvers.size(); i++) {
-            headerLine.append(String.format("\\multicolumn{2}{l|}{\\textbf{%s}}", solvers.get(i)));
+            headerLine.append(String.format("\\multicolumn{2}{c|}{\\textbf{%s}}", solvers.get(i)));
             if (i != solvers.size() - 1)
                 headerLine.append(" & ");
 
-            tableStructure.append("rr|");
+            tableStructure.append("cc|");
         }
 
-        body.append(this.printLatexTableSolverBlock(makespanValues, robustnessValues, solvers, iterations));
+        body.append(this.printLatexTableSolverMakespanRobustnessBlock(makespanValues, robustnessValues, solvers, iterations));
 
         contentTemplate = contentTemplate.replace("#TABLESTRUCTURE", tableStructure.toString());
         contentTemplate = contentTemplate.replace("#SOLVERS_HEADER", headerLine.toString());
@@ -113,7 +128,39 @@ public class LatexService {
         return contentTemplate;
     }
 
-    private String printLatexTableSolverBlock(Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> makespanValues,
+
+    @SneakyThrows
+    public String printLatexTableSolverPerformanceFeasibleOptimumTable(String templateName,
+                                                                       String benchmarkname,
+                                                                       List<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry> feasibleOptimalEntries,
+                                                                       List<String> solvers,
+                                                                       List<Integer> iterations,
+                                                                       int amountBenchmarks) {
+        String contentTemplate = this.getFileTemplate(templateName);
+        StringBuilder headerLine = new StringBuilder();
+        StringBuilder body = new StringBuilder();
+        StringBuilder tableStructure = new StringBuilder("r|");
+
+        for (int i = 0; i < solvers.size(); i++) {
+            headerLine.append(String.format("\\multicolumn{2}{c|}{\\textbf{%s}}", solvers.get(i)));
+            if (i != solvers.size() - 1)
+                headerLine.append(" & ");
+
+            tableStructure.append("cc|");
+        }
+
+        body.append(this.printLatexTableSolverFeasibleOptimumBlock(feasibleOptimalEntries, solvers, iterations, amountBenchmarks));
+
+        contentTemplate = contentTemplate.replace("#TABLESTRUCTURE", tableStructure.toString());
+        contentTemplate = contentTemplate.replace("#SOLVERS_HEADER", headerLine.toString());
+        contentTemplate = contentTemplate.replace("#SOLVERS_BODY", body.toString());
+        contentTemplate = contentTemplate.replace("#BENCHMARKNAME", benchmarkname);
+        contentTemplate = contentTemplate.replace("#COLUMN", String.valueOf(solvers.size() * 2 + 1));
+
+        return contentTemplate;
+    }
+
+    private String printLatexTableSolverMakespanRobustnessBlock(Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> makespanValues,
                                               Map<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry, StatisticValue> robustnessValues,
                                               List<String> solvers,
                                               List<Integer> iterations) {
@@ -130,11 +177,51 @@ public class LatexService {
             body.append(String.format("\\multicolumn{1}{|r|}{n = %d} ", iteration));
             for (String solver : solvers) {
                 SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry solverPerformanceResultEntry =
-                        new SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry(null, iteration, solver, null);
+                        new SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry(null, iteration, solver, null, 0, 0);
                 StatisticValue makespanStatistic = makespanValues.get(solverPerformanceResultEntry);
                 StatisticValue robustnessStatistic = robustnessValues   .get(solverPerformanceResultEntry);
 
                 body.append(String.format(" & %s & %s", makespanStatistic, robustnessStatistic));
+            }
+            body.append(" \\\\");
+            if (i == iterations.size() - 1)
+                body.append(" \\hline");
+            body.append("\n");
+            i++;
+        }
+        builder.append(headerLine);
+        builder.append(body);
+        return builder.toString();
+    }
+
+
+    private String printLatexTableSolverFeasibleOptimumBlock(List<SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry> feasibleOptimalEntries,
+                                                             List<String> solvers,
+                                                             List<Integer> iterations,
+                                                             int amountBenchmarks) {
+        StringBuilder builder = new StringBuilder();
+        StringBuilder headerLine = new StringBuilder();
+        StringBuilder body = new StringBuilder();
+
+        headerLine.append("\\multicolumn{1}{|r|}{Iterations}");
+        headerLine.append(" & \\multicolumn{1}{c}{Feasible} & \\multicolumn{1}{c|}{Optimal}".repeat(solvers.size()));
+        headerLine.append(" \\\\ \\hline ");
+
+        int i = 0;
+        for (Integer iteration : iterations) {
+            body.append(String.format("\\multicolumn{1}{|r|}{n = %d} ", iteration));
+            for (String solver : solvers) {
+                SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry solverPerformanceResultEntry =
+                        new SolverPerformanceComparisonExperiment.SolverPerformanceResultEntry(null, iteration, solver, null, 0, 0);
+
+                int feasibleSolutions = feasibleOptimalEntries.get(feasibleOptimalEntries.indexOf(solverPerformanceResultEntry)).getFeasible();
+                int optimalSolutions = feasibleOptimalEntries.get(feasibleOptimalEntries.indexOf(solverPerformanceResultEntry)).getOptimal();
+
+                body.append(String.format(" & %s (%.0f\\%%) & %s (%.0f\\%%)",
+                        feasibleSolutions,
+                        (double) feasibleSolutions / amountBenchmarks * 100,
+                        optimalSolutions,
+                        (double) optimalSolutions / amountBenchmarks * 100));
             }
             body.append(" \\\\");
             if (i == iterations.size() - 1)
