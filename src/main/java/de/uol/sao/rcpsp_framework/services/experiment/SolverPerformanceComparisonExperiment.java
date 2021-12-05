@@ -166,7 +166,6 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                 if (optimumExists && makespans.stream().sorted(Integer::compareTo).findFirst().get() == meanMakespan)
                     entry.setOptimal(entry.getOptimal() + 1);
             }
-            System.out.println(makespans);
         });
     }
 
