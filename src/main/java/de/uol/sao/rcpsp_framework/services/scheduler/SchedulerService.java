@@ -29,7 +29,8 @@ public class SchedulerService {
      */
     public Schedule createScheduleProactive(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
         Schedule schedule = new Schedule();
-        Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
+        Map<Resource, List<Interval>> schedulePlan = new HashMap<>();
+        Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
         Map<Job, Integer> earliestStartTime = new HashMap<>();
 
         Map<JobMode, Integer> modeDurations = new HashMap<>();
@@ -42,11 +43,14 @@ public class SchedulerService {
 
         // Creates initial allocation map
         benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            resourcePlan.put(resource, new ArrayList<>());
+            if (resource instanceof NonRenewableResource)
+                nonRenewableResourcesLeft.put(resource, amount);
+            else
+                schedulePlan.put(resource, new ArrayList<>());
         });
 
         schedule.setBenchmark(benchmark);
-        schedule.setResourcePlans(resourcePlan);
+        schedule.setSchedulePlan(schedulePlan);
         schedule.setScheduleRepresentation(execution);
 
         // Iterating through the JobMode combinations
@@ -64,18 +68,23 @@ public class SchedulerService {
                     Resource currentModeResource = entry.getKey();
                     Integer currentModeAmount = entry.getValue();
 
-                    int finalUpperBound = determineUpperBound(modeDurations.get(jobMode), potentialLowerBound, currentModeResource, benchmark.getHorizon());
-
-                    // potential new interval that needs to be checked
-                    Interval potentialInterval = new Interval(potentialLowerBound,
-                            finalUpperBound,
-                            currentModeAmount,
-                            jobMode);
-
                     int resourceAvailableGeneral = benchmark.getProject().getAvailableResources().get(currentModeResource);
-                    int resourceAvailableOnInterval = this.computeAvailableResourcesOnInterval(resourcePlan, currentModeResource, potentialInterval, resourceAvailableGeneral);
+                    int resourceAvailableOnInterval;
 
-                    // Check if the schedule can be actually scheduled
+                    if (currentModeResource instanceof RenewableResource) {
+                        int potentialUpperBound = potentialLowerBound + modeDurations.get(jobMode) - 1;
+
+                        // potential new interval that needs to be checked
+                        Interval potentialInterval = new Interval(potentialLowerBound,
+                                potentialUpperBound,
+                                currentModeAmount,
+                                jobMode);
+
+                        resourceAvailableOnInterval = this.computeAvailableResourcesOnInterval(schedulePlan, currentModeResource, potentialInterval, resourceAvailableGeneral);
+                    } else {
+                        resourceAvailableOnInterval = nonRenewableResourcesLeft.get(currentModeResource);
+                    }
+
                     if (currentModeAmount > resourceAvailableGeneral) {
                         throw new RenewableResourceNotEnoughException();
                     } else if (currentModeAmount > resourceAvailableOnInterval &&
@@ -87,7 +96,7 @@ public class SchedulerService {
                     }
                 }
             }
-            this.addInterval(jobMode, modeDurations.get(jobMode), resourcePlan, earliestStartTime, benchmark.getHorizon(), potentialLowerBound);
+            this.addInterval(jobMode, modeDurations.get(jobMode), schedulePlan, nonRenewableResourcesLeft, earliestStartTime, potentialLowerBound);
         }
 
         return schedule;
@@ -95,9 +104,10 @@ public class SchedulerService {
 
     /**
      * Creates a schedule according to the order of the given list.
-     * @return
+     * @param forwardSchedule Feasible forward schedule
+     * @return Feasible backward schedule
      */
-    public Schedule createScheduleBackward(Schedule forwardSchedule) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
+    public Schedule createScheduleBackward(Schedule forwardSchedule) {
         Benchmark benchmark = forwardSchedule.getBenchmark();
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
@@ -116,7 +126,7 @@ public class SchedulerService {
         });
 
         schedule.setBenchmark(benchmark);
-        schedule.setResourcePlans(resourcePlan);
+        schedule.setSchedulePlan(resourcePlan);
         schedule.setScheduleRepresentation(forwardSchedule.getScheduleRepresentation());
 
         List<JobMode> reversedList = jobModeList.subList(0, jobModeList.size());
@@ -135,7 +145,6 @@ public class SchedulerService {
 
             // Create initial interval
             int potentialUpperBound = Math.min(nextEarliestEndingTime, latestEndTime.getOrDefault(jobMode.getJob(), makespan));
-            int finalLowerBound = potentialUpperBound;
 
             // Construct the solution according the execution
             boolean solutionFound = false;
@@ -145,8 +154,10 @@ public class SchedulerService {
                     Resource currentModeResource = entry.getKey();
                     Integer currentModeAmount = entry.getValue();
 
-                    if (currentModeResource instanceof RenewableResource)
-                        finalLowerBound = determineLowerBound(modeDurations.get(jobMode), potentialUpperBound);
+                    if (currentModeResource instanceof NonRenewableResource)
+                        continue; // Ignoring non renewable resources as expect forward schedule to be checked
+
+                    int finalLowerBound = determineLowerBound(modeDurations.get(jobMode), potentialUpperBound);
 
                     // potential new interval that needs to be checked
                     Interval potentialInterval = new Interval(finalLowerBound,
@@ -158,20 +169,14 @@ public class SchedulerService {
                     int resourceAvailableOnInterval = this.computeAvailableResourcesOnInterval(resourcePlan, currentModeResource, potentialInterval, resourceAvailableGeneral);
 
                     // Check if the schedule can be actually scheduled
-                    if (currentModeAmount > resourceAvailableGeneral) {
-                        throw new RenewableResourceNotEnoughException();
-                    } else if (currentModeAmount > resourceAvailableOnInterval &&
-                            currentModeResource instanceof NonRenewableResource) {
-                        throw new NoNonRenewableResourcesLeftException(jobMode.getJob());
-                    } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
+                    if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialUpperBound--;
-                        finalLowerBound--;
                     }
                 }
             }
 
-            this.addIntervalBackward(benchmark.getProject(), jobMode, modeDurations.get(jobMode), resourcePlan, latestEndTime, benchmark.getHorizon(), makespan, potentialUpperBound);
+            this.addIntervalBackward(benchmark.getProject(), jobMode, modeDurations.get(jobMode), resourcePlan, latestEndTime, makespan, potentialUpperBound);
         }
 
         return schedule;
@@ -205,29 +210,33 @@ public class SchedulerService {
     private void addInterval(JobMode jobMode,
                              int duration,
                              Map<Resource, List<Interval>> resourcePlan,
+                             Map<Resource, Integer> nonRenewableResourcesLeft,
                              Map<Job, Integer> earliestStartTime,
-                             int horizon,
                              int actualLowerBound) {
         Mode currentMode = jobMode.getMode();
         for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
             Resource resource = entry.getKey();
             Integer amount = entry.getValue();
 
-            int actualUpperBound = determineUpperBound(duration, actualLowerBound, resource, horizon);
+            if (resource instanceof NonRenewableResource)
+                nonRenewableResourcesLeft.put(resource, nonRenewableResourcesLeft.get(resource) - amount);
+            else {
+                int actualUpperBound = actualLowerBound + duration - 1;
 
-            Interval newInterval = new Interval(actualLowerBound,
-                    actualUpperBound,
-                    amount,
-                    jobMode);
+                Interval newInterval = new Interval(actualLowerBound,
+                        actualUpperBound,
+                        amount,
+                        jobMode);
 
-            // Add to the resource plan
-            List<Interval> intervals = resourcePlan.get(resource);
-            intervals.add(newInterval);
+                // Add to the resource plan
+                List<Interval> intervals = resourcePlan.get(resource);
+                intervals.add(newInterval);
 
-            // Only renewable should be considered as NonRenewable are occupied til the horizon
-            if (resource instanceof RenewableResource) {
-                for (Job successorJob : jobMode.getJob().getSuccessor()) {
-                    earliestStartTime.put(successorJob, Math.max(earliestStartTime.getOrDefault(successorJob, 0), newInterval.getUpperBound() + 1));
+                // Only renewable should be considered as NonRenewable are occupied til the horizon
+                if (resource instanceof RenewableResource) {
+                    for (Job successorJob : jobMode.getJob().getSuccessor()) {
+                        earliestStartTime.put(successorJob, Math.max(earliestStartTime.getOrDefault(successorJob, 0), newInterval.getUpperBound() + 1));
+                    }
                 }
             }
         }
@@ -238,7 +247,6 @@ public class SchedulerService {
                                      int duration,
                                      Map<Resource, List<Interval>> resourcePlan,
                                      Map<Job, Integer> latestEndTime,
-                                     int horizon,
                                      int makespan,
                                      int actualUpperBound) {
         Mode currentMode = jobMode.getMode();
@@ -264,13 +272,6 @@ public class SchedulerService {
                 }
             }
         }
-    }
-
-    private int determineUpperBound(int duration, int lowerBound, Resource requestedResource, int horizon) {
-        int finalUpperBound = lowerBound + duration - 1;
-        if (requestedResource instanceof NonRenewableResource)
-            finalUpperBound = horizon;
-        return finalUpperBound;
     }
 
     private int determineLowerBound(int duration, int upperBound) {

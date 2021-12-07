@@ -167,29 +167,4 @@ public class HeuristicDirector {
         );
     }
 
-    public static ScheduleRepresentation constructScheduleRepresentationWithExistingActivities(List<Job> activities, Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        ModeHeuristic modeHeuristic = heuristic.getModeHeuristic().getDeclaredConstructor().newInstance();
-
-        List<Job> activityScheduled = new ArrayList<>(activities);
-        List<Mode> modesScheduled = new ArrayList<>();
-        Map<Job, List<Mode>> reservation = ProjectHelper.getReservationOfNonRenewableResources(benchmark.getProject());
-
-        List<Job> possibleJobs = new ArrayList<>();
-        possibleJobs.add(benchmark.getProject().getJobs().get(0));
-
-        activities.forEach(job -> {
-            // Compute the modes for all possible jobs
-            Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, job, activityScheduled, modesScheduled, benchmark);
-            Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
-                    HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getHeuristicSelection()) :
-                    HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getHeuristicSelection());
-
-            modesScheduled.add(selectedMode);
-        });
-
-        return new ActivityListSchemeRepresentation(
-                activityScheduled.stream().mapToInt(Job::getJobId).toArray(),
-                modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
-        );
-    }
 }

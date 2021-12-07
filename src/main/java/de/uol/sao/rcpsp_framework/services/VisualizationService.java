@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.services;
 
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
@@ -122,7 +123,7 @@ public class VisualizationService {
         resourceIntegerMap.forEach((resource, availableResource) -> {
             CategoryTableXYDataset dataset = new CategoryTableXYDataset();
 
-            schedule.getResourcePlans().forEach((resourceOfPlan, intervals) -> {
+            ScheduleHelper.getFullSchedulePlan(schedule).forEach((resourceOfPlan, intervals) -> {
                 intervals.forEach(interval -> {
                     for (int t = interval.getLowerBound(); t <= interval.getUpperBound(); t++) {
                         if (resourceOfPlan.toString().equals(resource.toString())) {

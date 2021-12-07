@@ -1,24 +1,21 @@
 package de.uol.sao.rcpsp_framework.helper;
 
 import de.uol.sao.rcpsp_framework.model.benchmark.Job;
-import de.uol.sao.rcpsp_framework.model.benchmark.Mode;
-import de.uol.sao.rcpsp_framework.model.benchmark.Project;
+import de.uol.sao.rcpsp_framework.model.benchmark.NonRenewableResource;
 import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.scheduling.*;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
 import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * The schedule helper containing helpful functions which are related to schedule and their information of a project
@@ -46,7 +43,7 @@ public class ScheduleHelper {
         actualStartingTime.put(jobs.get(0), 0);
         actualFinishingTime.put(jobs.get(0), 0);
 
-        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
@@ -62,7 +59,7 @@ public class ScheduleHelper {
         }
 
         int lowestBound = Integer.MAX_VALUE;
-        for (Map.Entry<Resource, List<Interval>> entry : backwardRecursion.getResourcePlans().entrySet()) {
+        for (Map.Entry<Resource, List<Interval>> entry : backwardRecursion.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
@@ -90,7 +87,7 @@ public class ScheduleHelper {
         Map<Job, Integer> earliestFinishingTime = new HashMap<>();
         earliestFinishingTime.put(jobs.get(0), 0);
 
-        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
@@ -163,5 +160,40 @@ public class ScheduleHelper {
         }
 
         return false;
+    }
+
+    /**
+     * A schedule plan doesn't consider non-renewable resources in the intervals. However
+     * for visualization non-renewable resources can be interesting tho. This method returns
+     * a resource with lists of intervals, so these can be visualized.
+     * @param schedule A schedule containing a schedule plan
+     * @return A schedule plan including non renewable resources
+     */
+    public static Map<Resource, List<Interval>> getFullSchedulePlan(Schedule schedule) {
+        int endInterval = schedule.computeMetric(Metrics.MAKESPAN) - 1;
+        List<JobMode> jobModes = schedule.getScheduleRepresentation().toJobMode(schedule.getBenchmark().getProject());
+
+        Map<Resource, List<Interval>> schedulePlan = new HashMap<>(schedule.getSchedulePlan());
+        jobModes.forEach(jobMode -> {
+            jobMode.getMode().getRequestedResources().forEach((resource, amount) -> {
+                if (resource instanceof NonRenewableResource) {
+                    int beginInterval = schedule.getBenchmark().getHorizon();
+                    for (List<Interval> intervals : schedule.getSchedulePlan().values()) {
+                        for (Interval interval : intervals) {
+                            if (interval.getSource().equals(jobMode)) {
+                                beginInterval = Math.min(interval.getLowerBound(), beginInterval);
+                            }
+                        }
+                    }
+
+                    Interval interval = new Interval(beginInterval, endInterval, amount, jobMode);
+                    List<Interval> intervals = schedulePlan.getOrDefault(resource, new ArrayList<>());
+                    intervals.add(interval);
+                    schedulePlan.put(resource, intervals);
+                }
+            });
+        });
+
+        return schedulePlan;
     }
 }

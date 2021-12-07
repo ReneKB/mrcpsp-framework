@@ -14,7 +14,7 @@ public class Makespan extends Metric<Integer> {
     @Override
     public Integer computeMetric(Schedule schedule) {
         AtomicInteger makespan = new AtomicInteger();
-        schedule.getResourcePlans().forEach((resource, intervals) -> {
+        schedule.getSchedulePlan().forEach((resource, intervals) -> {
             if (resource instanceof RenewableResource)
                 intervals.forEach(interval -> makespan.set(Math.max(interval.getUpperBound() + 1, makespan.get())));
         });

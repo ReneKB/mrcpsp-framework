@@ -22,7 +22,7 @@ import java.util.Map;
 @Log4j2
 public class Schedule {
     Benchmark benchmark;
-    Map<Resource, List<Interval>> resourcePlans = new HashMap<>();
+    Map<Resource, List<Interval>> schedulePlan = new HashMap<>();
     ScheduleRepresentation scheduleRepresentation;
     Map<Metric, Object> bufferedMetrics = new HashMap<>();
 
