@@ -76,8 +76,9 @@ public abstract class UncertaintyExperiment implements Experiment {
 
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
+        benchmarks.removeIf(benchmark -> !benchmark.getName().endsWith("_1.mm"));
         // Experiment Design
-        int uncertaintyExperiments = 15;
+        int uncertaintyExperiments = 12;
         int trials = 1;
 
         List<UncertaintyModel> uncertaintyModels = new ArrayList<>();

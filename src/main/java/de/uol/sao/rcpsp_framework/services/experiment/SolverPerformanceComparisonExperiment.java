@@ -74,10 +74,10 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         int experiment = ExperimentHelper.getExperimentFromArguments(args, 4);
         Metric<?> robustnessMetric = ExperimentHelper.getRobustMeasureFunctionFromArgs(args, Metrics.SF1);
 
-        Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults = new HashMap<>();
-        Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults = new HashMap<>();
+        Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkMakespanResults = Collections.synchronizedMap(new HashMap<>());
+        Map<SolverPerformanceResultEntry, List<StatisticValue>> benchmarkRobustnessResults = Collections.synchronizedMap(new HashMap<>());
 
-        List<SolverPerformanceResultEntry> feasibleOptimalList = new ArrayList<>();
+        List<SolverPerformanceResultEntry> feasibleOptimalList = Collections.synchronizedList(new ArrayList<>());
 
         for (Benchmark benchmark : benchmarks) {
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment);
@@ -86,34 +86,32 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             Map<Integer, List<SolverPerformanceResultEntry>> experimentSolverResultMap = new HashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
                 // Main work
-                for (Integer iteration : iterations) {
-                    for (String solverStr : solvers) {
+                iterations.parallelStream().forEach(iteration -> {
+                    solvers.parallelStream().forEach(solverStr -> {
                         log.info(String.format("Started experiment task %d (Solver: %s, Iterations: %d) ", experimentNo, solverStr, iteration));
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule bestSchedule;
                         try {
                             bestSchedule = solver.algorithm(benchmark, iteration, robustnessMetric, null);
+                            log.info(String.format("Completed experiment task %d (Solver: %s, Iterations: %d). Best Result: ", experimentNo, solverStr, iteration));
+                            ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
+
+                            // Add to list
+                            List<SolverPerformanceResultEntry> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(experimentNo, new ArrayList<>());
+                            solverPerformanceResultEntries.add(new SolverPerformanceResultEntry(benchmark, iteration, solverStr, bestSchedule, 0, 0));
+                            experimentSolverResultMap.put(experimentNo, solverPerformanceResultEntries);
+
+                            if (bestSchedule != null) {
+                                // Afterwork;
+                                if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                    bestOverallSchedule.set(bestSchedule);
+                                }
+                            }
                         } catch (GiveUpException e) {
                             log.info(String.format("Gave up on experiment task %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
-                            continue;
                         }
-
-                        log.info(String.format("Completed experiment task %d (Solver: %s, Iterations: %d). Best Result: ", experimentNo, solverStr, iteration));
-                        ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
-
-                        // Add to list
-                        List<SolverPerformanceResultEntry> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(experimentNo, new ArrayList<>());
-                        solverPerformanceResultEntries.add(new SolverPerformanceResultEntry(benchmark, iteration, solverStr, bestSchedule, 0, 0));
-                        experimentSolverResultMap.put(experimentNo, solverPerformanceResultEntries);
-
-                        if (bestSchedule != null) {
-                            // Afterwork;
-                            if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
-                                bestOverallSchedule.set(bestSchedule);
-                            }
-                        }
-                    }
-                }
+                    });
+                });
             });
 
             // Determine the mean makespan of the current benchmark
@@ -347,7 +345,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
     }
 
     private double getMeanMetric(Map<Integer,
-                                 List<SolverPerformanceResultEntry>> experimentSolverResultMap, Metric<?> metric,
+            List<SolverPerformanceResultEntry>> experimentSolverResultMap, Metric<?> metric,
                                  boolean globalMinimum) {
         double value = globalMinimum ? Double.MAX_VALUE : Double.MIN_VALUE;
 

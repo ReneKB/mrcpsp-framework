@@ -11,6 +11,7 @@ import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
+import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +63,7 @@ public class SchedulerService {
 
             // Construct the solution according the execution
             boolean solutionFound = false;
+            int steps = 0;
             while (!solutionFound) {
                 solutionFound = true;
                 for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
@@ -93,9 +95,15 @@ public class SchedulerService {
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialLowerBound++;
+                        steps++;
+                        break;
                     }
                 }
             }
+
+            if (steps > 30)
+                System.out.println("Practive: " + steps);
+
             this.addInterval(jobMode, modeDurations.get(jobMode), schedulePlan, nonRenewableResourcesLeft, earliestStartTime, potentialLowerBound);
         }
 
@@ -108,6 +116,7 @@ public class SchedulerService {
      * @return Feasible backward schedule
      */
     public Schedule createScheduleBackward(Schedule forwardSchedule) {
+        long start = System.currentTimeMillis();
         Benchmark benchmark = forwardSchedule.getBenchmark();
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
@@ -148,6 +157,7 @@ public class SchedulerService {
 
             // Construct the solution according the execution
             boolean solutionFound = false;
+            int steps = 0;
             while (!solutionFound) {
                 solutionFound = true;
                 for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
@@ -157,10 +167,10 @@ public class SchedulerService {
                     if (currentModeResource instanceof NonRenewableResource)
                         continue; // Ignoring non renewable resources as expect forward schedule to be checked
 
-                    int finalLowerBound = determineLowerBound(modeDurations.get(jobMode), potentialUpperBound);
+                    int potentialLowerBound = determineLowerBound(modeDurations.get(jobMode), potentialUpperBound);
 
                     // potential new interval that needs to be checked
-                    Interval potentialInterval = new Interval(finalLowerBound,
+                    Interval potentialInterval = new Interval(potentialLowerBound,
                             potentialUpperBound,
                             currentModeAmount,
                             jobMode);
@@ -172,9 +182,14 @@ public class SchedulerService {
                     if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialUpperBound--;
+                        steps++;
+                        break;
                     }
                 }
             }
+
+            if (steps > 10)
+                System.out.println("Backward: " + steps);
 
             this.addIntervalBackward(benchmark.getProject(), jobMode, modeDurations.get(jobMode), resourcePlan, latestEndTime, makespan, potentialUpperBound);
         }
@@ -202,6 +217,7 @@ public class SchedulerService {
             List<Interval> conflictingIntervalAtTimeslot = conflictingIntervals.stream().filter(interval -> interval.valueInInterval(finalI)).collect(Collectors.toList());
             int availableAtTimeslot = resourceAvailableGeneral - conflictingIntervalAtTimeslot.stream().map(Interval::getAmount).reduce((Integer::sum)).orElse(0);
             resourceAvailableOnInterval = Math.min(resourceAvailableOnInterval, availableAtTimeslot);
+
         }
 
         return resourceAvailableOnInterval;
@@ -278,4 +294,10 @@ public class SchedulerService {
         return upperBound - duration + 1;
     }
 
+    @Data
+    class AvailableResourceAndBound {
+        int availableResources;
+        int greatestLowerBound;
+        int leastUpperBound;
+    }
 }
