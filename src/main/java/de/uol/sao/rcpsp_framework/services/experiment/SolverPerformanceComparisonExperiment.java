@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Service("SolverPerformanceExperiment")
 @Log4j2
@@ -86,8 +87,11 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             Map<Integer, List<SolverPerformanceResultEntry>> experimentSolverResultMap = new HashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
                 // Main work
-                iterations.parallelStream().forEach(iteration -> {
-                    solvers.parallelStream().forEach(solverStr -> {
+                Stream<Integer> iterationsStream = options.contains("parallel") ? iterations.parallelStream() : iterations.stream();
+
+                iterationsStream.forEach(iteration -> {
+                    Stream<String> solversStream = options.contains("parallel") ? solvers.parallelStream() : solvers.stream();
+                    solversStream.forEach(solverStr -> {
                         log.info(String.format("Started experiment task %d (Solver: %s, Iterations: %d) ", experimentNo, solverStr, iteration));
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule bestSchedule;

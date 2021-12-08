@@ -101,9 +101,6 @@ public class SchedulerService {
                 }
             }
 
-            if (steps > 30)
-                System.out.println("Practive: " + steps);
-
             this.addInterval(jobMode, modeDurations.get(jobMode), schedulePlan, nonRenewableResourcesLeft, earliestStartTime, potentialLowerBound);
         }
 
@@ -187,9 +184,6 @@ public class SchedulerService {
                     }
                 }
             }
-
-            if (steps > 10)
-                System.out.println("Backward: " + steps);
 
             this.addIntervalBackward(benchmark.getProject(), jobMode, modeDurations.get(jobMode), resourcePlan, latestEndTime, makespan, potentialUpperBound);
         }

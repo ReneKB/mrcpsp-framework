@@ -76,7 +76,8 @@ public abstract class UncertaintyExperiment implements Experiment {
 
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
-        benchmarks.removeIf(benchmark -> !benchmark.getName().endsWith("_1.mm"));
+        this.filterOneInstancePerParameter(benchmarks);
+
         // Experiment Design
         int uncertaintyExperiments = 12;
         int trials = 1;
@@ -211,6 +212,19 @@ public abstract class UncertaintyExperiment implements Experiment {
         // Output in latex
         this.logLatex(benchmarks, uncertaintyModels, iterations, solvers, benchmarkOverallMakespanResults);
     }
+
+    void filterOneInstancePerParameter(List<Benchmark> benchmarks) {
+        List<Benchmark> benchmarksToDelete = new ArrayList<>();
+        String previousStr = "";
+        for (Benchmark benchmark : benchmarks) {
+            String currentInstanceStr = benchmark.getName().split("_")[0];
+            if (currentInstanceStr.equals(previousStr))
+                benchmarksToDelete.add(benchmark);
+            previousStr = currentInstanceStr;
+        }
+        benchmarks.removeAll(benchmarksToDelete);
+    }
+
 
     private void logLatex(List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
         String latex = latexService.printLatexTableUncertainty(

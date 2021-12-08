@@ -18,6 +18,7 @@ public enum CommandArgsOptions {
     ROBUST("robust"),
     LIMIT("limit"),
     SERVER("server"),
+    PARALLEL("parallel"),
     NONE("none");
 
     @Getter
