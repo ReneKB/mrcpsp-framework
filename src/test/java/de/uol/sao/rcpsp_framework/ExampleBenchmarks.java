@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework;
 
-import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
-import de.uol.sao.rcpsp_framework.services.benchmark.BenchmarkPSPLIBMultiModeLoader;
+import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.benchmark.BenchmarkPSPLIBMultiModeLoader;
 
 public class ExampleBenchmarks {
 

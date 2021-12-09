@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.model.benchmark.*;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
+import de.uol.sao.rcpsp_framework.benchmark.model.*;
+import de.uol.sao.rcpsp_framework.representation.JobMode;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.*;

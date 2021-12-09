@@ -1,9 +1,8 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.services.experiment.Experiment;
-import de.uol.sao.rcpsp_framework.services.solver.Solver;
+import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.experiment.Experiment;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.ApplicationArguments;

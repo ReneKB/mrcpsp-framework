@@ -1,14 +1,16 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.model.benchmark.Job;
-import de.uol.sao.rcpsp_framework.model.benchmark.NonRenewableResource;
-import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
-import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
-import de.uol.sao.rcpsp_framework.model.scheduling.*;
-import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
-import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
+import de.uol.sao.rcpsp_framework.benchmark.model.Job;
+import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
+import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
+import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.scheduling.Interval;
+import de.uol.sao.rcpsp_framework.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
