@@ -122,7 +122,6 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
             boolean optimumExists = optimumReference != null;
             double meanMakespan = optimumExists && optimumReference.isSolvable() ? optimumReference.getMakespan() : this.getMeanMetric(experimentSolverResultMap, Metrics.MAKESPAN, true);
-            double bestMakespan = bestOverallSchedule.get() != null ? bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN) : 0;
 
             // Compute the list of values of the best solver result
             Map<SolverPerformanceResultEntry, List<Integer>> makespanValues = new HashMap<>();
@@ -303,11 +302,11 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
         Map<SolverPerformanceResultEntry, StatisticValue> solverPerformanceResultsRobustness = new HashMap<>();
 
         benchmarkMakespanResults.forEach((solverPerformanceResultEntry, statisticValues) -> {
-            double makespanMean = statisticValues.stream().map(StatisticValue::getStddev).reduce(Double::sum).orElse(0.0);
+            double makespanMean = statisticValues.stream().map(StatisticValue::getStddev).filter(value -> !Double.isNaN(value)).reduce(Double::sum).orElse(0.0);
             makespanMean /= statisticValues.size();
 
             double makespanStd = 0;
-            for (double value : statisticValues.stream().map(StatisticValue::getStddev).collect(Collectors.toList())) {
+            for (double value : statisticValues.stream().map(StatisticValue::getStddev).filter(value -> !Double.isNaN(value)).collect(Collectors.toList())) {
                 makespanStd += Math.pow((value - makespanMean), 2);
             }
             makespanStd /= statisticValues.size();

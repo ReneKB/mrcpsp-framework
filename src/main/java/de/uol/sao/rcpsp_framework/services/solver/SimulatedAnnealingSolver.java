@@ -5,7 +5,6 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.model.benchmark.Benchmark;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
@@ -18,7 +17,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Log4j2
@@ -46,7 +44,7 @@ public class SimulatedAnnealingSolver implements Solver {
             for (ScheduleRepresentation neighbour : neighboursRepresentations) {
                 try {
                     if (Math.random() < 0.5)
-                        neighbours.add(schedulerService.createScheduleProactive(benchmark, neighbour, null));
+                        neighbours.add(schedulerService.createSchedule(benchmark, neighbour, null));
                 } catch (Exception ex) {}
             }
 

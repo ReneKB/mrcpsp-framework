@@ -17,7 +17,6 @@ import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSc
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.services.scheduler.SchedulerService;
-import de.uol.sao.rcpsp_framework.services.solver.GeneticAlgorithmSolver;
 import lombok.SneakyThrows;
 
 import java.util.*;
@@ -146,7 +145,7 @@ public class SolverHelper {
                                 Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
                                 alreadyScheduled);
 
-                        schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
+                        schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
                     } catch (Exception ex) {
                     }
                 }

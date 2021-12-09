@@ -36,7 +36,7 @@ public class ConcreteScheduleExperiment implements Experiment {
                 new int[] {1, 1, 1, 1, 1, 1}
         );
 
-        Schedule schedule = schedulerService.createScheduleProactive(benchmarks.get(0), activityListSchemeRepresentation, null);
+        Schedule schedule = schedulerService.createSchedule(benchmarks.get(0), activityListSchemeRepresentation, null);
         ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
         Schedule backwardSchedule = schedulerService.createScheduleBackward(schedule);
 

@@ -91,7 +91,7 @@ public class UncertaintyHybridExperiment extends UncertaintyExperiment {
             plannedJobModeList = potentialSchedule.getScheduleRepresentation().toJobMode(subbenchmark.getProject());
         }
 
-        return this.schedulerService.createScheduleProactive(subbenchmark, new ActivityListSchemeRepresentation(buildingJobModeList), null);
+        return this.schedulerService.createSchedule(subbenchmark, new ActivityListSchemeRepresentation(buildingJobModeList), null);
     }
 
     /**

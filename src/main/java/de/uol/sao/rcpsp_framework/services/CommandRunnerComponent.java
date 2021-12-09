@@ -129,7 +129,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
                 int[] activities = getArrayFromString(jobList);
                 int[] modes = this.getArrayFromString(modeList);
 
-                Schedule schedule = schedulerService.createScheduleProactive(benchmark, new ActivityListSchemeRepresentation(activities, modes), null);
+                Schedule schedule = schedulerService.createSchedule(benchmark, new ActivityListSchemeRepresentation(activities, modes), null);
 
                 // Output Metrics and visualize
                 log.info("Custom Schedule successfully created! ");

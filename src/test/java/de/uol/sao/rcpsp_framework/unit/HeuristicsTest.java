@@ -19,10 +19,7 @@ import lombok.extern.log4j.Log4j2;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +43,7 @@ public class HeuristicsTest {
 
         // test
         ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs);
-        Schedule schedule = schedulerService.createScheduleProactive(test, representation, null);
+        Schedule schedule = schedulerService.createSchedule(test, representation, null);
 
         // assert
 
@@ -74,7 +71,7 @@ public class HeuristicsTest {
         for (int tryNo = 0; tryNo < 100; tryNo++) {
             try {
                 ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs, HeuristicSampling.REGRET_BASED_BIAS, null);
-                Schedule schedule = schedulerService.createScheduleProactive(test, representation, null);
+                Schedule schedule = schedulerService.createSchedule(test, representation, null);
                 if (schedule != null && !scheduleFound) {
                     scheduleFound = true;
                     foundAt = tryNo;

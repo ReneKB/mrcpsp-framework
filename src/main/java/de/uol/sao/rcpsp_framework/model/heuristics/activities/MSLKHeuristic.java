@@ -40,7 +40,7 @@ public class MSLKHeuristic extends ActivityHeuristic {
         );
 
         try {
-            Schedule partialSchedule = new SchedulerService().createScheduleProactive(benchmark, scheduleRepresentation, null);
+            Schedule partialSchedule = new SchedulerService().createSchedule(benchmark, scheduleRepresentation, null);
             ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
 
             int leastFinishedTime = scheduleRelationInfo.getLatestFinishingTime().get(job);

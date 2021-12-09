@@ -11,7 +11,6 @@ import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -26,9 +25,9 @@ public class SchedulerService {
      * Creates a schedule according to the order of the given list.
      * @param benchmark Benchmark of concern
      * @param execution List of all required executions
-     * @return
+     * @return Feasible forwarding schedule
      */
-    public Schedule createScheduleProactive(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
+    public Schedule createSchedule(Benchmark benchmark, ScheduleRepresentation execution, UncertaintyModel uncertaintyModel) throws NoNonRenewableResourcesLeftException, RenewableResourceNotEnoughException {
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> schedulePlan = new HashMap<>();
         Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
@@ -63,7 +62,6 @@ public class SchedulerService {
 
             // Construct the solution according the execution
             boolean solutionFound = false;
-            int steps = 0;
             while (!solutionFound) {
                 solutionFound = true;
                 for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
@@ -95,7 +93,6 @@ public class SchedulerService {
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialLowerBound++;
-                        steps++;
                         break;
                     }
                 }
@@ -113,7 +110,6 @@ public class SchedulerService {
      * @return Feasible backward schedule
      */
     public Schedule createScheduleBackward(Schedule forwardSchedule) {
-        long start = System.currentTimeMillis();
         Benchmark benchmark = forwardSchedule.getBenchmark();
         Schedule schedule = new Schedule();
         Map<Resource, List<Interval>> resourcePlan = new HashMap<>();
@@ -121,15 +117,12 @@ public class SchedulerService {
 
         Map<JobMode, Integer> modeDurations = new HashMap<>();
         List<JobMode> jobModeList = forwardSchedule.getScheduleRepresentation().toJobMode(benchmark.getProject());
-        for (int i = 0; i < jobModeList.size(); i++) {
-            JobMode jobMode = jobModeList.get(i);
+        for (JobMode jobMode : jobModeList) {
             modeDurations.put(jobMode, jobMode.getMode().getDuration());
         }
 
         // Creates initial allocation map
-        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
-            resourcePlan.put(resource, new ArrayList<>());
-        });
+        benchmark.getProject().getAvailableResources().forEach((resource, amount) -> resourcePlan.put(resource, new ArrayList<>()));
 
         schedule.setBenchmark(benchmark);
         schedule.setSchedulePlan(resourcePlan);
@@ -154,7 +147,6 @@ public class SchedulerService {
 
             // Construct the solution according the execution
             boolean solutionFound = false;
-            int steps = 0;
             while (!solutionFound) {
                 solutionFound = true;
                 for (Map.Entry<Resource, Integer> entry : currentMode.getRequestedResources().entrySet()) {
@@ -179,7 +171,6 @@ public class SchedulerService {
                     if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialUpperBound--;
-                        steps++;
                         break;
                     }
                 }
@@ -288,10 +279,4 @@ public class SchedulerService {
         return upperBound - duration + 1;
     }
 
-    @Data
-    class AvailableResourceAndBound {
-        int availableResources;
-        int greatestLowerBound;
-        int leastUpperBound;
-    }
 }

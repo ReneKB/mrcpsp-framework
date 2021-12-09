@@ -16,7 +16,6 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
 import java.util.List;
 
 @Log4j2
@@ -49,7 +48,7 @@ public class HillClimbingSolver implements Solver {
                 Schedule currentSchedule = null;
 
                 try {
-                    currentSchedule = schedulerService.createScheduleProactive(benchmark, currentRepresentation, null);
+                    currentSchedule = schedulerService.createSchedule(benchmark, currentRepresentation, null);
                 } catch (Exception ex) { }
 
                 if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {

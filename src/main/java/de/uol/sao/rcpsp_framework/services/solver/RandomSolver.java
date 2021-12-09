@@ -33,7 +33,7 @@ public class RandomSolver implements Solver {
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createScheduleProactive(benchmark, HeuristicDirector.constructScheduleRepresentation(benchmark,
+                schedule = schedulerService.createSchedule(benchmark, HeuristicDirector.constructScheduleRepresentation(benchmark,
                         Heuristic.builder()
                             .modeHeuristic(RandomModeHeuristic.class)
                             .activityHeuristic(RandomActivityHeuristic.class)

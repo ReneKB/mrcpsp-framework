@@ -22,6 +22,6 @@ public class UncertaintyProactiveExperiment extends UncertaintyExperiment {
     @Override
     @SneakyThrows
     public Schedule buildUncertaintySolution(Schedule plannedSolution, Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction, UncertaintyModel uncertaintyModel) {
-        return super.schedulerService.createScheduleProactive(benchmark, plannedSolution.getScheduleRepresentation(), uncertaintyModel);
+        return super.schedulerService.createSchedule(benchmark, plannedSolution.getScheduleRepresentation(), uncertaintyModel);
     }
 }

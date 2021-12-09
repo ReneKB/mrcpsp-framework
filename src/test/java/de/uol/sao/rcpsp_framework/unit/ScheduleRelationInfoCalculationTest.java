@@ -37,7 +37,7 @@ public class ScheduleRelationInfoCalculationTest {
         List<JobMode> jobModeList = representation.toJobMode(project);
 
         // test
-        Schedule schedule = new SchedulerService().createScheduleProactive(benchmark, representation, null);
+        Schedule schedule = new SchedulerService().createSchedule(benchmark, representation, null);
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
 
         // assert that every latest ending time minus latest starting time equals the duration
@@ -66,7 +66,7 @@ public class ScheduleRelationInfoCalculationTest {
         ScheduleRepresentation representation = new ActivityListSchemeRepresentation(partialJobList, partialModeList);
 
         // test
-        Schedule schedule = new SchedulerService().createScheduleProactive(benchmark, representation, null);
+        Schedule schedule = new SchedulerService().createSchedule(benchmark, representation, null);
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
 
         // assert
@@ -97,7 +97,7 @@ public class ScheduleRelationInfoCalculationTest {
 
         ScheduleRepresentation representation = new ActivityListSchemeRepresentation(partialJobList, partialModeList);
         // test
-        Schedule schedule = new SchedulerService().createScheduleProactive(benchmark, representation, null);
+        Schedule schedule = new SchedulerService().createSchedule(benchmark, representation, null);
         ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
 
         // assert

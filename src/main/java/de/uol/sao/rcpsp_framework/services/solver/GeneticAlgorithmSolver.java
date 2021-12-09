@@ -10,13 +10,11 @@ import de.uol.sao.rcpsp_framework.model.benchmark.Project;
 import de.uol.sao.rcpsp_framework.model.heuristics.Heuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSampling;
-import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.model.heuristics.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
 import de.uol.sao.rcpsp_framework.model.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
@@ -78,7 +76,7 @@ public class GeneticAlgorithmSolver implements Solver {
             i += lambda;
 
             try {
-                Schedule generationBestSolution = schedulerService.createScheduleProactive(benchmark,
+                Schedule generationBestSolution = schedulerService.createSchedule(benchmark,
                         population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get().getScheduleRepresentation(),
                         null);
 
@@ -240,7 +238,7 @@ public class GeneticAlgorithmSolver implements Solver {
         // makespan + robustness (robustness / makespan)
         double fitness = benchmark.getHorizon();
         try {
-            Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
+            Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
             fitness = SolverHelper.calculateFitness(schedule, robustnessFunction);
         } catch (Exception ex) { }
 
@@ -287,7 +285,7 @@ public class GeneticAlgorithmSolver implements Solver {
                                     alreadyScheduled);
                         }
 
-                        Schedule schedule = schedulerService.createScheduleProactive(benchmark, scheduleRepresentation, null);
+                        Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
                         if (schedule != null)
                             population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
                     } catch (Exception ex) { }
