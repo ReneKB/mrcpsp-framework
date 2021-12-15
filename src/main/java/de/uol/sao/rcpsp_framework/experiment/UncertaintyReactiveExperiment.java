@@ -77,7 +77,7 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
 
             Schedule potentialSchedule = null;
             try {
-                potentialSchedule = solver.algorithm(subbenchmark, iterations / 5, null, buildingJobModeList);
+                potentialSchedule = solver.algorithm(subbenchmark, Math.min(iterations / 5, 1500), null, buildingJobModeList);
                 if (potentialSchedule == null)
                     potentialSchedule = plannedSolution;
                 else if (!this.verifySolver(buildingJobModeList, potentialSchedule)) {
@@ -92,6 +92,11 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
         }
 
         return this.schedulerService.createSchedule(subbenchmark, new ActivityListSchemeRepresentation(buildingJobModeList), null);
+    }
+
+    @Override
+    public int getUncertaintyExperiments() {
+        return 12;
     }
 
     /**

@@ -79,7 +79,6 @@ public abstract class UncertaintyExperiment implements Experiment {
         this.filterOneInstancePerParameter(benchmarks);
 
         // Experiment Design
-        int uncertaintyExperiments = 50;
         int trials = 1;
 
         List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
@@ -98,7 +97,7 @@ public abstract class UncertaintyExperiment implements Experiment {
 
         // Actual Execution
         for (Benchmark benchmark : benchmarks) {
-            printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment, uncertaintyModels, uncertaintyExperiments);
+            printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment, uncertaintyModels, this.getUncertaintyExperiments());
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
             Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new HashMap<>();
@@ -149,7 +148,7 @@ public abstract class UncertaintyExperiment implements Experiment {
                 }));
 
                 schedules.parallelStream().forEach(schedule -> uncertaintyModels.forEach(uncertaintyModel -> {
-                    IntStream.range(0, uncertaintyExperiments).parallel().forEach(experimentNo -> {
+                    IntStream.range(0, this.getUncertaintyExperiments()).parallel().forEach(experimentNo -> {
                         try {
                             Schedule uncertaintySchedule = this.buildUncertaintySolution(schedule,
                                     benchmark,
@@ -274,4 +273,6 @@ public abstract class UncertaintyExperiment implements Experiment {
                                                       int iterations,
                                                       Metric<?> robustnessFunction,
                                                       UncertaintyModel uncertaintyModel);
+
+    public abstract int getUncertaintyExperiments();
 }
