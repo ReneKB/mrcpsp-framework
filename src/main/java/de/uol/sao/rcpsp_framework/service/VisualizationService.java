@@ -2,7 +2,7 @@ package de.uol.sao.rcpsp_framework.service;
 
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import guru.nidi.graphviz.attribute.*;
@@ -39,11 +39,11 @@ public class VisualizationService {
 
     List<Node> generateNodes(Benchmark benchmark) {
         List<Node> nodes = new ArrayList<>();
-        List<Job> jobs = benchmark.getProject().getJobs();
+        List<Activity> activities = benchmark.getProject().getActivities();
 
         // Generates job nodes
-        jobs.forEach(job -> {
-            String id = String.valueOf(job.getJobId());
+        activities.forEach(job -> {
+            String id = String.valueOf(job.getActivityId());
 
             String modesStr = turn(job.getModes()
                     .stream().map(mode -> {
@@ -62,10 +62,10 @@ public class VisualizationService {
             Node selectedNode = nodes.get(i);
 
             // get the successor nodes
-            Job relevantJob = jobs.get(i);
+            Activity relevantActivity = activities.get(i);
 
-            List<Node> successorNodes = relevantJob.getSuccessor().stream()
-                    .map(Job::getJobId)
+            List<Node> successorNodes = relevantActivity.getSuccessors().stream()
+                    .map(Activity::getActivityId)
                     .map(integer -> nodes.stream().dropWhile(entries -> !entries.name().value().equals(integer.toString())).findFirst().get()).collect(Collectors.toList());
 
             // link the dependencies
@@ -86,7 +86,7 @@ public class VisualizationService {
         return dataset;
     }
 
-    public void visualizeJobsBenchmark(Benchmark benchmark) {
+    public void visualizeBenchmark(Benchmark benchmark) {
         // Jobs Visualization
         Graph g = graph("example1").directed()
                 .graphAttr().with(Rank.dir(LEFT_TO_RIGHT))
@@ -117,7 +117,7 @@ public class VisualizationService {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    public void visualizeResults(Schedule schedule) {
+    public void visualizeSchedule(Schedule schedule) {
         Benchmark benchmark = schedule.getBenchmark();
         Map<Resource, Integer> resourceIntegerMap = benchmark.getProject().getAvailableResources();
         resourceIntegerMap.forEach((resource, availableResource) -> {
@@ -127,7 +127,7 @@ public class VisualizationService {
                 intervals.forEach(interval -> {
                     for (int t = interval.getLowerBound(); t <= interval.getUpperBound(); t++) {
                         if (resourceOfPlan.toString().equals(resource.toString())) {
-                            dataset.add(t + 1, interval.getAmount(), interval.getSource().getJob().toString());
+                            dataset.add(t + 1, interval.getAmount(), interval.getSource().getActivity().toString());
                         }
                     }
                 });

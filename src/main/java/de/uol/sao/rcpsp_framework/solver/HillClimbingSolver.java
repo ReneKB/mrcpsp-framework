@@ -6,7 +6,7 @@ import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.extern.log4j.Log4j2;
@@ -30,8 +30,8 @@ public class HillClimbingSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) throws GiveUpException {
-        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedJobModeList);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
+        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
         Schedule bestOverallSchedule = bestSchedule;
 
         // Generate random solution until it's feasible
@@ -39,7 +39,7 @@ public class HillClimbingSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = bestSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedJobModeList);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList);
 
             Schedule neighbourhoodFavorite = null;
 

@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.activities;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 
@@ -11,12 +11,12 @@ import java.util.List;
 public class GRPWHeuristic extends ActivityHeuristic {
 
     @Override
-    public double determineActivityPriorityValue(Job job, Mode jobSelectedMode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        Mode highestDurationMode = job.getModes().stream().sorted(Comparator.comparingInt(Mode::getDuration)).findFirst().get();
+    public double determineActivityPriorityValue(Activity activity, Mode jobSelectedMode, List<Activity> scheduledActivities, List<Mode> scheduledModes, Benchmark benchmark) {
+        Mode highestDurationMode = activity.getModes().stream().sorted(Comparator.comparingInt(Mode::getDuration)).findFirst().get();
         int duration = highestDurationMode.getDuration();
 
-        for (Job successorJob : job.getSuccessor()) {
-            Mode successorHighestDurationMode = successorJob.getModes().stream().sorted(Comparator.comparingInt(Mode::getDuration)).findFirst().get();
+        for (Activity successorActivity : activity.getSuccessors()) {
+            Mode successorHighestDurationMode = successorActivity.getModes().stream().sorted(Comparator.comparingInt(Mode::getDuration)).findFirst().get();
             duration += successorHighestDurationMode.getDuration();
         }
 

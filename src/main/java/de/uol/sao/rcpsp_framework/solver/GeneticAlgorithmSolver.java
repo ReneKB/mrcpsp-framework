@@ -1,10 +1,10 @@
 package de.uol.sao.rcpsp_framework.solver;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.benchmark.model.Project;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
@@ -15,9 +15,9 @@ import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.AllArgsConstructor;
@@ -54,8 +54,8 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) {
-        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction, fixedJobModeList);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
+        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction, fixedActivityModeList);
         Schedule scheduleBestSolution = null;
 
         int i = 0;
@@ -63,7 +63,7 @@ public class GeneticAlgorithmSolver implements Solver {
             for (int offspring = 0; offspring < lambda; offspring++) {
                 List<ScheduleRepresentation> parents = this.selectParents(population.stream().map(Solution::getScheduleRepresentation).collect(Collectors.toList()));
                 ScheduleRepresentation crossovered = this.crossover(benchmark.getProject(), parents);
-                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered, fixedJobModeList);
+                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered, fixedActivityModeList);
                 Solution solution = this.fitness(benchmark, 0, mutation, robustnessFunction);
 
                 population.add(solution);
@@ -105,15 +105,15 @@ public class GeneticAlgorithmSolver implements Solver {
      * @return
      */
     private ScheduleRepresentation crossover(Project project, List<ScheduleRepresentation> schedules) {
-        List<JobMode> mother  = schedules.get(0).toJobMode(project);
-        List<JobMode> father  = schedules.get(1).toJobMode(project);
+        List<ActivityMode> mother  = schedules.get(0).toActivityModeList(project);
+        List<ActivityMode> father  = schedules.get(1).toActivityModeList(project);
 
-        int q1 = new Random().nextInt(project.getJobs().size() - 1);
+        int q1 = new Random().nextInt(project.getActivities().size() - 1);
         int q2 = q1;
         while (q2 <= q1)
-            q2 = new Random().nextInt(project.getJobs().size());
+            q2 = new Random().nextInt(project.getActivities().size());
 
-        List<JobMode> daughter = new ArrayList<>();
+        List<ActivityMode> daughter = new ArrayList<>();
 
         for (int i = 0; i < q1; i++) {
             daughter.add(mother.get(i));
@@ -122,8 +122,8 @@ public class GeneticAlgorithmSolver implements Solver {
         int k = 0;
         for (int i = q1; i < q2; i++) {
             while (daughter.stream()
-                    .map(JobMode::getJob).collect(Collectors.toList())
-                    .contains(father.get(k).getJob())) {
+                    .map(ActivityMode::getActivity).collect(Collectors.toList())
+                    .contains(father.get(k).getActivity())) {
                 k++;
             }
 
@@ -131,10 +131,10 @@ public class GeneticAlgorithmSolver implements Solver {
         }
 
         k = 0;
-        for (int i = q2; i < project.getJobs().size(); i++) {
+        for (int i = q2; i < project.getActivities().size(); i++) {
             while (daughter.stream()
-                    .map(JobMode::getJob).collect(Collectors.toList())
-                    .contains(mother.get(k).getJob())) {
+                    .map(ActivityMode::getActivity).collect(Collectors.toList())
+                    .contains(mother.get(k).getActivity())) {
                 k++;
             }
 
@@ -144,62 +144,62 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListSchemeRepresentation(daughter);
     }
 
-    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring, List<JobMode> fixedJobModeList) {
-        List<JobMode> jobList = offspring.toJobMode(project);
-        List<List<JobMode>> swappableJobModes = new ArrayList<>();
+    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring, List<ActivityMode> fixedActivityModeList) {
+        List<ActivityMode> jobList = offspring.toActivityModeList(project);
+        List<List<ActivityMode>> swappableJobModes = new ArrayList<>();
 
-        Set<Job> handledJobs = new HashSet<>();
-        handledJobs.add(jobList.get(0).getJob());
+        Set<Activity> handledActivities = new HashSet<>();
+        handledActivities.add(jobList.get(0).getActivity());
 
         for (int i = 1; i < jobList.size(); i++) {
-            Job previousJob = jobList.get(i - 1).getJob();
-            Job currentJob = jobList.get(i).getJob();
+            Activity previousActivity = jobList.get(i - 1).getActivity();
+            Activity currentActivity = jobList.get(i).getActivity();
 
-            Set<Job> requiredJobs = ProjectHelper.getPredecessorsOfJob(project, currentJob);
-            if (handledJobs.containsAll(requiredJobs) && !requiredJobs.contains(previousJob)) { // Can be swapped
-                List<JobMode> swappable = new ArrayList();
+            Set<Activity> requiredActivities = ProjectHelper.getPredecessorsOfJob(project, currentActivity);
+            if (handledActivities.containsAll(requiredActivities) && !requiredActivities.contains(previousActivity)) { // Can be swapped
+                List<ActivityMode> swappable = new ArrayList();
                 swappable.add(jobList.get(i));
                 swappable.add(jobList.get(i - 1));
 
                 swappableJobModes.add(swappable);
             }
-            handledJobs.add(currentJob);
+            handledActivities.add(currentActivity);
         }
 
         // For reactive solutions: Don't swap already planned jobmodes
-        if (fixedJobModeList != null) {
-            removeFromSwappableList(fixedJobModeList, swappableJobModes);
+        if (fixedActivityModeList != null) {
+            removeFromSwappableList(fixedActivityModeList, swappableJobModes);
         }
 
         // Swap one JobModes with each other
         while (!swappableJobModes.isEmpty()) {
-            List<JobMode> swappingJobMode = swappableJobModes.get(0);
-            int firstIndex = jobList.indexOf(swappingJobMode.get(0));
-            int secondIndex = jobList.indexOf(swappingJobMode.get(1));
+            List<ActivityMode> swappingActivityMode = swappableJobModes.get(0);
+            int firstIndex = jobList.indexOf(swappingActivityMode.get(0));
+            int secondIndex = jobList.indexOf(swappingActivityMode.get(1));
 
             if (Math.random() <= sigma) {
                 Collections.swap(jobList, firstIndex, secondIndex);
             }
-            removeFromSwappableList(swappingJobMode, swappableJobModes);
+            removeFromSwappableList(swappingActivityMode, swappableJobModes);
         }
 
         int[] jobs = new int[jobList.size()];
         int[] modes = new int[jobList.size()];
 
         for (int i = 0; i < jobs.length; i++) {
-            jobs[i] = jobList.get(i).getJob().getJobId();
+            jobs[i] = jobList.get(i).getActivity().getActivityId();
             modes[i] = jobList.get(i).getMode().getModeId();
         }
 
         // Swap one random mode
         for (int i = 0; i < modes.length; i++) {
-            Job job = jobList.get(i).getJob();
-            int size = job.getModes().size();
+            Activity activity = jobList.get(i).getActivity();
+            int size = activity.getModes().size();
 
             boolean isAlreadyScheduled = false;
-            if (fixedJobModeList != null) {
-                for (JobMode jobMode : fixedJobModeList) {
-                    if (job.equals(jobMode.getJob())) {
+            if (fixedActivityModeList != null) {
+                for (ActivityMode activityMode : fixedActivityModeList) {
+                    if (activity.equals(activityMode.getActivity())) {
                         isAlreadyScheduled = true;
                         break;
                     }
@@ -208,7 +208,7 @@ public class GeneticAlgorithmSolver implements Solver {
 
             if (!isAlreadyScheduled && size != 1 && Math.random() <= sigma) {
                 int finalI = i;
-                List<Mode> selectedMode = job.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
+                List<Mode> selectedMode = activity.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
                 Collections.shuffle(selectedMode);
                 modes[i] = selectedMode.get(0).getModeId();
             }
@@ -217,15 +217,15 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListSchemeRepresentation(jobs, modes);
     }
 
-    private void removeFromSwappableList(List<JobMode> removingItems, List<List<JobMode>> swappableJobModes) {
-        Set<List<JobMode>> removingIndices = new HashSet<>();
-        for (JobMode fixedJobMode : removingItems) {
-            Job fixedJob = fixedJobMode.getJob();
+    private void removeFromSwappableList(List<ActivityMode> removingItems, List<List<ActivityMode>> swappableJobModes) {
+        Set<List<ActivityMode>> removingIndices = new HashSet<>();
+        for (ActivityMode fixedActivityMode : removingItems) {
+            Activity fixedActivity = fixedActivityMode.getActivity();
 
-            for (List<JobMode> swappableJobModeList : swappableJobModes) {
-                for (JobMode swappableJobMode : swappableJobModeList) {
-                    if (swappableJobMode.getJob().equals(fixedJob))
-                        removingIndices.add(swappableJobModeList);
+            for (List<ActivityMode> swappableActivityModeList : swappableJobModes) {
+                for (ActivityMode swappableActivityMode : swappableActivityModeList) {
+                    if (swappableActivityMode.getActivity().equals(fixedActivity))
+                        removingIndices.add(swappableActivityModeList);
                 }
             }
         }
@@ -254,7 +254,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 .collect(Collectors.toList());
     }
 
-    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement, List<JobMode> alreadyScheduled) {
+    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement, List<ActivityMode> alreadyScheduled) {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling

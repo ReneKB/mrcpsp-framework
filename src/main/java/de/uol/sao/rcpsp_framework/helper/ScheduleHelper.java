@@ -1,15 +1,15 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
 import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Interval;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -26,37 +26,37 @@ import java.util.Map;
 public class ScheduleHelper {
 
     /**
-     * Creates a {@link ScheduleRelationInfo} which contains activity plan information, like earliest/latest
+     * Creates a {@link SchedulePlanInfo} which contains activity plan information, like earliest/latest
      * finishing and starting times of each job.
      * @param schedule The schedule of relevance
-     * @return The object {@link ScheduleRelationInfo} with the computed values
+     * @return The object {@link SchedulePlanInfo} with the computed values
      */
     @SneakyThrows
-    public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
+    public static SchedulePlanInfo createScheduleRelationInfo(Schedule schedule) {
         Schedule backwardRecursion = new SchedulerService().createScheduleBackward(schedule);
 
-        ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
-        Map<Job, Integer> latestStartingTime = scheduleRelationInfo.getLatestStartingTime();
-        Map<Job, Integer> latestFinishingTime = scheduleRelationInfo.getLatestFinishingTime();
-        List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
+        SchedulePlanInfo schedulePlanInfo = new SchedulePlanInfo();
+        Map<Activity, Integer> latestStartingTime = schedulePlanInfo.getLatestStartingTime();
+        Map<Activity, Integer> latestFinishingTime = schedulePlanInfo.getLatestFinishingTime();
+        List<Activity> activities = schedule.getBenchmark().getProject().getActivities();
 
-        Map<Job, Integer> actualStartingTime = scheduleRelationInfo.getEarliestStartingTime();
-        Map<Job, Integer> actualFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
-        actualStartingTime.put(jobs.get(0), 0);
-        actualFinishingTime.put(jobs.get(0), 0);
+        Map<Activity, Integer> actualStartingTime = schedulePlanInfo.getEarliestStartingTime();
+        Map<Activity, Integer> actualFinishingTime = schedulePlanInfo.getEarliestFinishingTime();
+        actualStartingTime.put(activities.get(0), 0);
+        actualFinishingTime.put(activities.get(0), 0);
 
         for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
-                Job job = interval.getSource().getJob();
-                int beginning = actualStartingTime.getOrDefault(job, Integer.MIN_VALUE);
+                Activity activity = interval.getSource().getActivity();
+                int beginning = actualStartingTime.getOrDefault(activity, Integer.MIN_VALUE);
                 beginning = Math.max(interval.getLowerBound(), beginning);
-                actualStartingTime.put(job, beginning);
+                actualStartingTime.put(activity, beginning);
 
-                int ending = actualFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                int ending = actualFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
                 ending = Math.min(interval.getUpperBound() + 1, ending);
-                actualFinishingTime.put(job, ending);
+                actualFinishingTime.put(activity, ending);
             }
         }
 
@@ -65,56 +65,56 @@ public class ScheduleHelper {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
-                Job job = interval.getSource().getJob();
-                int beginning = actualStartingTime.getOrDefault(job, Integer.MIN_VALUE);
+                Activity activity = interval.getSource().getActivity();
+                int beginning = actualStartingTime.getOrDefault(activity, Integer.MIN_VALUE);
                 beginning = Math.max(interval.getLowerBound(), beginning);
-                latestStartingTime.put(job, beginning);
+                latestStartingTime.put(activity, beginning);
 
-                int ending = actualFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                int ending = actualFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
                 ending = Math.min(interval.getUpperBound() + 1, ending);
-                latestFinishingTime.put(job, ending);
+                latestFinishingTime.put(activity, ending);
 
                 lowestBound = Math.min(lowestBound, beginning);
             }
         }
 
-        latestFinishingTime.put(jobs.get(0), lowestBound);
-        latestStartingTime.put(jobs.get(0), lowestBound);
+        latestFinishingTime.put(activities.get(0), lowestBound);
+        latestStartingTime.put(activities.get(0), lowestBound);
 
-        return scheduleRelationInfo;
+        return schedulePlanInfo;
     }
 
-    public static Map<Job, Integer> getEarliestFinishingTime(Schedule schedule) {
-        List<Job> jobs = schedule.getBenchmark().getProject().getJobs();
-        Map<Job, Integer> earliestFinishingTime = new HashMap<>();
-        earliestFinishingTime.put(jobs.get(0), 0);
+    public static Map<Activity, Integer> getEarliestFinishingTime(Schedule schedule) {
+        List<Activity> activities = schedule.getBenchmark().getProject().getActivities();
+        Map<Activity, Integer> earliestFinishingTime = new HashMap<>();
+        earliestFinishingTime.put(activities.get(0), 0);
 
         for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
-                Job job = interval.getSource().getJob();
-                int ending = earliestFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                Activity activity = interval.getSource().getActivity();
+                int ending = earliestFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
                 ending = Math.min(interval.getUpperBound() + 1, ending);
-                earliestFinishingTime.put(job, ending);
+                earliestFinishingTime.put(activity, ending);
             }
         }
 
-        earliestFinishingTime.put(jobs.get(jobs.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
+        earliestFinishingTime.put(activities.get(activities.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
         return earliestFinishingTime;
     }
 
     /**
      * Computes the free slack S for every job. Relevant for a lot of robustness calculations.
-     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
+     * @param schedulePlanInfo The schedule relation information with computed EST/EFT and LST/LFT
      * @return The map of all job slacks
      */
-    public static Map<Job, Integer> computeFreeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
-        Map<Job, Integer> slack = new HashMap<>();
+    public static Map<Activity, Integer> computeFreeSlacks(SchedulePlanInfo schedulePlanInfo) {
+        Map<Activity, Integer> slack = new HashMap<>();
 
         // Calculate the slack now
-        scheduleRelationInfo.getLatestStartingTime().forEach((job, integer) -> {
-            slack.put(job, integer - scheduleRelationInfo.getEarliestStartingTime().get(job));
+        schedulePlanInfo.getLatestStartingTime().forEach((job, integer) -> {
+            slack.put(job, integer - schedulePlanInfo.getEarliestStartingTime().get(job));
         });
 
         return slack;
@@ -173,10 +173,10 @@ public class ScheduleHelper {
      */
     public static Map<Resource, List<Interval>> getFullSchedulePlan(Schedule schedule) {
         int endInterval = schedule.computeMetric(Metrics.MAKESPAN) - 1;
-        List<JobMode> jobModes = schedule.getScheduleRepresentation().toJobMode(schedule.getBenchmark().getProject());
+        List<ActivityMode> activityModes = schedule.getScheduleRepresentation().toActivityModeList(schedule.getBenchmark().getProject());
 
         Map<Resource, List<Interval>> schedulePlan = new HashMap<>(schedule.getSchedulePlan());
-        jobModes.forEach(jobMode -> {
+        activityModes.forEach(jobMode -> {
             jobMode.getMode().getRequestedResources().forEach((resource, amount) -> {
                 if (resource instanceof NonRenewableResource) {
                     int beginInterval = schedule.getBenchmark().getHorizon();

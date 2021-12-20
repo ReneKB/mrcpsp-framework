@@ -1,9 +1,9 @@
 package de.uol.sao.rcpsp_framework.experiment;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
@@ -40,16 +40,16 @@ public class ConcreteScheduleExperiment implements Experiment {
         ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
         Schedule backwardSchedule = schedulerService.createScheduleBackward(schedule);
 
-        Map<Job, Integer> slacks = ScheduleHelper.computeFreeSlacks(ScheduleHelper.createScheduleRelationInfo(schedule));
+        Map<Activity, Integer> slacks = ScheduleHelper.computeFreeSlacks(ScheduleHelper.createScheduleRelationInfo(schedule));
 
         args.getOptionNames().forEach(finalOption -> {
             switch (CommandArgsOptions.fromString(finalOption)) {
                 case VISUALIZE:
                     log.info("");
                     log.info("Visualizing the result... ");
-                    visualizationService.visualizeJobsBenchmark(benchmarks.get(0));
-                    visualizationService.visualizeResults(schedule);
-                    visualizationService.visualizeResults(backwardSchedule);
+                    visualizationService.visualizeBenchmark(benchmarks.get(0));
+                    visualizationService.visualizeSchedule(schedule);
+                    visualizationService.visualizeSchedule(backwardSchedule);
                     break;
                 default:
             }

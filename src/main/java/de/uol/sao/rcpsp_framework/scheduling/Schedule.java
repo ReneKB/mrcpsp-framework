@@ -24,17 +24,13 @@ public class Schedule {
     Benchmark benchmark;
     Map<Resource, List<Interval>> schedulePlan = new HashMap<>();
     ScheduleRepresentation scheduleRepresentation;
-    Map<Metric, Object> bufferedMetrics = new HashMap<>();
+    Map<Metric, Object> metricsBuffer = new HashMap<>();
 
     public <T> T computeMetric(Metric<T> metric) {
-        if (!bufferedMetrics.containsKey(metric))
-            bufferedMetrics.put(metric, metric.computeMetric(this));
+        if (!metricsBuffer.containsKey(metric))
+            metricsBuffer.put(metric, metric.computeMetric(this));
 
-        return (T) bufferedMetrics.get(metric);
-    }
-
-    public boolean isPartialSchedule() {
-        return scheduleRepresentation.toJobMode(benchmark.getProject()).size() != this.getBenchmark().getProject().getJobs().size();
+        return (T) metricsBuffer.get(metric);
     }
 
     public String toString() {

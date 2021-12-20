@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.representation;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.benchmark.model.Project;
 import lombok.AllArgsConstructor;
@@ -19,31 +19,26 @@ public class ActivityListSchemeRepresentation implements ScheduleRepresentation 
     int[] activities; // equals λ acc. to literature
     int[] modes; // equals µ acc. to literature
 
-    public ActivityListSchemeRepresentation(List<JobMode> jobModes) {
-        this.activities = new int[jobModes.size()];
-        this.modes = new int[jobModes.size()];
+    public ActivityListSchemeRepresentation(List<ActivityMode> activityModes) {
+        this.activities = new int[activityModes.size()];
+        this.modes = new int[activityModes.size()];
 
-        for (int i = 0; i < jobModes.size(); i++) {
-            JobMode jobMode = jobModes.get(i);
-            this.activities[i] = jobMode.getJob().getJobId();
-            this.modes[i] = jobMode.getMode().getModeId();
+        for (int i = 0; i < activityModes.size(); i++) {
+            ActivityMode activityMode = activityModes.get(i);
+            this.activities[i] = activityMode.getActivity().getActivityId();
+            this.modes[i] = activityMode.getMode().getModeId();
         }
     }
 
     @Override
-    public void validityScheme() {
-
-    }
-
-    @Override
-    public List<JobMode> toJobMode(Project project) {
-        List<JobMode> jobModes = new ArrayList<>();
+    public List<ActivityMode> toActivityModeList(Project project) {
+        List<ActivityMode> activityModes = new ArrayList<>();
         for (int i = 0; i < modes.length; i++) {
-            Job job = ProjectHelper.getJobFromProject(project, activities[i]).get();
-            Mode mode = ProjectHelper.getModeFromJob(job, modes[i]).get();
-            jobModes.add(new JobMode(job, mode));
+            Activity activity = ProjectHelper.getJobFromProject(project, activities[i]).get();
+            Mode mode = ProjectHelper.getModeFromJob(activity, modes[i]).get();
+            activityModes.add(new ActivityMode(activity, mode));
         }
-        return jobModes;
+        return activityModes;
     }
 
     public String toString() {

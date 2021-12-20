@@ -8,8 +8,8 @@ import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.RandomModeHeuristic;
 import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
         Schedule bestSchedule = null;
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
@@ -39,7 +39,7 @@ public class RandomSolver implements Solver {
                             .activityHeuristic(RandomActivityHeuristic.class)
                             .build(),
                         HeuristicSampling.SINGLE,
-                        fixedJobModeList),
+                        fixedActivityModeList),
                         null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result

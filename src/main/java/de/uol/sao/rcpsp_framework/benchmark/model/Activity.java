@@ -11,12 +11,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Job {
-    int jobId;
+public class Activity {
+    int activityId;
     List<Mode> modes;
-    List<Job> successor;
+    List<Activity> successors;
 
     public String toString() {
-        return Integer.toString(jobId);
+        return Integer.toString(activityId);
     }
 }

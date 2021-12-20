@@ -1,6 +1,6 @@
 package de.uol.sao.rcpsp_framework.scheduling;
 
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,7 @@ public class Interval {
     int lowerBound;
     int upperBound;
     int amount;
-    JobMode source;
+    ActivityMode source;
 
     /**
      * Checks if a value is the given interval (e.g. [3, 5] for 4)

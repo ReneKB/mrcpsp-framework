@@ -1,14 +1,14 @@
 package de.uol.sao.rcpsp_framework.solver;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Project;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +34,13 @@ public class GreedySolver implements Solver {
     boolean completed = false;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
         Schedule bestSchedule = null;
 
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
-                schedule = schedulerService.createSchedule(benchmark, this.nextGreedySchemeRepresentation(benchmark, fixedJobModeList), null);
+                schedule = schedulerService.createSchedule(benchmark, this.nextGreedySchemeRepresentation(benchmark, fixedActivityModeList), null);
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
@@ -67,7 +67,7 @@ public class GreedySolver implements Solver {
         return current;
     }
 
-    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark, List<JobMode> fixedJobModeList) {
+    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark, List<ActivityMode> fixedActivityModeList) {
         Project project = benchmark.getProject();
 
         if (positionActivityScheduled == null) {
@@ -99,38 +99,38 @@ public class GreedySolver implements Solver {
             positionModeScheduled = modeIncrementor(positionModeScheduled, maxModesValues, positionModeScheduled.length - 1);
         } else {
             Arrays.fill(positionModeScheduled, 1);
-            List<Job> activityScheduled = Arrays.stream(activitySchedule)
+            List<Activity> activityScheduled = Arrays.stream(activitySchedule)
                     .mapToObj(operand -> ProjectHelper.getJobFromProject(project, operand).get())
                     .collect(Collectors.toList());
 
-            List<Job> potentialResult = new ArrayList<>(activityScheduled);
-            Set<Job> availableJobs;
+            List<Activity> potentialResult = new ArrayList<>(activityScheduled);
+            Set<Activity> availableActivities;
 
             int lastIndex = potentialResult.size() - 1;
             boolean climbUp = false;
 
             while (!completed && (potentialResult.equals(activityScheduled) || potentialResult.size() < activitySchedule.length)) {
                 if (!climbUp) {
-                    Job removedJob = potentialResult.remove(lastIndex);
-                    availableJobs = ProjectHelper.getAvailableJobs(project, potentialResult);
-                    availableJobs.removeIf(job -> job.getJobId() <= removedJob.getJobId());
+                    Activity removedActivity = potentialResult.remove(lastIndex);
+                    availableActivities = ProjectHelper.getAvailableJobs(project, potentialResult);
+                    availableActivities.removeIf(job -> job.getActivityId() <= removedActivity.getActivityId());
                 } else {
-                    availableJobs = ProjectHelper.getAvailableJobs(project, potentialResult);
+                    availableActivities = ProjectHelper.getAvailableJobs(project, potentialResult);
                 }
 
-                if (availableJobs.isEmpty()) {
+                if (availableActivities.isEmpty()) {
                     lastIndex--;
                 } else {
                     climbUp = true;
-                    Job job = availableJobs.stream().sorted(Comparator.comparingInt(Job::getJobId)).findFirst().get();
-                    potentialResult.add(job);
+                    Activity activity = availableActivities.stream().sorted(Comparator.comparingInt(Activity::getActivityId)).findFirst().get();
+                    potentialResult.add(activity);
                 }
 
                 if (lastIndex == -1)
                     completed = true;
             }
 
-            List<Integer> results = potentialResult.stream().map(Job::getJobId).collect(Collectors.toList());
+            List<Integer> results = potentialResult.stream().map(Activity::getActivityId).collect(Collectors.toList());
             for (int i = 0; i < results.size(); i++) {
                 positionActivityScheduled[i] = results.get(i);
             }

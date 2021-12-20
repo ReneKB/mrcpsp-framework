@@ -4,11 +4,11 @@ import de.uol.sao.rcpsp_framework.exception.NoNonRenewableResourcesLeftException
 import de.uol.sao.rcpsp_framework.exception.RenewableResourceNotEnoughException;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
@@ -20,9 +20,9 @@ import java.util.List;
 public class MSLKHeuristic extends ActivityHeuristic {
 
     @Override
-    public double determineActivityPriorityValue(Job job, Mode jobSelectedMode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        List<Job> possibleScheduledJobs = new ArrayList<>(scheduledJobs);
-        possibleScheduledJobs.add(job);
+    public double determineActivityPriorityValue(Activity activity, Mode jobSelectedMode, List<Activity> scheduledActivities, List<Mode> scheduledModes, Benchmark benchmark) {
+        List<Activity> possibleScheduledActivities = new ArrayList<>(scheduledActivities);
+        possibleScheduledActivities.add(activity);
 
         int priorityValue = 0;
 
@@ -31,7 +31,7 @@ public class MSLKHeuristic extends ActivityHeuristic {
         List<Mode> possibleScheduledModes = new ArrayList<>(scheduledModes);
         possibleScheduledModes.add(jobSelectedMode);
 
-        int[] scheduledJobsArray = ArrayUtils.toPrimitive(possibleScheduledJobs.stream().map(Job::getJobId).toArray(Integer[]::new));
+        int[] scheduledJobsArray = ArrayUtils.toPrimitive(possibleScheduledActivities.stream().map(Activity::getActivityId).toArray(Integer[]::new));
         int[] scheduledModesArray = ArrayUtils.toPrimitive(possibleScheduledModes.stream().map(Mode::getModeId).toArray(Integer[]::new));
 
         ScheduleRepresentation scheduleRepresentation = new ActivityListSchemeRepresentation(
@@ -41,10 +41,10 @@ public class MSLKHeuristic extends ActivityHeuristic {
 
         try {
             Schedule partialSchedule = new SchedulerService().createSchedule(benchmark, scheduleRepresentation, null);
-            ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
+            SchedulePlanInfo schedulePlanInfo = ScheduleHelper.createScheduleRelationInfo(partialSchedule);
 
-            int leastFinishedTime = scheduleRelationInfo.getLatestFinishingTime().get(job);
-            int earliestFinishedTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
+            int leastFinishedTime = schedulePlanInfo.getLatestFinishingTime().get(activity);
+            int earliestFinishedTime = schedulePlanInfo.getEarliestFinishingTime().get(activity);
             priorityValue = Math.max(leastFinishedTime - earliestFinishedTime, priorityValue);
         } catch (NoNonRenewableResourcesLeftException e) {
             return Integer.MAX_VALUE;

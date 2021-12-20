@@ -5,7 +5,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.*;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,17 +14,17 @@ import java.util.stream.Collectors;
 
 public class HeuristicDirector {
 
-    private static Map<Job, Double> computePriorityValueForJobs(ActivityHeuristic activityHeuristic, Map<Job, Mode> jobsModes, List<Job> jobs, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
-        Map<Job, Double> jobWithPriorityValue = new HashMap<>();
-        jobs.forEach(job ->
-            jobWithPriorityValue.put(job, activityHeuristic.determineActivityPriorityValue(job, jobsModes.get(job), scheduledJobs, scheduledModes, benchmark))
+    private static Map<Activity, Double> computeActivityPriorityValues(ActivityHeuristic activityHeuristic, Map<Activity, Mode> jobsModes, List<Activity> activities, List<Activity> scheduledActivities, List<Mode> scheduledModes, Benchmark benchmark) {
+        Map<Activity, Double> jobWithPriorityValue = new HashMap<>();
+        activities.forEach(job ->
+            jobWithPriorityValue.put(job, activityHeuristic.determineActivityPriorityValue(job, jobsModes.get(job), scheduledActivities, scheduledModes, benchmark))
         );
         return jobWithPriorityValue;
     }
 
-    private static Map<Mode, Double> computeModePriorityValues(ModeHeuristic modeHeuristic, Job selectedJob, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    private static Map<Mode, Double> computeModePriorityValues(ModeHeuristic modeHeuristic, Activity selectedActivity, List<Activity> scheduledActivities, List<Mode> scheduledModes, Benchmark benchmark) {
         Map<Mode, Double> jobWithPriorityValue = new HashMap<>();
-        selectedJob.getModes().forEach(mode -> {
+        selectedActivity.getModes().forEach(mode -> {
             boolean infeasibleRenewableResources = false;
             for (Map.Entry<Resource, Integer> entry : mode.getRequestedResources().entrySet()) {
                 Resource possibleRequestedResource = entry.getKey();
@@ -36,7 +36,7 @@ public class HeuristicDirector {
             }
 
             if (!infeasibleRenewableResources)
-                jobWithPriorityValue.put(mode, modeHeuristic.determineModePriorityValue(selectedJob, mode, scheduledJobs, scheduledModes, benchmark));
+                jobWithPriorityValue.put(mode, modeHeuristic.determineModePriorityValue(selectedActivity, mode, scheduledActivities, scheduledModes, benchmark));
             else
                 jobWithPriorityValue.put(mode, Double.MAX_VALUE);
 
@@ -127,42 +127,42 @@ public class HeuristicDirector {
         return HeuristicDirector.constructScheduleRepresentation(benchmark, heuristic, HeuristicSampling.SINGLE, null);
     }
 
-    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling, List<JobMode> alreadyScheduled) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling, List<ActivityMode> alreadyScheduled) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         ActivityHeuristic activityHeuristic = heuristic.getActivityHeuristic().getDeclaredConstructor().newInstance();
         ModeHeuristic modeHeuristic = heuristic.getModeHeuristic().getDeclaredConstructor().newInstance();
 
-        List<Job> activityScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(JobMode::getJob).collect(Collectors.toList());
-        List<Mode> modesScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(JobMode::getMode).collect(Collectors.toList());
+        List<Activity> activityScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(ActivityMode::getActivity).collect(Collectors.toList());
+        List<Mode> modesScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(ActivityMode::getMode).collect(Collectors.toList());
 
-        List<Job> possibleJobs = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
+        List<Activity> possibleActivities = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
 
         // First schedule the activities
-        while (!possibleJobs.isEmpty()) {
+        while (!possibleActivities.isEmpty()) {
             // Compute the modes for all possible jobs
-            Map<Job, Mode> modes = new HashMap<>();
-            for (Job possibleJob : possibleJobs) {
-                Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleJob, activityScheduled, modesScheduled, benchmark);
+            Map<Activity, Mode> modes = new HashMap<>();
+            for (Activity possibleActivity : possibleActivities) {
+                Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleActivity, activityScheduled, modesScheduled, benchmark);
                 Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
                     HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getHeuristicSelection()) :
                     HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getHeuristicSelection());
-                modes.put(possibleJob, selectedMode);
+                modes.put(possibleActivity, selectedMode);
             }
 
             // Compute all possible activities acc. to the heuristic alg
-            Map<Job, Double> activityPriorityValues = HeuristicDirector.computePriorityValueForJobs(activityHeuristic, modes, possibleJobs, activityScheduled, modesScheduled, benchmark);
-            Job selectedJob = heuristicSampling == HeuristicSampling.SINGLE ?
+            Map<Activity, Double> activityPriorityValues = HeuristicDirector.computeActivityPriorityValues(activityHeuristic, modes, possibleActivities, activityScheduled, modesScheduled, benchmark);
+            Activity selectedActivity = heuristicSampling == HeuristicSampling.SINGLE ?
                     HeuristicDirector.samplingSingle(activityPriorityValues, activityHeuristic.getHeuristicSelection()) :
                     HeuristicDirector.samplingRegretBasedBiasRandom(activityPriorityValues, activityHeuristic.getHeuristicSelection());
 
-            activityScheduled.add(selectedJob);
-            modesScheduled.add(modes.get(selectedJob));
+            activityScheduled.add(selectedActivity);
+            modesScheduled.add(modes.get(selectedActivity));
 
             // Remove from list and add the possible successors
-            possibleJobs = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
+            possibleActivities = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
         }
 
         return new ActivityListSchemeRepresentation(
-            activityScheduled.stream().mapToInt(Job::getJobId).toArray(),
+            activityScheduled.stream().mapToInt(Activity::getActivityId).toArray(),
             modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
         );
     }

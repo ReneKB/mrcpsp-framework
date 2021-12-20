@@ -4,7 +4,7 @@ import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 
 import java.util.List;
 
@@ -16,6 +16,6 @@ public interface Solver {
     Schedule algorithm(Benchmark benchmark,
                        int iterations,
                        Metric<?> robustnessFunction,
-                       List<JobMode> fixedJobModeList) throws GiveUpException;
+                       List<ActivityMode> fixedActivityModeList) throws GiveUpException;
 
 }

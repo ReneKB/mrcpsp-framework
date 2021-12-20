@@ -5,8 +5,8 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.SneakyThrows;
@@ -32,14 +32,14 @@ public class SimulatedAnnealingSolver implements Solver {
 
     @Override
     @SneakyThrows
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) throws GiveUpException {
-        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedJobModeList);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
+        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
         Schedule overallBestSolution = bestSchedule;
 
         int i = 0;
         while (i < iterations) {
             List<Schedule> neighbours = new ArrayList<>();
-            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(),fixedJobModeList);
+            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(), fixedActivityModeList);
 
             for (ScheduleRepresentation neighbour : neighboursRepresentations) {
                 try {

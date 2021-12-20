@@ -197,8 +197,8 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                     case VISUALIZE:
                         log.info("");
                         log.info("Visualizing the result... ");
-                        visualizationService.visualizeJobsBenchmark(benchmark);
-                        visualizationService.visualizeResults(bestOverallSchedule.get());
+                        visualizationService.visualizeBenchmark(benchmark);
+                        visualizationService.visualizeSchedule(bestOverallSchedule.get());
                         break;
                     default:
                 }

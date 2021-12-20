@@ -1,8 +1,8 @@
 package de.uol.sao.rcpsp_framework.helper;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
@@ -12,9 +12,9 @@ import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.SneakyThrows;
@@ -24,26 +24,26 @@ import java.util.stream.Collectors;
 
 public class SolverHelper {
 
-    public static void flipNeighbourModes(List<Job> initialJobList, int[] neighbourModes) {
-        if (initialJobList.isEmpty())
+    public static void flipNeighbourModes(List<Activity> initialActivityList, int[] neighbourModes) {
+        if (initialActivityList.isEmpty())
             return;
 
-        int gap = neighbourModes.length - initialJobList.size();
+        int gap = neighbourModes.length - initialActivityList.size();
 
         Mode newSelectedMode = null;
         int newSelectedModeIndex = 0;
 
-        int completeModesAmount = initialJobList.stream().map(Job::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
-        boolean singleMode = completeModesAmount == initialJobList.size();
+        int completeModesAmount = initialActivityList.stream().map(Activity::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
+        boolean singleMode = completeModesAmount == initialActivityList.size();
 
         while (newSelectedMode == null && !singleMode) {
-            int randomIndex = new Random().nextInt(initialJobList.size());
+            int randomIndex = new Random().nextInt(initialActivityList.size());
             int currentMode = neighbourModes[randomIndex + gap];
 
-            Job job = initialJobList.get(randomIndex);
-            int size = job.getModes().size();
+            Activity activity = initialActivityList.get(randomIndex);
+            int size = activity.getModes().size();
             if (size != 1) {
-                List<Mode> selectedMode = job.getModes().stream().dropWhile(mode -> mode.getModeId() == currentMode).collect(Collectors.toList());
+                List<Mode> selectedMode = activity.getModes().stream().dropWhile(mode -> mode.getModeId() == currentMode).collect(Collectors.toList());
                 Collections.shuffle(selectedMode);
                 newSelectedMode = selectedMode.get(0);
                 newSelectedModeIndex = randomIndex;
@@ -56,30 +56,30 @@ public class SolverHelper {
 
 
     @SneakyThrows
-    public static List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<JobMode> fixedJobMode) {
-        List<JobMode> jobModes = scheduleRepresentation.toJobMode(benchmark.getProject());
+    public static List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<ActivityMode> fixedActivityMode) {
+        List<ActivityMode> activityModes = scheduleRepresentation.toActivityModeList(benchmark.getProject());
         List<ScheduleRepresentation> neighbourhood = new ArrayList<>();
 
-        List<Job> jobList = jobModes.stream().map(JobMode::getJob).collect(Collectors.toList());
-        List<Mode> modeList = jobModes.stream().map(JobMode::getMode).collect(Collectors.toList());
+        List<Activity> activityList = activityModes.stream().map(ActivityMode::getActivity).collect(Collectors.toList());
+        List<Mode> modeList = activityModes.stream().map(ActivityMode::getMode).collect(Collectors.toList());
 
-        List<Job> changeableModes = fixedJobMode != null ? jobList.stream()
-                .filter(job -> !fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toList()).contains(job))
-                .collect(Collectors.toList()) : new ArrayList<>(jobList);
+        List<Activity> changeableModes = fixedActivityMode != null ? activityList.stream()
+                .filter(job -> !fixedActivityMode.stream().map(ActivityMode::getActivity).collect(Collectors.toList()).contains(job))
+                .collect(Collectors.toList()) : new ArrayList<>(activityList);
 
-        int[] jobs = new int[jobList.size()];
+        int[] jobs = new int[activityList.size()];
         int[] modes = new int[modeList.size()];
 
         for (int i = 0; i < jobs.length; i++) {
-            jobs[i] = jobList.get(i).getJobId();
+            jobs[i] = activityList.get(i).getActivityId();
             modes[i] = modeList.get(i).getModeId();
         }
 
-        Set<Job> handledJobs = new HashSet<>();
-        if (fixedJobMode != null) {
-            handledJobs.addAll(fixedJobMode.stream().map(JobMode::getJob).collect(Collectors.toSet()));
+        Set<Activity> handledActivities = new HashSet<>();
+        if (fixedActivityMode != null) {
+            handledActivities.addAll(fixedActivityMode.stream().map(ActivityMode::getActivity).collect(Collectors.toSet()));
         } else
-            handledJobs.add(jobList.get(0));
+            handledActivities.add(activityList.get(0));
 
         // Adds for the same activity list mode neighbours
         for (int i = 0; i < 2; i++) {
@@ -90,12 +90,12 @@ public class SolverHelper {
             neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
         }
 
-        for (int i = fixedJobMode != null ? fixedJobMode.size() + 1 : 1; i < jobList.size(); i++) {
-            Job previousJob = jobList.get(i - 1);
-            Job currentJob = jobList.get(i);
+        for (int i = fixedActivityMode != null ? fixedActivityMode.size() + 1 : 1; i < activityList.size(); i++) {
+            Activity previousActivity = activityList.get(i - 1);
+            Activity currentActivity = activityList.get(i);
 
-            Set<Job> requiredJobs = ProjectHelper.getPredecessorsOfJob(benchmark.getProject(), currentJob);
-            if (handledJobs.containsAll(requiredJobs) && !requiredJobs.contains(previousJob)) { // Can be swapped
+            Set<Activity> requiredActivities = ProjectHelper.getPredecessorsOfJob(benchmark.getProject(), currentActivity);
+            if (handledActivities.containsAll(requiredActivities) && !requiredActivities.contains(previousActivity)) { // Can be swapped
                 int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
                 int[] neighbourModes = Arrays.copyOf(modes, modes.length);
 
@@ -113,13 +113,13 @@ public class SolverHelper {
                 SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
                 neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
             }
-            handledJobs.add(currentJob);
+            handledActivities.add(currentActivity);
         }
 
         return neighbourhood;
     }
 
-    public static Schedule createInitialSolution(SchedulerService schedulerService, Benchmark benchmark, List<JobMode> alreadyScheduled) throws GiveUpException {
+    public static Schedule createInitialSolution(SchedulerService schedulerService, Benchmark benchmark, List<ActivityMode> alreadyScheduled) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 

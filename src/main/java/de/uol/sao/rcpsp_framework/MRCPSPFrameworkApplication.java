@@ -5,10 +5,10 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-public class RCPSPFrameworkApplication {
+public class MRCPSPFrameworkApplication {
 
     public static void main(String[] args) {
-        SpringApplicationBuilder builder = new SpringApplicationBuilder(RCPSPFrameworkApplication.class);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(MRCPSPFrameworkApplication.class);
         builder.headless(false);
         ConfigurableApplicationContext context = builder.run(args);
     }

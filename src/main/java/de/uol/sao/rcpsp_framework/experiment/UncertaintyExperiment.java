@@ -76,16 +76,16 @@ public abstract class UncertaintyExperiment implements Experiment {
 
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
-        this.filterOneInstancePerParameter(benchmarks);
+        ExperimentHelper.filterOneInstancePerParameter(benchmarks);
 
         // Experiment Design
-        int trials = 1;
+        int trials = 2;
 
         List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.40)));
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
@@ -211,19 +211,6 @@ public abstract class UncertaintyExperiment implements Experiment {
         // Output in latex
         this.logLatex(benchmarks, uncertaintyModels, iterations, solvers, benchmarkOverallMakespanResults);
     }
-
-    void filterOneInstancePerParameter(List<Benchmark> benchmarks) {
-        List<Benchmark> benchmarksToDelete = new ArrayList<>();
-        String previousStr = "";
-        for (Benchmark benchmark : benchmarks) {
-            String currentInstanceStr = benchmark.getName().split("_")[0];
-            if (currentInstanceStr.equals(previousStr))
-                benchmarksToDelete.add(benchmark);
-            previousStr = currentInstanceStr;
-        }
-        benchmarks.removeAll(benchmarksToDelete);
-    }
-
 
     private void logLatex(List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
         String latex = latexService.printLatexTableUncertainty(

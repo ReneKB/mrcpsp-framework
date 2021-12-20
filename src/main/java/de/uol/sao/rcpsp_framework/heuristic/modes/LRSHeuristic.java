@@ -10,7 +10,7 @@ import java.util.Map;
 public class LRSHeuristic extends ModeHeuristic {
 
     @Override
-    public double determineModePriorityValue(Job job, Mode mode, List<Job> scheduledJobs, List<Mode> scheduledModes, Benchmark benchmark) {
+    public double determineModePriorityValue(Activity activity, Mode mode, List<Activity> scheduledActivities, List<Mode> scheduledModes, Benchmark benchmark) {
         Map<Resource, Integer> nonRenewableResourcesLeft = new HashMap<>();
         benchmark.getProject().getAvailableResources().forEach((resource, amount) -> {
             if (resource instanceof NonRenewableResource) {

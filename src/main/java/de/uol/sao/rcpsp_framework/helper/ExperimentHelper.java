@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.helper;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.experiment.Experiment;
@@ -135,5 +136,17 @@ public class ExperimentHelper {
         }
 
         return experiments;
+    }
+
+    public static void filterOneInstancePerParameter(List<Benchmark> benchmarks) {
+        List<Benchmark> benchmarksToDelete = new ArrayList<>();
+        String previousStr = "";
+        for (Benchmark benchmark : benchmarks) {
+            String currentInstanceStr = benchmark.getName().split("_")[0];
+            if (currentInstanceStr.equals(previousStr))
+                benchmarksToDelete.add(benchmark);
+            previousStr = currentInstanceStr;
+        }
+        benchmarks.removeAll(benchmarksToDelete);
     }
 }

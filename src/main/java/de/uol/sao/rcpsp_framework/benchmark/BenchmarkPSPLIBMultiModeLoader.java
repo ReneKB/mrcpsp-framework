@@ -48,12 +48,12 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
         Benchmark benchmark = new Benchmark();
         benchmark.setProject(project);
         benchmark.setName(file);
-        List<Job> jobs = new ArrayList<>();
+        List<Activity> activities = new ArrayList<>();
         Map<Resource, Integer> availableResources = new HashMap<>();
 
         // buffer for the last section (ResourceAvailabilities)
         List<Resource> bufferResourcesAvailableOrder = new ArrayList<>();
-        Job bufferJob = null;
+        Activity bufferActivity = null;
 
         int currentSegmentStateIndex = -1;
 
@@ -78,8 +78,8 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         benchmark.setNumberJobs(jobAmount);
 
                         for (int i = 0; i < jobAmount; i++) {
-                            Job job = Job.builder().jobId(i + 1).build();
-                            jobs.add(job);
+                            Activity activity = Activity.builder().activityId(i + 1).build();
+                            activities.add(activity);
                         }
                     }
                     else if (strLine.contains("horizon")) {
@@ -117,15 +117,15 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         List<Integer> lineIntegers = this.getIntegersByTrialErrorParsing(strLine);
 
                         // Now search for the proper job.
-                        Job job = jobs.stream().filter(possibleJob -> possibleJob.getJobId() == lineIntegers.get(0)).findFirst().get();
+                        Activity activity = activities.stream().filter(possibleJob -> possibleJob.getActivityId() == lineIntegers.get(0)).findFirst().get();
 
                         // create modes
                         int amountMode = lineIntegers.get(1);
 
                         List<Mode> modes = new ArrayList<>();
-                        List<Job> successorJobs = new ArrayList<>();
-                        job.setModes(modes);
-                        job.setSuccessor(successorJobs);
+                        List<Activity> successorActivities = new ArrayList<>();
+                        activity.setModes(modes);
+                        activity.setSuccessors(successorActivities);
 
                         for (int i = 0; i < amountMode; i++) {
                             modes.add(Mode.builder().modeId(i + 1).duration(-1).build());
@@ -136,8 +136,8 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
 
                         for (int i = 3; i < 3 + amountSuccessor; i++) {
                             int successorIndex = lineIntegers.get(i);
-                            Job successorJob = jobs.stream().filter(possibleJob -> possibleJob.getJobId() == successorIndex).findFirst().get();
-                            successorJobs.add(successorJob);
+                            Activity successorActivity = activities.stream().filter(possibleJob -> possibleJob.getActivityId() == successorIndex).findFirst().get();
+                            successorActivities.add(successorActivity);
                         }
                     }
                     break;
@@ -153,7 +153,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         int modeId = lineIntegers.get(0);
                         int duration = lineIntegers.get(1);
 
-                        Mode mode = bufferJob.getModes().stream().filter(possibleMode -> possibleMode.getModeId() == modeId).findFirst().get();
+                        Mode mode = bufferActivity.getModes().stream().filter(possibleMode -> possibleMode.getModeId() == modeId).findFirst().get();
 
                         Map<Resource, Integer> requestedResources = new HashMap<>();
                         for (int i = 2, j = 0; i < lineIntegers.size(); i++, j++) {
@@ -172,8 +172,8 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
                         int modeId = lineIntegers.get(1);
                         int duration = lineIntegers.get(2);
 
-                        Job job = jobs.stream().filter(possibleJob -> possibleJob.getJobId() == jobId).findFirst().get();
-                        Mode mode = job.getModes().stream().filter(possibleMode -> possibleMode.getModeId() == modeId).findFirst().get();
+                        Activity activity = activities.stream().filter(possibleJob -> possibleJob.getActivityId() == jobId).findFirst().get();
+                        Mode mode = activity.getModes().stream().filter(possibleMode -> possibleMode.getModeId() == modeId).findFirst().get();
 
                         Map<Resource, Integer> requestedResources = new HashMap<>();
                         for (int i = 3, j = 0; i < lineIntegers.size(); i++, j++) {
@@ -186,7 +186,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
 
                         mode.setDuration(duration);
                         mode.setRequestedResources(requestedResources);
-                        bufferJob = job;
+                        bufferActivity = activity;
                     }
                     break;
                 case ResourceAvailabilities:
@@ -208,7 +208,7 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
             }
         }
 
-        project.setJobs(jobs);
+        project.setActivities(activities);
         project.setAvailableResources(availableResources);
 
         // log.info(String.format("Loaded Benchmark: %s (Jobs: %d, Horizon: %d) ", benchmark.getName(), benchmark.getNumberJobs(), benchmark.getHorizon()));

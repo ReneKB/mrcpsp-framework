@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.activities;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import lombok.Getter;
@@ -12,9 +12,9 @@ public abstract class ActivityHeuristic {
     @Getter
     protected HeuristicSelection heuristicSelection;
 
-    public abstract double determineActivityPriorityValue(Job job,
+    public abstract double determineActivityPriorityValue(Activity activity,
                                                           Mode jobSelectedMode,
-                                                          List<Job> scheduledJobs,
+                                                          List<Activity> scheduledActivities,
                                                           List<Mode> scheduledModes,
                                                           Benchmark benchmark);
 

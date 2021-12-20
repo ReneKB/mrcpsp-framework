@@ -11,9 +11,9 @@ public abstract class ModeHeuristic {
     @Getter
     protected HeuristicSelection heuristicSelection;
 
-    public abstract double determineModePriorityValue(Job job,
+    public abstract double determineModePriorityValue(Activity activity,
                                                       Mode mode,
-                                                      List<Job> scheduledJobs,
+                                                      List<Activity> scheduledActivities,
                                                       List<Mode> scheduledModes,
                                                       Benchmark benchmark);
 

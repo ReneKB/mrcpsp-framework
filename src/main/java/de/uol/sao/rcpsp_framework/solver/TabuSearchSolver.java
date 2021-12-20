@@ -5,7 +5,7 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
-import de.uol.sao.rcpsp_framework.representation.JobMode;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
@@ -30,8 +30,8 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<JobMode> fixedJobModeList) throws GiveUpException {
-        Schedule tabuSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedJobModeList);
+    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
+        Schedule tabuSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
         Schedule bestSchedule = tabuSchedule;
         Schedule bestOverallSchedule = bestSchedule;
 
@@ -43,7 +43,7 @@ public class TabuSearchSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedJobModeList);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList);
             neighbourhood.removeIf(tabuList::contains);
 
             Schedule neighbourhoodFavorite = null;

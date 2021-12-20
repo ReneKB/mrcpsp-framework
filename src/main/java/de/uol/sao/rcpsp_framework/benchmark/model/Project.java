@@ -14,6 +14,6 @@ import java.util.Map;
 @Builder(toBuilder = true)
 public class Project {
     int projectId;
-    List<Job> jobs;
+    List<Activity> activities;
     Map<Resource, Integer> availableResources;
 }

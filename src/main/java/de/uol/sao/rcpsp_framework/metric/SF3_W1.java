@@ -1,10 +1,10 @@
 package de.uol.sao.rcpsp_framework.metric;
 
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.benchmark.model.Job;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.scheduling.ScheduleRelationInfo;
+import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import lombok.SneakyThrows;
 
 import java.util.HashMap;
@@ -20,14 +20,14 @@ public class SF3_W1 extends Metric<Double> {
     @Override
     @SneakyThrows
     public Double computeMetric(Schedule schedule) {
-        ScheduleRelationInfo scheduleRelationInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
-        Map<Job, Integer> slacks = ScheduleHelper.computeFreeSlacks(scheduleRelationInfo);
-        Map<Job, Integer> durations = new HashMap<>();
-        scheduleRelationInfo.getEarliestFinishingTime().forEach((job, earliestFinishingTime) -> {
-            durations.put(job, earliestFinishingTime - scheduleRelationInfo.getEarliestStartingTime().get(job));
+        SchedulePlanInfo schedulePlanInfo = ScheduleHelper.createScheduleRelationInfo(schedule);
+        Map<Activity, Integer> slacks = ScheduleHelper.computeFreeSlacks(schedulePlanInfo);
+        Map<Activity, Integer> durations = new HashMap<>();
+        schedulePlanInfo.getEarliestFinishingTime().forEach((job, earliestFinishingTime) -> {
+            durations.put(job, earliestFinishingTime - schedulePlanInfo.getEarliestStartingTime().get(job));
         });
 
-        return slacks.keySet().stream().map(job -> Math.min((double) slacks.get(job), frac * durations.get(job)) * job.getSuccessor().size()).reduce(Double::sum).get();
+        return slacks.keySet().stream().map(job -> Math.min((double) slacks.get(job), frac * durations.get(job)) * job.getSuccessors().size()).reduce(Double::sum).get();
     }
 
     @Override
