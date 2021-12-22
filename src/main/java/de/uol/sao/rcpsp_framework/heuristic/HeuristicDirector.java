@@ -4,7 +4,7 @@ import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 
@@ -161,7 +161,7 @@ public class HeuristicDirector {
             possibleActivities = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
         }
 
-        return new ActivityListSchemeRepresentation(
+        return new ActivityListRepresentation(
             activityScheduled.stream().mapToInt(Activity::getActivityId).toArray(),
             modesScheduled.stream().mapToInt(Mode::getModeId).toArray()
         );

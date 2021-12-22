@@ -4,7 +4,9 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.experiment.Experiment;
+import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.util.Assert;
@@ -148,5 +150,15 @@ public class ExperimentHelper {
             previousStr = currentInstanceStr;
         }
         benchmarks.removeAll(benchmarksToDelete);
+    }
+
+    public static List<UncertaintyModel> getUncertaintyIssues() {
+        int trials = 2;
+        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
+        return uncertaintyModels;
     }
 }

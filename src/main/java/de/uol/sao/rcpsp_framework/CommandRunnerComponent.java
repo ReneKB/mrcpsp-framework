@@ -5,11 +5,12 @@ import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
 import de.uol.sao.rcpsp_framework.helper.FileHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.service.BenchmarkLoaderService;
 import de.uol.sao.rcpsp_framework.experiment.Experiment;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.service.CommandLineToolService;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import de.uol.sao.rcpsp_framework.service.VisualizationService;
 import lombok.SneakyThrows;
@@ -33,10 +34,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
     BenchmarkLoaderService benchmarkLoaderService;
 
     @Autowired
-    SchedulerService schedulerService;
-
-    @Autowired
-    VisualizationService visualizationService;
+    CommandLineToolService commandLineToolService;
 
     @Autowired
     BeanFactory beanFactory;
@@ -54,7 +52,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
         List<Benchmark> splittedBenchmarks = benchmarks.subList(0, Math.min(benchmarks.size(), limit));
 
         if (!args.containsOption(CommandArgsOptions.SERVER.getCommandStr())) {
-            Executors.newSingleThreadExecutor().execute(() -> runInputThread(benchmarks.get(0)));
+            Executors.newSingleThreadExecutor().execute(() -> commandLineToolService.runInputThread(benchmarks, args));
         }
 
         experiments.forEach(experiment -> {
@@ -116,38 +114,4 @@ public class CommandRunnerComponent implements ApplicationRunner {
         }).collect(Collectors.toList());
     }
 
-
-    void runInputThread(Benchmark benchmark) {
-        while (true) {
-            log.info("Ready for receiving custom activity input from console! ");
-
-            try {
-                Scanner scanner = new Scanner(System.in);
-
-                String jobList = scanner.nextLine();
-                log.info("Custom modes: ");
-                String modeList = scanner.nextLine();
-
-                int[] activities = getArrayFromString(jobList);
-                int[] modes = this.getArrayFromString(modeList);
-
-                Schedule schedule = schedulerService.createSchedule(benchmark, new ActivityListSchemeRepresentation(activities, modes), null);
-
-                // Output Metrics and visualize
-                log.info("Custom Schedule successfully created! ");
-                ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
-
-                visualizationService.visualizeBenchmark(benchmark);
-                visualizationService.visualizeSchedule(schedule);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private int[] getArrayFromString(String jobList) {
-        return Arrays.stream(jobList.substring(1, jobList.length() - 1)
-                        .split(","))
-                        .map(String::trim).mapToInt(Integer::parseInt).toArray();
-    }
 }

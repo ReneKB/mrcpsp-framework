@@ -79,13 +79,6 @@ public class VisualizationService {
 
         return nodes;
     }
-
-    DefaultXYDataset generateDataset(Benchmark benchmark) {
-        DefaultXYDataset dataset = new DefaultXYDataset();
-
-        return dataset;
-    }
-
     public void visualizeBenchmark(Benchmark benchmark) {
         // Jobs Visualization
         Graph g = graph("example1").directed()

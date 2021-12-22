@@ -14,7 +14,7 @@ import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.SneakyThrows;
@@ -87,7 +87,7 @@ public class SolverHelper {
             int[] neighbourModes = Arrays.copyOf(modes, modes.length);
 
             SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-            neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
+            neighbourhood.add(new ActivityListRepresentation(neighbourJobs, neighbourModes));
         }
 
         for (int i = fixedActivityMode != null ? fixedActivityMode.size() + 1 : 1; i < activityList.size(); i++) {
@@ -108,10 +108,10 @@ public class SolverHelper {
                 neighbourModes[i] = tmp;
 
                 SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-                neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
+                neighbourhood.add(new ActivityListRepresentation(neighbourJobs, neighbourModes));
 
                 SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-                neighbourhood.add(new ActivityListSchemeRepresentation(neighbourJobs, neighbourModes));
+                neighbourhood.add(new ActivityListRepresentation(neighbourJobs, neighbourModes));
             }
             handledActivities.add(currentActivity);
         }

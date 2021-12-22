@@ -9,7 +9,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -34,7 +34,7 @@ public class MSLKHeuristic extends ActivityHeuristic {
         int[] scheduledJobsArray = ArrayUtils.toPrimitive(possibleScheduledActivities.stream().map(Activity::getActivityId).toArray(Integer[]::new));
         int[] scheduledModesArray = ArrayUtils.toPrimitive(possibleScheduledModes.stream().map(Mode::getModeId).toArray(Integer[]::new));
 
-        ScheduleRepresentation scheduleRepresentation = new ActivityListSchemeRepresentation(
+        ScheduleRepresentation scheduleRepresentation = new ActivityListRepresentation(
             scheduledJobsArray,
             scheduledModesArray
         );

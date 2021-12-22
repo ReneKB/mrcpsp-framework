@@ -17,7 +17,7 @@ import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.AllArgsConstructor;
@@ -141,7 +141,7 @@ public class GeneticAlgorithmSolver implements Solver {
             daughter.add(mother.get(k));
         }
 
-        return new ActivityListSchemeRepresentation(daughter);
+        return new ActivityListRepresentation(daughter);
     }
 
     private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring, List<ActivityMode> fixedActivityModeList) {
@@ -214,7 +214,7 @@ public class GeneticAlgorithmSolver implements Solver {
             }
         }
 
-        return new ActivityListSchemeRepresentation(jobs, modes);
+        return new ActivityListRepresentation(jobs, modes);
     }
 
     private void removeFromSwappableList(List<ActivityMode> removingItems, List<List<ActivityMode>> swappableJobModes) {

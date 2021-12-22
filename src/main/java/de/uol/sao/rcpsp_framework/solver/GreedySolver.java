@@ -6,7 +6,7 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Project;
 import de.uol.sao.rcpsp_framework.metric.Metric;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
@@ -67,7 +67,7 @@ public class GreedySolver implements Solver {
         return current;
     }
 
-    private ActivityListSchemeRepresentation nextGreedySchemeRepresentation(Benchmark benchmark, List<ActivityMode> fixedActivityModeList) {
+    private ActivityListRepresentation nextGreedySchemeRepresentation(Benchmark benchmark, List<ActivityMode> fixedActivityModeList) {
         Project project = benchmark.getProject();
 
         if (positionActivityScheduled == null) {
@@ -86,7 +86,7 @@ public class GreedySolver implements Solver {
         int[] activitySchedule = Arrays.copyOf(positionActivityScheduled, positionActivityScheduled.length);
         int[] modesSchedule = Arrays.copyOf(positionModeScheduled, positionModeScheduled.length);
 
-        ActivityListSchemeRepresentation activityListSchemeRepresentation = new ActivityListSchemeRepresentation(
+        ActivityListRepresentation activityListRepresentation = new ActivityListRepresentation(
             activitySchedule,
             modesSchedule
         );
@@ -136,7 +136,7 @@ public class GreedySolver implements Solver {
             }
         }
 
-        return activityListSchemeRepresentation;
+        return activityListRepresentation;
     }
 
 }

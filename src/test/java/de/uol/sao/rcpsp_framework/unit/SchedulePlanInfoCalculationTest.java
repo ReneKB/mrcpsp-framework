@@ -7,7 +7,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Project;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.benchmark.BenchmarkLoader;
 import de.uol.sao.rcpsp_framework.benchmark.BenchmarkPSPLIBMultiModeLoader;
@@ -33,7 +33,7 @@ public class SchedulePlanInfoCalculationTest {
         int[] jobList = { 1, 2, 6, 3, 5, 4, 9, 11, 14, 18, 7, 17, 10, 13, 8, 16, 15, 12, 21, 19, 20, 22 };
         int[] modeList = { 1, 1, 2, 2, 1, 1, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 3, 3, 3, 3, 2, 1 };
 
-        ScheduleRepresentation representation = new ActivityListSchemeRepresentation(jobList, modeList);
+        ScheduleRepresentation representation = new ActivityListRepresentation(jobList, modeList);
         List<ActivityMode> activityModeList = representation.toActivityModeList(project);
 
         // test
@@ -63,7 +63,7 @@ public class SchedulePlanInfoCalculationTest {
         int[] partialJobList = {1, 2};
         int[] partialModeList = {1, 2};
 
-        ScheduleRepresentation representation = new ActivityListSchemeRepresentation(partialJobList, partialModeList);
+        ScheduleRepresentation representation = new ActivityListRepresentation(partialJobList, partialModeList);
 
         // test
         Schedule schedule = new SchedulerService().createSchedule(benchmark, representation, null);
@@ -95,7 +95,7 @@ public class SchedulePlanInfoCalculationTest {
         int[] partialJobList = {1, 2, 3, 5};
         int[] partialModeList = {1, 2, 1, 1};
 
-        ScheduleRepresentation representation = new ActivityListSchemeRepresentation(partialJobList, partialModeList);
+        ScheduleRepresentation representation = new ActivityListRepresentation(partialJobList, partialModeList);
         // test
         Schedule schedule = new SchedulerService().createSchedule(benchmark, representation, null);
         SchedulePlanInfo schedulePlanInfo = ScheduleHelper.createScheduleRelationInfo(schedule);

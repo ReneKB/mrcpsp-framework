@@ -15,11 +15,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class ActivityListSchemeRepresentation implements ScheduleRepresentation {
+public class ActivityListRepresentation implements ScheduleRepresentation {
     int[] activities; // equals λ acc. to literature
     int[] modes; // equals µ acc. to literature
 
-    public ActivityListSchemeRepresentation(List<ActivityMode> activityModes) {
+    public ActivityListRepresentation(List<ActivityMode> activityModes) {
         this.activities = new int[activityModes.size()];
         this.modes = new int[activityModes.size()];
 

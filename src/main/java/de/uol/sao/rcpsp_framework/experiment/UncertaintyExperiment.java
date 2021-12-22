@@ -77,15 +77,7 @@ public abstract class UncertaintyExperiment implements Experiment {
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         ExperimentHelper.filterOneInstancePerParameter(benchmarks);
-
-        // Experiment Design
-        int trials = 2;
-
-        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.25)));
+        List<UncertaintyModel> uncertaintyModels = ExperimentHelper.getUncertaintyIssues();
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));

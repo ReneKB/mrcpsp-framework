@@ -82,14 +82,9 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         // Experiment Design
         int uncertaintyExperiments = 50;
-        int trials = 2;
 
         ExperimentHelper.filterOneInstancePerParameter(benchmarks);
-        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
-        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
+        List<UncertaintyModel> uncertaintyModels = ExperimentHelper.getUncertaintyIssues();
 
         List<Metric> robustnessMeasures = new ArrayList<>();
         robustnessMeasures.add(null);

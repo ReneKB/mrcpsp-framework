@@ -9,7 +9,7 @@ import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
-import de.uol.sao.rcpsp_framework.representation.ActivityListSchemeRepresentation;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.solver.Solver;
 import lombok.SneakyThrows;
@@ -91,7 +91,7 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
             plannedActivityModeList = potentialSchedule.getScheduleRepresentation().toActivityModeList(subbenchmark.getProject());
         }
 
-        return this.schedulerService.createSchedule(subbenchmark, new ActivityListSchemeRepresentation(buildingActivityModeList), null);
+        return this.schedulerService.createSchedule(subbenchmark, new ActivityListRepresentation(buildingActivityModeList), null);
     }
 
     @Override
