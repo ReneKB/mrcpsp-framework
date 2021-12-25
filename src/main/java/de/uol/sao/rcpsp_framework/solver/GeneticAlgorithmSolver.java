@@ -43,6 +43,7 @@ public class GeneticAlgorithmSolver implements Solver {
 
     int mu = 40;
     int lambda = 50;
+    int kappa = 50;
     double sigma = 0.06;
 
     @Data
@@ -69,7 +70,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 population.add(solution);
             }
 
-            List<Solution> newPopulation = this.select(population, mu, 50);
+            List<Solution> newPopulation = this.select(population, mu, kappa);
             if (newPopulation.size() > 2)
                 population = newPopulation;
 
@@ -105,8 +106,8 @@ public class GeneticAlgorithmSolver implements Solver {
      * @return
      */
     private ScheduleRepresentation crossover(Project project, List<ScheduleRepresentation> schedules) {
-        List<ActivityMode> mother  = schedules.get(0).toActivityModeList(project);
-        List<ActivityMode> father  = schedules.get(1).toActivityModeList(project);
+        List<ActivityMode> mother = schedules.get(0).toActivityModeList(project);
+        List<ActivityMode> father = schedules.get(1).toActivityModeList(project);
 
         int q1 = new Random().nextInt(project.getActivities().size() - 1);
         int q2 = q1;

@@ -49,7 +49,7 @@ public class HillClimbingSolver implements Solver {
 
                 try {
                     currentSchedule = schedulerService.createSchedule(benchmark, currentRepresentation, null);
-                } catch (Exception ex) { }
+                } catch (Exception ignored) { }
 
                 if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {
                     neighbourhoodFavorite = currentSchedule;

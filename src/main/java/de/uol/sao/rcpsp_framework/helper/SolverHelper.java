@@ -109,9 +109,6 @@ public class SolverHelper {
 
                 SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
                 neighbourhood.add(new ActivityListRepresentation(neighbourJobs, neighbourModes));
-
-                SolverHelper.flipNeighbourModes(changeableModes, neighbourModes);
-                neighbourhood.add(new ActivityListRepresentation(neighbourJobs, neighbourModes));
             }
             handledActivities.add(currentActivity);
         }
