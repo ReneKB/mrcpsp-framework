@@ -21,7 +21,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -30,10 +31,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Log4j2
 public abstract class UncertaintyExperiment implements Experiment {
@@ -76,8 +77,10 @@ public abstract class UncertaintyExperiment implements Experiment {
 
     @SneakyThrows
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
+        Set<String> options = args.getOptionNames();
         ExperimentHelper.filterOneInstancePerParameter(benchmarks);
         List<UncertaintyModel> uncertaintyModels = ExperimentHelper.getUncertaintyIssues();
+        String filename = ExperimentHelper.getFileName(benchmarks, this.getClass());
 
         // Set<String> options = args.getOptionNames();
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
@@ -87,43 +90,57 @@ public abstract class UncertaintyExperiment implements Experiment {
 
         Map<ExperimentResult, List<Double>> benchmarkMakespanResults = new HashMap<>();
 
+        // Init CSV Writer
+        FileWriter out = new FileWriter(filename + ".csv");
+        String[] csvHeaders = { "benchmark", "solver", "iterations", "makespan-optimum", "makespan", "robustness", "robustness_measure", "uncertainty_percentage", "makespan_uncertainty", "robustness_uncertainty"};
+        CSVPrinter printer = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(csvHeaders));
+
+        int benchmarkDone = 0;
+        int benchmarkRequired = benchmarks.size();
+
         // Actual Execution
         for (Benchmark benchmark : benchmarks) {
+            benchmarkDone++;
+            String progress = String.format("(%d/%d): ", benchmarkDone, benchmarkRequired);
+
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment, uncertaintyModels, this.getUncertaintyExperiments());
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
             Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new HashMap<>();
-            IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
+            IntStream.range(0, experiment).parallel().forEach(experimentNo -> {            // Main work
+                Stream<Integer> iterationsStream = options.contains("parallel") ? iterations.parallelStream() : iterations.stream();
+
                 // Main work
-                for (Integer iteration : iterations) {
-                    for (String solverStr : solvers) {
-                        log.info(String.format("Started experiment task %d (Solver: %s, Iterations: %d) ", experimentNo, solverStr, iteration));
+                iterationsStream.forEach(iteration -> {
+                    Stream<String> solversStream = options.contains("parallel") ? solvers.parallelStream() : solvers.stream();
+
+                    solversStream.forEach(solverStr -> {
+                        log.info(String.format("%s Started experiment task %d (Solver: %s, Iterations: %d) ", progress, experimentNo, solverStr, iteration));
                         Solver solver = beans.getBean(solverStr, Solver.class);
 
                         Schedule bestSchedule;
                         try {
                             bestSchedule = this.buildSolution(benchmark, solver, iteration, robustnessMetric);
+
+                            // Evaluate the best solution for
+                            log.info(String.format("%s Solution found for experiment task %d. ", progress, experimentNo));
+                            ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
+
+                            SolverIterationTuple solverIterationTuple = new SolverIterationTuple(solverStr, iteration);
+                            List<Schedule> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(solverIterationTuple, new ArrayList<>());
+                            if (bestSchedule != null) {
+                                solverPerformanceResultEntries.add(bestSchedule);
+                                experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
+
+                                if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                    bestOverallSchedule.set(bestSchedule);
+                                }
+                            }
                         } catch (GiveUpException e) {
                             log.info(String.format("Gave up on experiment task %d (Solver: %s, Iterations: %d). ", experimentNo, solverStr, iteration));
-                            continue;
                         }
-
-                        // Evaluate the best solution for
-                        log.info(String.format("Solution found for experiment task %d. ", experimentNo));
-                        ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
-
-                        SolverIterationTuple solverIterationTuple = new SolverIterationTuple(solverStr, iteration);
-                        List<Schedule> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(solverIterationTuple, new ArrayList<>());
-                        if (bestSchedule != null) {
-                            solverPerformanceResultEntries.add(bestSchedule);
-                            experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
-
-                            if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
-                                bestOverallSchedule.set(bestSchedule);
-                            }
-                        }
-                    }
-                }
+                    });
+                });
             });
 
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
@@ -148,6 +165,36 @@ public abstract class UncertaintyExperiment implements Experiment {
                                     solverIterationTuple.getIterations(),
                                     robustnessMetric,
                                     uncertaintyModel);
+
+                            try {
+                                Object makespan = schedule.computeMetric(Metrics.MAKESPAN);
+                                Object uncertainty_makespan = uncertaintySchedule.computeMetric(Metrics.MAKESPAN);
+
+                                Object robustness = -1;
+                                Object uncertainty_robustness = -1;
+
+                                boolean robustnessConsidered = robustnessMetric != null && !(this instanceof UncertaintyProactiveExperiment) && !(this instanceof UncertaintyProactiveReactiveExperiment);
+                                if (robustnessConsidered) {
+                                    robustness = schedule.computeMetric(robustnessMetric);
+                                    uncertainty_robustness = uncertaintySchedule.computeMetric(robustnessMetric);
+                                }
+
+                                synchronized (printer) {
+                                    printer.printRecord(benchmark.getName(),
+                                            solverIterationTuple.getSolver(),
+                                            solverIterationTuple.getIterations(),
+                                            optimalMakespan,
+                                            makespan,
+                                            robustness,
+                                            robustnessConsidered ? robustnessMetric.toString() : "null",
+                                            uncertaintyModel.getModeDelayDistribution().getProbabilityOfSuccess(),
+                                            uncertainty_makespan,
+                                            uncertainty_robustness);
+                                    printer.flush();
+                                }
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
 
                             List<Integer> makespanValues = actualExecutionResultsMakespan.get(uncertaintyModel);
                             makespanValues.add(uncertaintySchedule.computeMetric(Metrics.MAKESPAN));
@@ -201,10 +248,10 @@ public abstract class UncertaintyExperiment implements Experiment {
         });
 
         // Output in latex
-        this.logLatex(benchmarks, uncertaintyModels, iterations, solvers, benchmarkOverallMakespanResults);
+        this.logLatex(filename, uncertaintyModels, iterations, solvers, benchmarkOverallMakespanResults);
     }
 
-    private void logLatex(List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
+    private void logLatex(String filename, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
         String latex = latexService.printLatexTableUncertainty(
                 "latex/uncertainty_experiment.latex",
                 benchmarkOverallMakespanResults,
@@ -214,11 +261,7 @@ public abstract class UncertaintyExperiment implements Experiment {
 
         Files.createDirectories(Paths.get("results"));
 
-        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-        FileWriter fileWriter = new FileWriter(String.format("results/%s_%s_%s.log",
-                benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", ""),
-                this.getClass().getSimpleName(),
-                datetime));
+        FileWriter fileWriter = new FileWriter(filename + ".log");
         fileWriter.write(latex);
         fileWriter.close();
     }

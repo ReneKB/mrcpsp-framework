@@ -11,7 +11,9 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.util.Assert;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -160,5 +162,13 @@ public class ExperimentHelper {
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
         uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
         return uncertaintyModels;
+    }
+
+    public static String getFileName(List<Benchmark> benchmarks, Class<?> experimentClass) {
+        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return String.format("results/%s_%s_%s",
+                benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", ""),
+                experimentClass.getSimpleName(),
+                datetime);
     }
 }

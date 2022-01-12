@@ -9,6 +9,8 @@ import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
+import de.uol.sao.rcpsp_framework.heuristic.activities.LSTHeuristic;
+import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
@@ -122,8 +124,22 @@ public class SolverHelper {
 
         int giveUpCounter = 0;
         while (schedule == null) {
-            if (giveUpCounter > 50)
-                throw new GiveUpException();
+            if (giveUpCounter > 50) {
+                try {
+                    ScheduleRepresentation scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
+                            benchmark,
+                            Heuristic.builder()
+                                    .modeHeuristic(LRSHeuristic.class)
+                                    .activityHeuristic(LSTHeuristic.class)
+                                    .build(),
+                            HeuristicSampling.SINGLE,
+                            alreadyScheduled);
+
+                    schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
+                } catch (Exception ex) {
+                    throw new GiveUpException();
+                }
+            }
 
             for (Class<?> availableActivityHeuristic : ActivityHeuristic.availableActivityHeuristics) {
                 if (schedule != null)

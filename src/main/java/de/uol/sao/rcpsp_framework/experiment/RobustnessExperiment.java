@@ -21,7 +21,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -38,7 +39,7 @@ import java.util.stream.IntStream;
 
 @Log4j2
 @Service("RobustnessExperiment")
-public class RobustnessExperiment extends UncertaintyPredictiveExperiment implements Experiment {
+public class RobustnessExperiment extends UncertaintyPredictiveExperiment {
 
     @Autowired
     VisualizationService visualizationService;
@@ -102,11 +103,23 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
         List<Integer> iterations = ExperimentHelper.getIterationsFromArguments(args, Collections.singletonList(5000));
         List<String> solvers = ExperimentHelper.getSolversFromArguments(args, Collections.singletonList("TabuSearch"));
         int experiment = ExperimentHelper.getExperimentFromArguments(args, 4);
+        String filename = ExperimentHelper.getFileName(benchmarks, this.getClass());
 
         Map<ExperimentResult, List<Double>> benchmarkMakespanResults = new HashMap<>();
 
+        // Init CSV Writer
+        FileWriter out = new FileWriter(filename + ".csv");
+        String[] csvHeaders = { "benchmark", "solver", "iterations", "makespan-optimum", "makespan", "robustness", "robustness_measure", "uncertainty_percentage", "makespan_uncertainty", "robustness_uncertainty"};
+        CSVPrinter printer = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(csvHeaders));
+
+        int benchmarkDone = 0;
+        int benchmarkRequired = benchmarks.size();
+
         // Actual Execution
         for (Benchmark benchmark : benchmarks) {
+            benchmarkDone++;
+            String progress = String.format("(%d/%d): ", benchmarkDone, benchmarkRequired);
+
             printBenchmarkStartInfo(benchmark, iterations, solvers, experiment, uncertaintyModels, uncertaintyExperiments);
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
@@ -116,7 +129,7 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
                 for (Integer iteration : iterations) {
                     for (String solverStr : solvers) {
                         for (Metric robustnessMetric : robustnessMeasures) {
-                            log.info(String.format("Started experiment task %d (Solver: %s, Iterations: %d, Robustness Measure: %s) ", experimentNo, solverStr, iteration, robustnessMetric));
+                            log.info(String.format("%s Started experiment task %d (Solver: %s, Iterations: %d, Robustness Measure: %s) ", progress, experimentNo, solverStr, iteration, robustnessMetric));
                             Solver solver = beans.getBean(solverStr, Solver.class);
 
                             Schedule bestSchedule;
@@ -128,7 +141,7 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
                             }
 
                             // Evaluate the best solution for
-                            log.info(String.format("Solution found for experiment task %d. ", experimentNo));
+                            log.info(String.format("%s Solution found for experiment task %d. ", progress, experimentNo));
                             ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
 
                             SolverIterationTuple solverIterationTuple = new SolverIterationTuple(solverStr, iteration, robustnessMetric);
@@ -147,7 +160,7 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
             });
 
             OptimumReference optimumReference = benchmarkLoaderService.loadOptimum(benchmark);
-            double optimalMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN);
+            int optimalMakespan = optimumReference != null && optimumReference.isSolvable() ? optimumReference.getMakespan() : bestOverallSchedule.get().computeMetric(Metrics.MAKESPAN);
 
             experimentSolverResultMap.forEach((solverIterationTuple, schedules) -> {
                 // Simulate uncertainty
@@ -168,6 +181,35 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
                                     solverIterationTuple.getIterations(),
                                     solverIterationTuple.getRobustnessMeasure(),
                                     uncertaintyModel);
+
+                            try {
+                                Object makespan = schedule.computeMetric(Metrics.MAKESPAN);
+                                Object uncertainty_makespan = uncertaintySchedule.computeMetric(Metrics.MAKESPAN);
+
+                                Object robustness = -1;
+                                Object uncertainty_robustness = -1;
+
+                                if (solverIterationTuple.getRobustnessMeasure() != null) {
+                                    robustness = schedule.computeMetric(solverIterationTuple.getRobustnessMeasure());
+                                    uncertainty_robustness = uncertaintySchedule.computeMetric(solverIterationTuple.getRobustnessMeasure());
+                                }
+
+                                synchronized (printer) {
+                                    printer.printRecord(benchmark.getName(),
+                                            solverIterationTuple.getSolver(),
+                                            solverIterationTuple.getIterations(),
+                                            optimalMakespan,
+                                            makespan,
+                                            robustness,
+                                            solverIterationTuple.getRobustnessMeasure() != null ? solverIterationTuple.getRobustnessMeasure().toString() : "null",
+                                            uncertaintyModel.getModeDelayDistribution().getProbabilityOfSuccess(),
+                                            uncertainty_makespan,
+                                            uncertainty_robustness);
+                                    printer.flush();
+                                }
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
 
                             List<Integer> makespanValues = actualExecutionResultsMakespan.get(uncertaintyModel);
                             makespanValues.add(uncertaintySchedule.computeMetric(Metrics.MAKESPAN));
@@ -221,10 +263,10 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
         });
 
         // Output in latex
-        this.logLatex(benchmarks, uncertaintyModels, iterations, solvers, robustnessMeasures, benchmarkOverallMakespanResults);
+        this.logLatex(filename, benchmarks, uncertaintyModels, iterations, solvers, robustnessMeasures, benchmarkOverallMakespanResults);
     }
 
-    private void logLatex(List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, List<Metric> robustnessMetrics, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
+    private void logLatex(String filename, List<Benchmark> benchmarks, List<UncertaintyModel> uncertaintyModels, List<Integer> iterations, List<String> solvers, List<Metric> robustnessMetrics, Map<ExperimentResult, StatisticValue> benchmarkOverallMakespanResults) throws IOException {
         String latex = latexService.printLatexTableRobustness(
                 "latex/robustness_experiment.latex",
                 benchmarkOverallMakespanResults,
@@ -235,11 +277,7 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment implem
 
         Files.createDirectories(Paths.get("results"));
 
-        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-        FileWriter fileWriter = new FileWriter(String.format("results/%s_%s_%s.log",
-                benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", ""),
-                this.getClass().getSimpleName(),
-                datetime));
+        FileWriter fileWriter = new FileWriter(filename + ".log");
         fileWriter.write(latex);
         fileWriter.close();
     }
