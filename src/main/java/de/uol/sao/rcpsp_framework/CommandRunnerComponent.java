@@ -95,7 +95,7 @@ public class CommandRunnerComponent implements ApplicationRunner {
 
 
     private List<Benchmark> loadBenchmarkSetFromArgs(String defaultPath) {
-        List<Benchmark> benchmarks = new ArrayList<>();
+        List<Benchmark> benchmarks = Collections.synchronizedList(new ArrayList<>());
         File file = FileHelper.getFile(defaultPath);
 
         if (file.exists()) {
