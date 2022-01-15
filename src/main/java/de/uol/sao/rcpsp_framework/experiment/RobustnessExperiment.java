@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileWriter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
@@ -113,38 +114,37 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment {
             printBenchmarkStartInfo(benchmark, iterations, solvers, experiment, uncertaintyModels, uncertaintyExperiments);
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
-            Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new HashMap<>();
+            Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new ConcurrentHashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
                 // Main work
                 for (Integer iteration : iterations) {
                     for (String solverStr : solvers) {
-                        for (Metric robustnessMetric : robustnessMeasures) {
+                        robustnessMeasures.parallelStream().forEach(robustnessMetric -> {
                             log.info(String.format("%s Started experiment task %d (Solver: %s, Iterations: %d, Robustness Measure: %s) ", progress, experimentNo, solverStr, iteration, robustnessMetric));
                             Solver solver = beans.getBean(solverStr, Solver.class);
 
                             Schedule bestSchedule;
                             try {
                                 bestSchedule = this.buildSolution(benchmark, solver, iteration, robustnessMetric);
+
+                                // Evaluate the best solution for
+                                log.info(String.format("%s Solution found for experiment task %d. ", progress, experimentNo));
+                                ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
+
+                                SolverIterationTuple solverIterationTuple = new SolverIterationTuple(solverStr, iteration, robustnessMetric);
+                                List<Schedule> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(solverIterationTuple, new ArrayList<>());
+                                if (bestSchedule != null) {
+                                    solverPerformanceResultEntries.add(bestSchedule);
+                                    experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
+
+                                    if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                        bestOverallSchedule.set(bestSchedule);
+                                    }
+                                }
                             } catch (GiveUpException e) {
                                 log.info(String.format("Gave up on experiment task %d (Solver: %s, Iterations: %d, Robustness Measure: %s). ", experimentNo, solverStr, iteration));
-                                continue;
                             }
-
-                            // Evaluate the best solution for
-                            log.info(String.format("%s Solution found for experiment task %d. ", progress, experimentNo));
-                            ScheduleHelper.outputSchedule(bestSchedule, robustnessMetric);
-
-                            SolverIterationTuple solverIterationTuple = new SolverIterationTuple(solverStr, iteration, robustnessMetric);
-                            List<Schedule> solverPerformanceResultEntries = experimentSolverResultMap.getOrDefault(solverIterationTuple, new ArrayList<>());
-                            if (bestSchedule != null) {
-                                solverPerformanceResultEntries.add(bestSchedule);
-                                experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
-
-                                if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
-                                    bestOverallSchedule.set(bestSchedule);
-                                }
-                            }
-                        }
+                        });
                     }
                 }
             });

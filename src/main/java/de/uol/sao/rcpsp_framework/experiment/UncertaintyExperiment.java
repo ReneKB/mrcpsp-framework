@@ -26,6 +26,7 @@ import org.springframework.boot.ApplicationArguments;
 
 import java.io.FileWriter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -95,7 +96,7 @@ public abstract class UncertaintyExperiment implements Experiment {
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment, uncertaintyModels, this.getUncertaintyExperiments());
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
-            Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new HashMap<>();
+            Map<SolverIterationTuple, List<Schedule>> experimentSolverResultMap = new ConcurrentHashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {            // Main work
                 Stream<Integer> iterationsStream = options.contains("parallel") ? iterations.parallelStream() : iterations.stream();
 

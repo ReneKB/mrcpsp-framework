@@ -5,6 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+/**
+ * Model class that representing an optimum-reference. Can be instantiated with the BenchmarkLoader.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

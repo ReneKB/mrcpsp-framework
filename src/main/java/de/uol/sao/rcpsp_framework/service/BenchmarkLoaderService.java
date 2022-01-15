@@ -39,13 +39,13 @@ public class BenchmarkLoaderService implements BenchmarkLoader {
 
     /**
      * According to the filename, the proper benchmark will be loaded.
-     * @param file filename inside the resource class path
+     * @param filePath filename inside the resource class path
      * @return The generalized Benchmark object
      */
     @SneakyThrows
     @Override
-    public Benchmark loadBenchmark(String file) {
-        return selectBenchmarkLoader(file).loadBenchmark(file);
+    public Benchmark loadBenchmark(String filePath) {
+        return selectBenchmarkLoader(filePath).loadBenchmark(filePath);
     }
 
     @Override

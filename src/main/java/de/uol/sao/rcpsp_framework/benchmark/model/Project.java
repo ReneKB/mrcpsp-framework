@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Model class that representing a project plan including activities and the given information of resources
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

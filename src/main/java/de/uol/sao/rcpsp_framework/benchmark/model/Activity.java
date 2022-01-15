@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * Model class that representing an activity (or job) of a project plan.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

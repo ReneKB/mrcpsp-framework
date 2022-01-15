@@ -1,17 +1,14 @@
 package de.uol.sao.rcpsp_framework.experiment;
 
-import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
-import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
-import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
-import de.uol.sao.rcpsp_framework.service.VisualizationService;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
-import de.uol.sao.rcpsp_framework.solver.GeneticAlgorithmSolver;
+import de.uol.sao.rcpsp_framework.service.VisualizationService;
 import de.uol.sao.rcpsp_framework.solver.TabuSearchSolver;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -20,7 +17,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service("ConcreteScheduleExperiment")
 @Log4j2

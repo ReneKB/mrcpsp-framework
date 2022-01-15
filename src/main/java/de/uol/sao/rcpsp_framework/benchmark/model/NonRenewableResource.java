@@ -3,6 +3,9 @@ package de.uol.sao.rcpsp_framework.benchmark.model;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Model class that representing a non-renewable resource
+ */
 @Data
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor

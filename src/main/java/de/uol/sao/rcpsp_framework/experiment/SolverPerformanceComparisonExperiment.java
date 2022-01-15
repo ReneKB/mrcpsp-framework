@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileWriter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -90,7 +91,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
             printBenchmarkStartInfo(benchmark, iterations, solvers, robustnessMetric, experiment);
             AtomicReference<Schedule> bestOverallSchedule = new AtomicReference<>(null);
 
-            Map<Integer, List<SolverPerformanceResultEntry>> experimentSolverResultMap = new HashMap<>();
+            Map<Integer, List<SolverPerformanceResultEntry>> experimentSolverResultMap = new ConcurrentHashMap<>();
             IntStream.range(0, experiment).parallel().forEach(experimentNo -> {
                 // Main work
                 Stream<Integer> iterationsStream = options.contains("parallel") ? iterations.parallelStream() : iterations.stream();

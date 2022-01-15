@@ -39,15 +39,15 @@ public class BenchmarkPSPLIBMultiModeLoader implements BenchmarkLoader {
 
     @Override
     @SneakyThrows
-    public Benchmark loadBenchmark(String file) {
-        InputStream inputStream = new FileInputStream(FileHelper.getFile(file));
+    public Benchmark loadBenchmark(String filePath) {
+        InputStream inputStream = new FileInputStream(FileHelper.getFile(filePath));
         if (inputStream == null)
-            throw new RuntimeException("Benchmark " + file + " not found");
+            throw new RuntimeException("Benchmark " + filePath + " not found");
 
         Project project = new Project();
         Benchmark benchmark = new Benchmark();
         benchmark.setProject(project);
-        benchmark.setName(file);
+        benchmark.setName(filePath);
         List<Activity> activities = new ArrayList<>();
         Map<Resource, Integer> availableResources = new HashMap<>();
 

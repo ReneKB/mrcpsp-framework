@@ -5,6 +5,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Model class that representing a renewable resource
+ */
 @Data
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor

@@ -86,10 +86,10 @@ public class SchedulerService {
                     }
 
                     if (currentModeAmount > resourceAvailableGeneral) {
-                        throw new RenewableResourceNotEnoughException();
+                        throw new RenewableResourceNotEnoughException(currentModeResource);
                     } else if (currentModeAmount > resourceAvailableOnInterval &&
                             currentModeResource instanceof NonRenewableResource) {
-                        throw new NoNonRenewableResourcesLeftException(activityMode.getActivity());
+                        throw new NoNonRenewableResourcesLeftException();
                     } else if (resourceAvailableOnInterval - currentModeAmount < 0) {
                         solutionFound = false;
                         potentialLowerBound++;

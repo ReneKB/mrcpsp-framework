@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Model class that representing a mode of an activity.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
