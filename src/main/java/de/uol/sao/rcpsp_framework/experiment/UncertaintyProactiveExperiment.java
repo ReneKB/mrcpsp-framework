@@ -2,6 +2,7 @@ package de.uol.sao.rcpsp_framework.experiment;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
@@ -16,7 +17,7 @@ public class UncertaintyProactiveExperiment extends UncertaintyExperiment {
 
     @Override
     public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null, null);
+        return solver.algorithm(benchmark, iterations, ScheduleComparator.getMakespanRobustnessComparator(null), null, null);
     }
 
     @Override

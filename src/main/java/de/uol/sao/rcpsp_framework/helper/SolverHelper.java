@@ -7,7 +7,6 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.activities.LSTHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
@@ -170,10 +169,10 @@ public class SolverHelper {
         return schedule;
     }
 
-    public static double calculateFitness(Schedule schedule, Metric<?> robustnessFunction) {
-        int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-        double robustness = robustnessFunction != null ? Double.parseDouble(schedule.computeMetric(robustnessFunction).toString()) *
-                (robustnessFunction.getOptimum() == HeuristicSelection.MAX ? 1 : -1) : 0;
-        return makespan - robustness / 100;
+    public static double calculateFitness(Schedule schedule, ScheduleComparator scheduleComparator) {
+        double primary = ScheduleComparator.getValue(schedule, scheduleComparator.getPrimary());
+        double secondary = scheduleComparator.getSecondary() != null ? ScheduleComparator.getValue(schedule, scheduleComparator.getSecondary()) *
+                (scheduleComparator.getSecondary().getOptimum() == Selection.MAX ? 1 : -1) : 0;
+        return primary - secondary / 100;
     }
 }

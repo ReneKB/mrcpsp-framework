@@ -5,6 +5,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.OptimumReference;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
@@ -103,7 +104,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule schedule;
                         try {
-                            schedule = solver.algorithm(benchmark, iteration, robustnessMetric, null);
+                            schedule = solver.algorithm(benchmark, iteration, ScheduleComparator.getMakespanRobustnessComparator(robustnessMetric), null, null);
                             log.info(String.format("%s Completed experiment task %d (Solver: %s, Iterations: %d). Best Result: ", progress, experimentNo, solverStr, iteration));
                             ScheduleHelper.outputSchedule(schedule, robustnessMetric);
 
@@ -114,7 +115,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
 
                             if (schedule != null) {
                                 // Afterwork;
-                                if (ScheduleHelper.compareSchedule(schedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                if (ScheduleComparator.getMakespanRobustnessComparator(robustnessMetric).compare(schedule, bestOverallSchedule.get())) {
                                     bestOverallSchedule.set(schedule);
                                 }
                             }

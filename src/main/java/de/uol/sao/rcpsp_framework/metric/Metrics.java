@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.metric;
 
 public class Metrics {
     public static final Metric<Integer> MAKESPAN = new Makespan();
+    public static final Metric<Integer> COST = new Cost();
     public static final Metric<Integer> SF1 = new SF1();
     public static final Metric<Integer> SF2 = new SF2();
     public static final Metric<Double> SF3 = new SF3();
@@ -20,6 +21,9 @@ public class Metrics {
         switch (name) {
             case "Makespan":
                 metric = (Metric<T>) MAKESPAN;
+                break;
+            case "Cost":
+                metric = (Metric<T>) COST;
                 break;
             case "SF1":
                 metric = (Metric<T>) SF1;

@@ -25,6 +25,8 @@ public class Schedule {
     Map<Resource, List<Interval>> schedulePlan = new HashMap<>();
     ScheduleRepresentation scheduleRepresentation;
     Map<Metric, Object> metricsBuffer = new HashMap<>();
+    Schedule baselinePlan;
+
 
     public <T> T computeMetric(Metric<T> metric) {
         if (!metricsBuffer.containsKey(metric))

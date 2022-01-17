@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.solver;
 
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
@@ -28,7 +29,7 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
+    public Schedule algorithm(Benchmark benchmark, int iterations, ScheduleComparator comparator, List<ActivityMode> fixedActivityModeList, Schedule baseline) {
         Schedule bestSchedule = null;
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
@@ -41,11 +42,15 @@ public class RandomSolver implements Solver {
                         HeuristicSampling.SINGLE,
                         fixedActivityModeList),
                         null);
+
+                if (baseline != null)
+                    schedule.setBaselinePlan(baseline);
+
             } catch (Exception e) {
                 // ignore as it will be considered as worst result
             }
 
-            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, robustnessFunction))
+            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, comparator))
                 bestSchedule = schedule;
         }
         return bestSchedule;

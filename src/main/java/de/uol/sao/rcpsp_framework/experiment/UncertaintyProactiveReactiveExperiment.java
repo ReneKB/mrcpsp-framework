@@ -5,7 +5,9 @@ import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
@@ -27,7 +29,7 @@ public class UncertaintyProactiveReactiveExperiment extends UncertaintyExperimen
 
     @Override
     public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null, null);
+        return solver.algorithm(benchmark, iterations, ScheduleComparator.getMakespanRobustnessComparator(null), null, null);
     }
 
     @Override
@@ -77,7 +79,9 @@ public class UncertaintyProactiveReactiveExperiment extends UncertaintyExperimen
 
             Schedule potentialSchedule = null;
             try {
-                potentialSchedule = solver.algorithm(subbenchmark, Math.min(iterations / 2, 2000), null, buildingActivityModeList);
+                potentialSchedule = solver.algorithm(subbenchmark,
+                        Math.min(iterations / 2, 2000), ScheduleComparator.builder().primary(Metrics.COST).secondary(Metrics.MAKESPAN).build(),
+                        buildingActivityModeList, plannedSolution);
                 if (potentialSchedule == null)
                     potentialSchedule = plannedSolution;
                 else if (!this.verifySolver(buildingActivityModeList, potentialSchedule)) {

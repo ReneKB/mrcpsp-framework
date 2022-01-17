@@ -3,7 +3,6 @@ package de.uol.sao.rcpsp_framework.helper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
 import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
@@ -45,7 +44,9 @@ public class ScheduleHelper {
         actualStartingTime.put(activities.get(0), 0);
         actualFinishingTime.put(activities.get(0), 0);
 
-        for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
+        Map<Resource, List<Interval>> schedulePlan = schedule.getSchedulePlan();
+
+        for (Map.Entry<Resource, List<Interval>> entry : schedulePlan.entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
@@ -144,24 +145,8 @@ public class ScheduleHelper {
         }
     }
 
-    public static boolean compareSchedule(Schedule schedule, Schedule currentBestSchedule, Metric<?> robustnessMeasure) {
-        if (schedule == null)
-            return false;
-        else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
-            return true;
-        } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MIN &&
-                (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) > Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
-            return true;
-        } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MAX &&
-                (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) < Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
-            return true;
-        }
-
-        return false;
+    public static boolean compareSchedule(Schedule a, Schedule b, ScheduleComparator comparator) {
+        return comparator.compare(a, b);
     }
 
     /**

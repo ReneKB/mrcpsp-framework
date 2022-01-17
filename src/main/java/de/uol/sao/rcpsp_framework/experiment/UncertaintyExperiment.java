@@ -4,6 +4,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.OptimumReference;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
@@ -122,7 +123,7 @@ public abstract class UncertaintyExperiment implements Experiment {
                                 solverPerformanceResultEntries.add(bestSchedule);
                                 experimentSolverResultMap.put(solverIterationTuple, solverPerformanceResultEntries);
 
-                                if (ScheduleHelper.compareSchedule(bestSchedule, bestOverallSchedule.get(), robustnessMetric)) {
+                                if (ScheduleComparator.getMakespanRobustnessComparator(robustnessMetric).compare(bestSchedule, bestOverallSchedule.get())) {
                                     bestOverallSchedule.set(bestSchedule);
                                 }
                             }

@@ -2,7 +2,7 @@ package de.uol.sao.rcpsp_framework.metric;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import lombok.SneakyThrows;
@@ -31,7 +31,7 @@ public class SF3_W1 extends Metric<Double> {
     }
 
     @Override
-    public HeuristicSelection getOptimum() {
-        return HeuristicSelection.MAX;
+    public Selection getOptimum() {
+        return Selection.MAX;
     }
 }

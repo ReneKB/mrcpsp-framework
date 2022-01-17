@@ -2,6 +2,7 @@ package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
@@ -15,7 +16,8 @@ public interface Solver {
      */
     Schedule algorithm(Benchmark benchmark,
                        int iterations,
-                       Metric<?> robustnessFunction,
-                       List<ActivityMode> fixedActivityModeList) throws GiveUpException;
+                       ScheduleComparator comparator,
+                       List<ActivityMode> fixedActivityModeList,
+                       Schedule baseline) throws GiveUpException;
 
 }

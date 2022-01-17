@@ -2,6 +2,7 @@ package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
@@ -55,8 +56,8 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
-        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction, fixedActivityModeList);
+    public Schedule algorithm(Benchmark benchmark, int iterations, ScheduleComparator comparator, List<ActivityMode> fixedActivityModeList, Schedule baseline) {
+        List<Solution> population = this.initialPopulation(benchmark, mu, comparator, fixedActivityModeList, baseline);
         Schedule scheduleBestSolution = null;
 
         int i = 0;
@@ -65,7 +66,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 List<ScheduleRepresentation> parents = this.selectParents(population.stream().map(Solution::getScheduleRepresentation).collect(Collectors.toList()));
                 ScheduleRepresentation crossovered = this.crossover(benchmark.getProject(), parents);
                 ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered, fixedActivityModeList);
-                Solution solution = this.fitness(benchmark, 0, mutation, robustnessFunction);
+                Solution solution = this.fitness(benchmark, 0, mutation, comparator, baseline);
 
                 population.add(solution);
             }
@@ -81,7 +82,10 @@ public class GeneticAlgorithmSolver implements Solver {
                         population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get().getScheduleRepresentation(),
                         null);
 
-                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, robustnessFunction)) {
+                if (baseline != null)
+                    generationBestSolution.setBaselinePlan(baseline);
+
+                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, comparator)) {
                     scheduleBestSolution = generationBestSolution;
                     sigma = sigma * Math.pow(Math.exp(1 - (double) (1/5)), 0.05);
                 } else {
@@ -235,12 +239,15 @@ public class GeneticAlgorithmSolver implements Solver {
             swappableJobModes.removeAll(removingIndices);
     }
 
-    private Solution fitness(Benchmark benchmark, int generation, ScheduleRepresentation scheduleRepresentation, Metric<?> robustnessFunction) {
+    private Solution fitness(Benchmark benchmark, int generation, ScheduleRepresentation scheduleRepresentation, ScheduleComparator scheduleComparator, Schedule baseline) {
         // makespan + robustness (robustness / makespan)
         double fitness = benchmark.getHorizon();
         try {
             Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
-            fitness = SolverHelper.calculateFitness(schedule, robustnessFunction);
+            if (baseline != null)
+                schedule.setBaselinePlan(baseline);
+
+            fitness = SolverHelper.calculateFitness(schedule, scheduleComparator);
         } catch (Exception ex) { }
 
         return new Solution(generation, scheduleRepresentation, fitness);
@@ -255,7 +262,7 @@ public class GeneticAlgorithmSolver implements Solver {
                 .collect(Collectors.toList());
     }
 
-    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement, List<ActivityMode> alreadyScheduled) {
+    private List<Solution> initialPopulation(Benchmark benchmark, int amount, ScheduleComparator scheduleComparator, List<ActivityMode> alreadyScheduled, Schedule baseline) {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
@@ -287,8 +294,11 @@ public class GeneticAlgorithmSolver implements Solver {
                         }
 
                         Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
-                        if (schedule != null)
-                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
+                        if (schedule != null) {
+                            if (baseline != null)
+                                schedule.setBaselinePlan(baseline);
+                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), scheduleComparator, baseline));
+                        }
                     } catch (Exception ex) { }
                 }
             }

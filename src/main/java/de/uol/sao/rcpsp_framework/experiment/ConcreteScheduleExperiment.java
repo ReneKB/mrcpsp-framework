@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.experiment;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
@@ -36,7 +37,7 @@ public class ConcreteScheduleExperiment implements Experiment {
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         Benchmark benchmark = benchmarks.get(1);
 
-        Schedule schedule = solver.algorithm(benchmark, 100, Metrics.SF1, null);
+        Schedule schedule = solver.algorithm(benchmark, 100, ScheduleComparator.getMakespanRobustnessComparator(Metrics.SF1), null, null);
         Schedule backwardSchedule = schedulerService.createScheduleBackward(schedule);
 
         ScheduleRepresentation scheduleRepresentation = new ActivityListRepresentation(

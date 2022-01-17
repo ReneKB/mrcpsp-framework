@@ -1,6 +1,7 @@
 package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
+import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
@@ -30,8 +31,10 @@ public class HillClimbingSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
+    public Schedule algorithm(Benchmark benchmark, int iterations, ScheduleComparator comparator, List<ActivityMode> fixedActivityModeList, Schedule baseline) throws GiveUpException {
         Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
+        if (baseline != null)
+            bestSchedule.setBaselinePlan(baseline);
         Schedule bestOverallSchedule = bestSchedule;
 
         // Generate random solution until it's feasible
@@ -49,22 +52,24 @@ public class HillClimbingSolver implements Solver {
 
                 try {
                     currentSchedule = schedulerService.createSchedule(benchmark, currentRepresentation, null);
+                    if (baseline != null)
+                        bestSchedule.setBaselinePlan(baseline);
                 } catch (Exception ignored) { }
 
-                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {
+                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, comparator)) {
                     neighbourhoodFavorite = currentSchedule;
                 }
             }
 
             if (neighbourhoodFavorite != null) {
-                if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestSchedule, robustnessFunction)) {
+                if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestSchedule, comparator)) {
                     bestSchedule = neighbourhoodFavorite;
                 }
             }
 
             i += Math.max(neighbourhood.size(), 1);
 
-            if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestOverallSchedule, robustnessFunction))
+            if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestOverallSchedule, comparator))
                 bestOverallSchedule = neighbourhoodFavorite;
         }
         return bestOverallSchedule;

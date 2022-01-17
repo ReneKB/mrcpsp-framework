@@ -3,14 +3,14 @@ package de.uol.sao.rcpsp_framework.heuristic.activities;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 import lombok.Getter;
 
 import java.util.List;
 
 public abstract class ActivityHeuristic {
     @Getter
-    protected HeuristicSelection heuristicSelection;
+    protected Selection selection;
 
     public abstract double determineActivityPriorityValue(Activity activity,
                                                           Mode jobSelectedMode,
