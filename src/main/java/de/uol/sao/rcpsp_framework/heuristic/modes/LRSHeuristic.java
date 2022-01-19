@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.modes;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +46,6 @@ public class LRSHeuristic extends ModeHeuristic {
     }
 
     public LRSHeuristic() {
-        this.heuristicSelection = HeuristicSelection.MIN;
+        this.selection = Selection.MIN;
     }
 }

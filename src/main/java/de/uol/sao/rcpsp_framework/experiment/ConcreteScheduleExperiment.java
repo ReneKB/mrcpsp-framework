@@ -44,7 +44,7 @@ public class ConcreteScheduleExperiment implements Experiment {
             new int[] { 1, 1, 1, 1, 1, 1, 1 }
         );
 
-        List<ScheduleRepresentation> rep = SolverHelper.getNeighbourhood(benchmark, scheduleRepresentation, null);
+        List<ScheduleRepresentation> rep = SolverHelper.getNeighbourhood(benchmark, scheduleRepresentation, null, 2);
 
         ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
         ScheduleHelper.outputSchedule(backwardSchedule, Metrics.SF1);

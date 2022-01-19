@@ -160,7 +160,7 @@ public abstract class UncertaintyExperiment implements Experiment {
                                 Object robustness = -1;
                                 Object uncertainty_robustness = -1;
 
-                                boolean robustnessConsidered = robustnessMetric != null && !(this instanceof UncertaintyProactiveExperiment) && !(this instanceof UncertaintyProactiveReactiveExperiment);
+                                boolean robustnessConsidered = robustnessMetric != null && !(this instanceof UncertaintyProactiveExperiment) && !(this instanceof UncertaintyReactiveExperiment);
                                 if (robustnessConsidered) {
                                     robustness = schedule.computeMetric(robustnessMetric);
                                     uncertainty_robustness = uncertaintySchedule.computeMetric(robustnessMetric);

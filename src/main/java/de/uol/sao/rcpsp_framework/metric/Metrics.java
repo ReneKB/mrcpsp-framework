@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.metric;
 
 public class Metrics {
     public static final Metric<Integer> MAKESPAN = new Makespan();
+
     public static final Metric<Integer> SF1 = new SF1();
     public static final Metric<Integer> SF2 = new SF2();
     public static final Metric<Double> SF3 = new SF3();

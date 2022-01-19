@@ -3,7 +3,6 @@ package de.uol.sao.rcpsp_framework.helper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
 import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
@@ -150,18 +149,22 @@ public class ScheduleHelper {
         else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MIN &&
+                robustnessMeasure.getOptimum() == Selection.MIN &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
                 (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) > Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MAX &&
+                robustnessMeasure.getOptimum() == Selection.MAX &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
                 (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) < Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         }
 
         return false;
+    }
+
+    public static boolean compareSchedule(Schedule a, Schedule b, ScheduleComparator comparator) {
+        return comparator.compare(a, b);
     }
 
     /**

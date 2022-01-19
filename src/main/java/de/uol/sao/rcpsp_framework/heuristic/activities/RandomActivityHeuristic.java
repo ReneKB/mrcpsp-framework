@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.heuristic.activities;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 
 import java.util.List;
 import java.util.Random;
@@ -16,6 +16,6 @@ public class RandomActivityHeuristic extends ActivityHeuristic {
     }
 
     public RandomActivityHeuristic() {
-        this.heuristicSelection = HeuristicSelection.MIN;
+        this.selection = Selection.MIN;
     }
 }

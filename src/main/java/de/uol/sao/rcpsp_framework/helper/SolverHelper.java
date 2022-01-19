@@ -7,7 +7,6 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.activities.LSTHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
@@ -26,23 +25,23 @@ import java.util.stream.Collectors;
 
 public class SolverHelper {
 
-    public static void flipNeighbourModes(List<Activity> initialActivityList, int[] neighbourModes) {
-        if (initialActivityList.isEmpty())
+    public static void flipNeighbourModes(List<Activity> changable, int[] neighbourModes) {
+        if (changable.isEmpty())
             return;
 
-        int gap = neighbourModes.length - initialActivityList.size();
+        int gap = neighbourModes.length - changable.size();
 
         Mode newSelectedMode = null;
         int newSelectedModeIndex = 0;
 
-        int completeModesAmount = initialActivityList.stream().map(Activity::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
-        boolean singleMode = completeModesAmount == initialActivityList.size();
+        int completeModesAmount = changable.stream().map(Activity::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
+        boolean singleMode = completeModesAmount == changable.size();
 
         while (newSelectedMode == null && !singleMode) {
-            int randomIndex = new Random().nextInt(initialActivityList.size());
+            int randomIndex = new Random().nextInt(changable.size());
             int currentMode = neighbourModes[randomIndex + gap];
 
-            Activity activity = initialActivityList.get(randomIndex);
+            Activity activity = changable.get(randomIndex);
             int size = activity.getModes().size();
             if (size != 1) {
                 List<Mode> selectedMode = activity.getModes().stream().dropWhile(mode -> mode.getModeId() == currentMode).collect(Collectors.toList());
@@ -58,7 +57,7 @@ public class SolverHelper {
 
 
     @SneakyThrows
-    public static List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<ActivityMode> fixedActivityMode) {
+    public static List<ScheduleRepresentation> getNeighbourhood(Benchmark benchmark, ScheduleRepresentation scheduleRepresentation, List<ActivityMode> fixedActivityMode, int modeRepeats) {
         List<ActivityMode> activityModes = scheduleRepresentation.toActivityModeList(benchmark.getProject());
         List<ScheduleRepresentation> neighbourhood = new ArrayList<>();
 
@@ -77,14 +76,14 @@ public class SolverHelper {
             modes[i] = modeList.get(i).getModeId();
         }
 
-        Set<Activity> handledActivities = new HashSet<>();
+        Set<Activity> handledActivities = new LinkedHashSet<>();
         if (fixedActivityMode != null) {
-            handledActivities.addAll(fixedActivityMode.stream().map(ActivityMode::getActivity).collect(Collectors.toSet()));
+            handledActivities.addAll(fixedActivityMode.stream().map(ActivityMode::getActivity).collect(Collectors.toList()));
         } else
             handledActivities.add(activityList.get(0));
 
         // Adds for the same activity list mode neighbours
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < modeRepeats; i++) {
             int[] neighbourJobs = Arrays.copyOf(jobs, jobs.length);
             int[] neighbourModes = Arrays.copyOf(modes, modes.length);
 
@@ -173,7 +172,7 @@ public class SolverHelper {
     public static double calculateFitness(Schedule schedule, Metric<?> robustnessFunction) {
         int makespan = schedule.computeMetric(Metrics.MAKESPAN);
         double robustness = robustnessFunction != null ? Double.parseDouble(schedule.computeMetric(robustnessFunction).toString()) *
-                (robustnessFunction.getOptimum() == HeuristicSelection.MAX ? 1 : -1) : 0;
+                (robustnessFunction.getOptimum() == Selection.MAX ? 1 : -1) : 0;
         return makespan - robustness / 100;
     }
 }

@@ -43,7 +43,7 @@ public class TabuSearchSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList, 2);
             neighbourhood.removeIf(tabuList::contains);
 
             Schedule neighbourhoodFavorite = null;

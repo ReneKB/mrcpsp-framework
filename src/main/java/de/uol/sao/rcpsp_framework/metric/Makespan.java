@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.metric;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.RenewableResource;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +22,7 @@ public class Makespan extends Metric<Integer> {
     }
 
     @Override
-    public HeuristicSelection getOptimum() {
-        return HeuristicSelection.MIN;
+    public Selection getOptimum() {
+        return Selection.MIN;
     }
 }

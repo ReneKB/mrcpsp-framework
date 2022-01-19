@@ -39,7 +39,7 @@ public class HillClimbingSolver implements Solver {
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = bestSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList, 2);
 
             Schedule neighbourhoodFavorite = null;
 

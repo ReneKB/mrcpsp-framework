@@ -5,7 +5,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
-import de.uol.sao.rcpsp_framework.heuristic.HeuristicSelection;
+import de.uol.sao.rcpsp_framework.helper.Selection;
 import de.uol.sao.rcpsp_framework.heuristic.activities.LFTHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
@@ -104,7 +104,7 @@ public class HeuristicsTest {
         // test
         Map<Integer, Integer> sampleResults = new HashMap<>();
         for (int i = 0; i < samplingAmount; i++) {
-            int jobId = HeuristicDirector.samplingRegretBasedBiasRandom(priorityValues, HeuristicSelection.MIN);
+            int jobId = HeuristicDirector.samplingRegretBasedBiasRandom(priorityValues, Selection.MIN);
             int previousAmount = sampleResults.getOrDefault(jobId, 0);
             sampleResults.put(jobId, previousAmount + 1);
         }

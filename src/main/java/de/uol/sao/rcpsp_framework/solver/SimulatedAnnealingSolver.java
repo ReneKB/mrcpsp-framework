@@ -39,7 +39,7 @@ public class SimulatedAnnealingSolver implements Solver {
         int i = 0;
         while (i < iterations) {
             List<Schedule> neighbours = new ArrayList<>();
-            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(), fixedActivityModeList);
+            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(), fixedActivityModeList, 2);
 
             for (ScheduleRepresentation neighbour : neighboursRepresentations) {
                 try {
