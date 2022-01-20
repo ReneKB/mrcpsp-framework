@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.modes;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +25,6 @@ public class LPSRDHeuristic extends ModeHeuristic {
     }
 
     public LPSRDHeuristic() {
-        this.selection = Selection.MIN;
+        this.optimum = Optimum.MIN;
     }
 }

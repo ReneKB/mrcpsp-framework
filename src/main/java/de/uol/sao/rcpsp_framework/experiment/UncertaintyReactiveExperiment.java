@@ -2,10 +2,12 @@ package de.uol.sao.rcpsp_framework.experiment;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
+import de.uol.sao.rcpsp_framework.function.SingleObjectiveFunction;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.helper.ScheduleComparator;
+import de.uol.sao.rcpsp_framework.function.MultiObjectiveByPriorityFunction;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
 import de.uol.sao.rcpsp_framework.metric.Cost;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
@@ -34,8 +36,8 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
     ReactiveTabuSearchAlgorithm reactiveTabuSearchAlgorithm;
 
     @Override
-    public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null, null);
+    public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessMetric) throws GiveUpException {
+        return solver.algorithm(benchmark, iterations, new SingleObjectiveFunction(Metrics.MAKESPAN));
     }
 
     @Override
@@ -51,7 +53,7 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
         List<ActivityMode> buildingActivityModeList = new ArrayList<>();
         Map<ActivityMode, Integer> delayedDurations = new HashMap<>();
 
-        ScheduleComparator comparator = ScheduleComparator.builder().primary(new Cost(plannedSolution)).secondary(Metrics.MAKESPAN).build();
+        ObjectiveFunction objectiveFunction = new MultiObjectiveByPriorityFunction(new Cost(plannedSolution), Metrics.MAKESPAN);
 
         Schedule potentialSchedule = plannedSolution;
         while (buildingActivityModeList.size() < plannedActivityModeList.size()) {
@@ -87,7 +89,7 @@ public class UncertaintyReactiveExperiment extends UncertaintyExperiment {
             });
 
             try {
-                Schedule newPotentialSchedule = reactiveTabuSearchAlgorithm.algorithm(plannedSolution, potentialSchedule, subbenchmark, 500, buildingActivityModeList, comparator);
+                Schedule newPotentialSchedule = reactiveTabuSearchAlgorithm.algorithm(potentialSchedule, subbenchmark, 500, buildingActivityModeList, objectiveFunction);
                 if (newPotentialSchedule != null)
                     potentialSchedule = newPotentialSchedule;
                 else if (!this.verifySolver(buildingActivityModeList, potentialSchedule)) {

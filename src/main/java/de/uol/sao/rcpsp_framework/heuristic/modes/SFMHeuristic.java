@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.heuristic.modes;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 
 import java.util.List;
 
@@ -15,6 +15,6 @@ public class SFMHeuristic extends ModeHeuristic {
     }
 
     public SFMHeuristic() {
-        this.selection = Selection.MIN;
+        this.optimum = Optimum.MIN;
     }
 }

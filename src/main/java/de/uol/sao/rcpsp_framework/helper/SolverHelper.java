@@ -4,6 +4,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
@@ -25,23 +26,23 @@ import java.util.stream.Collectors;
 
 public class SolverHelper {
 
-    public static void flipNeighbourModes(List<Activity> changable, int[] neighbourModes) {
-        if (changable.isEmpty())
+    public static void flipNeighbourModes(List<Activity> changeableActivities, int[] neighbourModes) {
+        if (changeableActivities.isEmpty())
             return;
 
-        int gap = neighbourModes.length - changable.size();
+        int gap = neighbourModes.length - changeableActivities.size();
 
         Mode newSelectedMode = null;
         int newSelectedModeIndex = 0;
 
-        int completeModesAmount = changable.stream().map(Activity::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
-        boolean singleMode = completeModesAmount == changable.size();
+        int completeModesAmount = changeableActivities.stream().map(Activity::getModes).map(modes -> modes.size()).reduce(Integer::sum).get();
+        boolean singleMode = completeModesAmount == changeableActivities.size();
 
         while (newSelectedMode == null && !singleMode) {
-            int randomIndex = new Random().nextInt(changable.size());
+            int randomIndex = new Random().nextInt(changeableActivities.size());
             int currentMode = neighbourModes[randomIndex + gap];
 
-            Activity activity = changable.get(randomIndex);
+            Activity activity = changeableActivities.get(randomIndex);
             int size = activity.getModes().size();
             if (size != 1) {
                 List<Mode> selectedMode = activity.getModes().stream().dropWhile(mode -> mode.getModeId() == currentMode).collect(Collectors.toList());
@@ -117,7 +118,7 @@ public class SolverHelper {
         return neighbourhood;
     }
 
-    public static Schedule createInitialSolution(SchedulerService schedulerService, Benchmark benchmark, List<ActivityMode> alreadyScheduled) throws GiveUpException {
+    public static Schedule createInitialSolution(SchedulerService schedulerService, Benchmark benchmark) throws GiveUpException {
         // must be a feasible solution
         Schedule schedule = null;
 
@@ -131,8 +132,7 @@ public class SolverHelper {
                                     .modeHeuristic(LRSHeuristic.class)
                                     .activityHeuristic(LSTHeuristic.class)
                                     .build(),
-                            HeuristicSampling.SINGLE,
-                            alreadyScheduled);
+                            HeuristicSampling.SINGLE);
 
                     schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
                 } catch (Exception ex) {
@@ -154,8 +154,7 @@ public class SolverHelper {
                                         .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
                                         .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
                                         .build(),
-                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
-                                alreadyScheduled);
+                                Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
 
                         schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
                     } catch (Exception ex) {
@@ -169,10 +168,4 @@ public class SolverHelper {
         return schedule;
     }
 
-    public static double calculateFitness(Schedule schedule, Metric<?> robustnessFunction) {
-        int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-        double robustness = robustnessFunction != null ? Double.parseDouble(schedule.computeMetric(robustnessFunction).toString()) *
-                (robustnessFunction.getOptimum() == Selection.MAX ? 1 : -1) : 0;
-        return makespan - robustness / 100;
-    }
 }

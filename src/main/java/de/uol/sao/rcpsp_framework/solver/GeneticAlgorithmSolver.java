@@ -2,8 +2,8 @@ package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.benchmark.model.Project;
@@ -14,7 +14,6 @@ import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
-import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
@@ -55,8 +54,10 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
-        List<Solution> population = this.initialPopulation(benchmark, mu, robustnessFunction, fixedActivityModeList);
+    public Schedule algorithm(Benchmark benchmark,
+                              int iterations,
+                              ObjectiveFunction objectiveFunction) {
+        List<Solution> population = this.initialPopulation(benchmark, mu, objectiveFunction);
         Schedule scheduleBestSolution = null;
 
         int i = 0;
@@ -64,9 +65,8 @@ public class GeneticAlgorithmSolver implements Solver {
             for (int offspring = 0; offspring < lambda; offspring++) {
                 List<ScheduleRepresentation> parents = this.selectParents(population.stream().map(Solution::getScheduleRepresentation).collect(Collectors.toList()));
                 ScheduleRepresentation crossovered = this.crossover(benchmark.getProject(), parents);
-                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered, fixedActivityModeList);
-                Solution solution = this.fitness(benchmark, 0, mutation, robustnessFunction);
-
+                ScheduleRepresentation mutation = this.mutation(benchmark.getProject(), crossovered);
+                Solution solution = this.fitness(benchmark, 0, mutation, objectiveFunction);
                 population.add(solution);
             }
 
@@ -81,7 +81,7 @@ public class GeneticAlgorithmSolver implements Solver {
                         population.stream().sorted(Comparator.comparingDouble(Solution::getFitness)).findFirst().get().getScheduleRepresentation(),
                         null);
 
-                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, robustnessFunction)) {
+                if (ScheduleHelper.compareSchedule(generationBestSolution, scheduleBestSolution, objectiveFunction)) {
                     scheduleBestSolution = generationBestSolution;
                     sigma = sigma * Math.pow(Math.exp(1 - (double) (1/5)), 0.05);
                 } else {
@@ -93,6 +93,11 @@ public class GeneticAlgorithmSolver implements Solver {
         return scheduleBestSolution;
     }
 
+    /**
+     * Selection of the parents. Two random individuals will be taken from the population
+     * @param population The generation population
+     * @return A list of two parents
+     */
     private List<ScheduleRepresentation> selectParents(List<ScheduleRepresentation> population) {
         Collections.shuffle(population);
         List<ScheduleRepresentation> newList = new ArrayList<>();
@@ -101,9 +106,10 @@ public class GeneticAlgorithmSolver implements Solver {
     }
 
     /**
-     * Two-Point Crossover (acc. to Hartmann, p. 4 f.)
-     * @param schedules
-     * @return
+     * Two-Point Crossover-Operator.
+     * @param project Project of concern
+     * @param schedules A list of two individuals which needs to be crossovered
+     * @return A newborn individual with ongoing mutation
      */
     private ScheduleRepresentation crossover(Project project, List<ScheduleRepresentation> schedules) {
         List<ActivityMode> mother = schedules.get(0).toActivityModeList(project);
@@ -145,7 +151,13 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListRepresentation(daughter);
     }
 
-    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring, List<ActivityMode> fixedActivityModeList) {
+    /**
+     * (Swapping) Mutation Operator with usage of the dynamic mutation rate sigma.
+     * @param project Project of concern
+     * @param offspring The newborn offspring
+     * @return A "actual" newborn with a mutation
+     */
+    private ScheduleRepresentation mutation(Project project, ScheduleRepresentation offspring) {
         List<ActivityMode> jobList = offspring.toActivityModeList(project);
         List<List<ActivityMode>> swappableJobModes = new ArrayList<>();
 
@@ -167,11 +179,6 @@ public class GeneticAlgorithmSolver implements Solver {
             handledActivities.add(currentActivity);
         }
 
-        // For reactive solutions: Don't swap already planned jobmodes
-        if (fixedActivityModeList != null) {
-            removeFromSwappableList(fixedActivityModeList, swappableJobModes);
-        }
-
         // Swap one JobModes with each other
         while (!swappableJobModes.isEmpty()) {
             List<ActivityMode> swappingActivityMode = swappableJobModes.get(0);
@@ -181,6 +188,7 @@ public class GeneticAlgorithmSolver implements Solver {
             if (Math.random() <= sigma) {
                 Collections.swap(jobList, firstIndex, secondIndex);
             }
+
             removeFromSwappableList(swappingActivityMode, swappableJobModes);
         }
 
@@ -197,17 +205,7 @@ public class GeneticAlgorithmSolver implements Solver {
             Activity activity = jobList.get(i).getActivity();
             int size = activity.getModes().size();
 
-            boolean isAlreadyScheduled = false;
-            if (fixedActivityModeList != null) {
-                for (ActivityMode activityMode : fixedActivityModeList) {
-                    if (activity.equals(activityMode.getActivity())) {
-                        isAlreadyScheduled = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!isAlreadyScheduled && size != 1 && Math.random() <= sigma) {
+            if (size != 1 && Math.random() <= sigma) {
                 int finalI = i;
                 List<Mode> selectedMode = activity.getModes().stream().dropWhile(mode -> mode.getModeId() == modes[finalI]).collect(Collectors.toList());
                 Collections.shuffle(selectedMode);
@@ -218,34 +216,33 @@ public class GeneticAlgorithmSolver implements Solver {
         return new ActivityListRepresentation(jobs, modes);
     }
 
-    private void removeFromSwappableList(List<ActivityMode> removingItems, List<List<ActivityMode>> swappableJobModes) {
-        Set<List<ActivityMode>> removingIndices = new HashSet<>();
-        for (ActivityMode fixedActivityMode : removingItems) {
-            Activity fixedActivity = fixedActivityMode.getActivity();
-
-            for (List<ActivityMode> swappableActivityModeList : swappableJobModes) {
-                for (ActivityMode swappableActivityMode : swappableActivityModeList) {
-                    if (swappableActivityMode.getActivity().equals(fixedActivity))
-                        removingIndices.add(swappableActivityModeList);
-                }
-            }
-        }
-
-        if (!removingIndices.isEmpty())
-            swappableJobModes.removeAll(removingIndices);
-    }
-
-    private Solution fitness(Benchmark benchmark, int generation, ScheduleRepresentation scheduleRepresentation, Metric<?> robustnessFunction) {
+    /**
+     * Fitness function of the GA. Makespan - Robustness / 100
+     * @param benchmark Benchmark of concern
+     * @param age Age of the individual
+     * @param scheduleRepresentation Representation of the individual
+     * @param optimumFunction The actual implementation of the objective function
+     * @return A solution with the fitness value
+     */
+    private Solution fitness(Benchmark benchmark, int age, ScheduleRepresentation scheduleRepresentation, ObjectiveFunction optimumFunction) {
         // makespan + robustness (robustness / makespan)
         double fitness = benchmark.getHorizon();
         try {
             Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
-            fitness = SolverHelper.calculateFitness(schedule, robustnessFunction);
+            fitness = optimumFunction.fitness(schedule);
         } catch (Exception ex) { }
 
-        return new Solution(generation, scheduleRepresentation, fitness);
+        return new Solution(age, scheduleRepresentation, fitness);
     }
 
+    /**
+     * Selection-Operator of the GA. Selects an fixed amount of individuals according the
+     * fitness and the age.
+     * @param population The current population
+     * @param amount Amount of individuals that should be selected acc. to the fitness
+     * @param lifespan The maximum lifespan of an individual
+     * @return The new population for the upcoming generation
+     */
     private List<Solution> select(List<Solution> population, int amount, int lifespan) {
         return population.stream()
                 .peek(solution -> solution.setGeneration(solution.getGeneration() + 1))
@@ -255,7 +252,14 @@ public class GeneticAlgorithmSolver implements Solver {
                 .collect(Collectors.toList());
     }
 
-    private List<Solution> initialPopulation(Benchmark benchmark, int amount, Metric<?> robustnessMeasurement, List<ActivityMode> alreadyScheduled) {
+    /**
+     * Generates an initial population from a bunch of heuristics.
+     * @param benchmark Benchmark of concern
+     * @param amount The amount of individuals inside a population
+     * @param optimumFunction The used objective function
+     * @return The initial population
+     */
+    private List<Solution> initialPopulation(Benchmark benchmark, int amount, ObjectiveFunction optimumFunction) {
         List<Solution> population = new ArrayList<>();
 
         // Heuristics: Single Sampling
@@ -273,8 +277,7 @@ public class GeneticAlgorithmSolver implements Solver {
                                             .modeHeuristic(LRSHeuristic.class)
                                             .activityHeuristic(RandomActivityHeuristic.class)
                                             .build(),
-                                    Math.random() < 0.2 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
-                                    alreadyScheduled);
+                                    Math.random() < 0.2 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
                         } else {
                             scheduleRepresentation = HeuristicDirector.constructScheduleRepresentation(
                                     benchmark,
@@ -282,13 +285,12 @@ public class GeneticAlgorithmSolver implements Solver {
                                             .modeHeuristic((Class<? extends ModeHeuristic>) availableModeHeuristic)
                                             .activityHeuristic((Class<? extends ActivityHeuristic>) availableActivityHeuristic)
                                             .build(),
-                                    Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS,
-                                    alreadyScheduled);
+                                    Math.random() < 0.66 ? HeuristicSampling.SINGLE : HeuristicSampling.REGRET_BASED_BIAS);
                         }
 
                         Schedule schedule = schedulerService.createSchedule(benchmark, scheduleRepresentation, null);
                         if (schedule != null)
-                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), robustnessMeasurement));
+                            population.add(this.fitness(benchmark, 1, schedule.getScheduleRepresentation(), optimumFunction));
                     } catch (Exception ex) { }
                 }
             }
@@ -296,5 +298,27 @@ public class GeneticAlgorithmSolver implements Solver {
 
         Collections.shuffle(population);
         return population.stream().limit(amount).collect(Collectors.toList());
+    }
+
+    /**
+     * Help function that is necessary of the iterative process of the mutation step.
+     * @param removingItems The items that should be removed from a swappable list of job-modes tuples
+     * @param swappableJobModes Feasible swappable list of job-modes tuples
+     */
+    private void removeFromSwappableList(List<ActivityMode> removingItems, List<List<ActivityMode>> swappableJobModes) {
+        Set<List<ActivityMode>> removingIndices = new HashSet<>();
+        for (ActivityMode fixedActivityMode : removingItems) {
+            Activity fixedActivity = fixedActivityMode.getActivity();
+
+            for (List<ActivityMode> swappableActivityModeList : swappableJobModes) {
+                for (ActivityMode swappableActivityMode : swappableActivityModeList) {
+                    if (swappableActivityMode.getActivity().equals(fixedActivity))
+                        removingIndices.add(swappableActivityModeList);
+                }
+            }
+        }
+
+        if (!removingIndices.isEmpty())
+            swappableJobModes.removeAll(removingIndices);
     }
 }

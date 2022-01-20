@@ -1,11 +1,9 @@
 package de.uol.sao.rcpsp_framework.experiment;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.function.MultiObjectiveByPriorityFunction;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
-import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
-import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import de.uol.sao.rcpsp_framework.service.VisualizationService;
@@ -36,22 +34,14 @@ public class ConcreteScheduleExperiment implements Experiment {
     public void runExperiments(ApplicationArguments args, List<Benchmark> benchmarks) {
         Benchmark benchmark = benchmarks.get(1);
 
-        Schedule schedule = solver.algorithm(benchmark, 100, Metrics.SF1, null);
+        Schedule schedule = solver.algorithm(benchmark, 100, new MultiObjectiveByPriorityFunction(Metrics.MAKESPAN, Metrics.SF1));
         Schedule backwardSchedule = schedulerService.createScheduleBackward(schedule);
-
-        ScheduleRepresentation scheduleRepresentation = new ActivityListRepresentation(
-            new int[] { 1, 2, 3, 4, 5, 6, 7 },
-            new int[] { 1, 1, 1, 1, 1, 1, 1 }
-        );
-
-        List<ScheduleRepresentation> rep = SolverHelper.getNeighbourhood(benchmark, scheduleRepresentation, null, 2);
 
         ScheduleHelper.outputSchedule(schedule, Metrics.SF1);
         ScheduleHelper.outputSchedule(backwardSchedule, Metrics.SF1);
 
         visualizationService.visualizeBenchmark(benchmark);
         visualizationService.visualizeSchedule(schedule);
-        // visualizationService.visualizeSchedule(backwardSchedule);
     }
 
 }

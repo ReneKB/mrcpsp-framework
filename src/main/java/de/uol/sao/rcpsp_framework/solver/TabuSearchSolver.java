@@ -1,11 +1,10 @@
 package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.metric.Metric;
-import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
@@ -30,40 +29,44 @@ public class TabuSearchSolver implements Solver {
     BeanFactory beans;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
-        Schedule tabuSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
+    public Schedule algorithm(Benchmark benchmark,
+                              int iterations,
+                              ObjectiveFunction objectiveFunction) throws GiveUpException {
+        // Create initial solution
+        Schedule tabuSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark);
         Schedule bestSchedule = tabuSchedule;
         Schedule bestOverallSchedule = bestSchedule;
 
+        // Creates the tabu list T
         int tabuListSize = (int) Math.sqrt(benchmark.getNumberJobs() - 2);
         List<ScheduleRepresentation> tabuList = new LinkedList<>();
 
-        // Generate random solution until it's feasible
+        // Run the iterative aspect of the algorithm
         int i = 0;
         while (i < iterations) {
             // Create neighbors
             ScheduleRepresentation representation = tabuSchedule.getScheduleRepresentation();
-            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, fixedActivityModeList, 2);
+            List<ScheduleRepresentation> neighbourhood = SolverHelper.getNeighbourhood(benchmark, representation, null, 2);
             neighbourhood.removeIf(tabuList::contains);
 
             Schedule neighbourhoodFavorite = null;
 
-            for (int j = 0; j < neighbourhood.size(); j++) {
-                ScheduleRepresentation currentRepresentation = neighbourhood.get(j);
+            for (ScheduleRepresentation currentRepresentation : neighbourhood) {
                 Schedule currentSchedule = null;
 
                 try {
                     currentSchedule = schedulerService.createSchedule(benchmark, currentRepresentation, null);
-                } catch (Exception ex) { }
+                } catch (Exception ignored) {
+                }
 
-                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, robustnessFunction)) {
+                if (ScheduleHelper.compareSchedule(currentSchedule, neighbourhoodFavorite, objectiveFunction)) {
                     neighbourhoodFavorite = currentSchedule;
                 }
             }
 
             if (neighbourhoodFavorite != null) {
                 tabuSchedule = neighbourhoodFavorite;
-                if (ScheduleHelper.compareSchedule(tabuSchedule, bestSchedule, robustnessFunction)) {
+                if (ScheduleHelper.compareSchedule(tabuSchedule, bestSchedule, objectiveFunction)) {
                     bestSchedule = neighbourhoodFavorite;
                 }
 
@@ -74,9 +77,10 @@ public class TabuSearchSolver implements Solver {
 
             i += Math.max(neighbourhood.size(), 1);
 
-            if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestOverallSchedule, robustnessFunction))
+            if (ScheduleHelper.compareSchedule(neighbourhoodFavorite, bestOverallSchedule, objectiveFunction))
                 bestOverallSchedule = neighbourhoodFavorite;
         }
+
         return bestOverallSchedule;
     }
 

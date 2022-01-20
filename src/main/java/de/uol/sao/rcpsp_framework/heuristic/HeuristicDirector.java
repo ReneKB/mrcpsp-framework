@@ -1,17 +1,15 @@
 package de.uol.sao.rcpsp_framework.heuristic;
 
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
 import de.uol.sao.rcpsp_framework.heuristic.activities.ActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.ModeHeuristic;
 import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
-import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class HeuristicDirector {
 
@@ -45,7 +43,7 @@ public class HeuristicDirector {
         return jobWithPriorityValue;
     }
 
-    public static <T> T samplingSingle(Map<T, Double> objectWithPriorityValue, Selection selection) {
+    public static <T> T samplingSingle(Map<T, Double> objectWithPriorityValue, Optimum optimum) {
         T selected = null;
         Double selectedPriorityValue = 0.0;
 
@@ -54,7 +52,7 @@ public class HeuristicDirector {
             T job = entry.getKey();
             Double priorityValue = entry.getValue();
 
-            if (selected == null || (selection == Selection.MIN ? selectedPriorityValue > priorityValue : selectedPriorityValue < priorityValue)) {
+            if (selected == null || (optimum == Optimum.MIN ? selectedPriorityValue > priorityValue : selectedPriorityValue < priorityValue)) {
                 selected = job;
                 selectedPriorityValue = priorityValue;
             }
@@ -63,7 +61,7 @@ public class HeuristicDirector {
         return selected;
     }
 
-    public static <T> T samplingRegretBasedBiasRandom(Map<T, Double> objectWithPriorityValue, Selection selection) {
+    public static <T> T samplingRegretBasedBiasRandom(Map<T, Double> objectWithPriorityValue, Optimum optimum) {
         T selected = null;
         Map<T, Double> objectWithRegrets = new HashMap<>();
         Map<T, Double> objectWithProbability = new HashMap<>();
@@ -72,7 +70,7 @@ public class HeuristicDirector {
         double highestPriorityValue = objectWithPriorityValue.values().stream().sorted((o1, o2) -> (int) (o1 - o2)).reduce((aDouble, aDouble2) -> aDouble2).stream().findFirst().get();
 
         // Calculation of v' acc. to literature
-        if (selection == Selection.MIN) {
+        if (optimum == Optimum.MIN) {
             for (T t : objectWithPriorityValue.keySet()) {
                 objectWithRegrets.put(t, highestPriorityValue - objectWithPriorityValue.get(t));
             }
@@ -125,15 +123,15 @@ public class HeuristicDirector {
     }
 
     public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        return HeuristicDirector.constructScheduleRepresentation(benchmark, heuristic, HeuristicSampling.SINGLE, null);
+        return HeuristicDirector.constructScheduleRepresentation(benchmark, heuristic, HeuristicSampling.SINGLE);
     }
 
-    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling, List<ActivityMode> alreadyScheduled) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static ScheduleRepresentation constructScheduleRepresentation(Benchmark benchmark, Heuristic heuristic, HeuristicSampling heuristicSampling) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         ActivityHeuristic activityHeuristic = heuristic.getActivityHeuristic().getDeclaredConstructor().newInstance();
         ModeHeuristic modeHeuristic = heuristic.getModeHeuristic().getDeclaredConstructor().newInstance();
 
-        List<Activity> activityScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(ActivityMode::getActivity).collect(Collectors.toList());
-        List<Mode> modesScheduled = alreadyScheduled == null ? new ArrayList<>() : alreadyScheduled.stream().map(ActivityMode::getMode).collect(Collectors.toList());
+        List<Activity> activityScheduled = new ArrayList<>();
+        List<Mode> modesScheduled =new ArrayList<>();
 
         List<Activity> possibleActivities = new ArrayList<>(ProjectHelper.getAvailableJobs(benchmark.getProject(), activityScheduled));
 
@@ -144,16 +142,16 @@ public class HeuristicDirector {
             for (Activity possibleActivity : possibleActivities) {
                 Map<Mode, Double> modesPriorityValues = HeuristicDirector.computeModePriorityValues(modeHeuristic, possibleActivity, activityScheduled, modesScheduled, benchmark);
                 Mode selectedMode = heuristicSampling == HeuristicSampling.SINGLE ?
-                    HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getSelection()) :
-                    HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getSelection());
+                    HeuristicDirector.samplingSingle(modesPriorityValues, modeHeuristic.getOptimum()) :
+                    HeuristicDirector.samplingRegretBasedBiasRandom(modesPriorityValues, modeHeuristic.getOptimum());
                 modes.put(possibleActivity, selectedMode);
             }
 
             // Compute all possible activities acc. to the heuristic alg
             Map<Activity, Double> activityPriorityValues = HeuristicDirector.computeActivityPriorityValues(activityHeuristic, modes, possibleActivities, activityScheduled, modesScheduled, benchmark);
             Activity selectedActivity = heuristicSampling == HeuristicSampling.SINGLE ?
-                    HeuristicDirector.samplingSingle(activityPriorityValues, activityHeuristic.getSelection()) :
-                    HeuristicDirector.samplingRegretBasedBiasRandom(activityPriorityValues, activityHeuristic.getSelection());
+                    HeuristicDirector.samplingSingle(activityPriorityValues, activityHeuristic.getOptimum()) :
+                    HeuristicDirector.samplingRegretBasedBiasRandom(activityPriorityValues, activityHeuristic.getOptimum());
 
             activityScheduled.add(selectedActivity);
             modesScheduled.add(modes.get(selectedActivity));

@@ -3,6 +3,7 @@ package de.uol.sao.rcpsp_framework.experiment;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.OptimumReference;
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
+import de.uol.sao.rcpsp_framework.function.MultiObjectiveByPriorityFunction;
 import de.uol.sao.rcpsp_framework.helper.CommandArgsOptions;
 import de.uol.sao.rcpsp_framework.helper.ExperimentHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
@@ -103,7 +104,7 @@ public class SolverPerformanceComparisonExperiment implements Experiment {
                         Solver solver = beans.getBean(solverStr, Solver.class);
                         Schedule schedule;
                         try {
-                            schedule = solver.algorithm(benchmark, iteration, robustnessMetric, null);
+                            schedule = solver.algorithm(benchmark, iteration, new MultiObjectiveByPriorityFunction(Metrics.MAKESPAN, robustnessMetric));
                             log.info(String.format("%s Completed experiment task %d (Solver: %s, Iterations: %d). Best Result: ", progress, experimentNo, solverStr, iteration));
                             ScheduleHelper.outputSchedule(schedule, robustnessMetric);
 

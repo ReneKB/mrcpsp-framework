@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.metric;
 import de.uol.sao.rcpsp_framework.helper.ProjectHelper;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import lombok.SneakyThrows;
@@ -26,7 +26,7 @@ public class SF1_W9 extends Metric<Integer> {
     }
 
     @Override
-    public Selection getOptimum() {
-        return Selection.MAX;
+    public Optimum getOptimum() {
+        return Optimum.MAX;
     }
 }

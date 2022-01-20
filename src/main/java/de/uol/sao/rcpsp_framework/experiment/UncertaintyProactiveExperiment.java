@@ -2,7 +2,10 @@ package de.uol.sao.rcpsp_framework.experiment;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
+import de.uol.sao.rcpsp_framework.function.SingleObjectiveFunction;
 import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
 import de.uol.sao.rcpsp_framework.solver.Solver;
@@ -15,8 +18,8 @@ import org.springframework.stereotype.Service;
 public class UncertaintyProactiveExperiment extends UncertaintyExperiment {
 
     @Override
-    public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessFunction) throws GiveUpException {
-        return solver.algorithm(benchmark, iterations, null, null);
+    public Schedule buildSolution(Benchmark benchmark, Solver solver, int iterations, Metric<?> robustnessMetric) throws GiveUpException {
+        return solver.algorithm(benchmark, iterations, new SingleObjectiveFunction(Metrics.MAKESPAN));
     }
 
     @Override

@@ -1,19 +1,12 @@
 package de.uol.sao.rcpsp_framework.metric;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
-import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.math3.distribution.BinomialDistribution;
-import org.apache.commons.math3.distribution.TriangularDistribution;
 import org.apache.commons.math3.distribution.UniformIntegerDistribution;
-import org.apache.commons.math3.random.UniformRandomGenerator;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,7 +68,7 @@ public class Cost extends Metric<Integer> {
     }
 
     @Override
-    public Selection getOptimum() {
-        return Selection.MIN;
+    public Optimum getOptimum() {
+        return Optimum.MIN;
     }
 }

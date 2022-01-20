@@ -3,6 +3,8 @@ package de.uol.sao.rcpsp_framework.helper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
 import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.metric.Metric;
 import de.uol.sao.rcpsp_framework.metric.Metrics;
 import de.uol.sao.rcpsp_framework.representation.ActivityMode;
@@ -149,12 +151,12 @@ public class ScheduleHelper {
         else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == Selection.MIN &&
+                robustnessMeasure.getOptimum() == Optimum.MIN &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
                 (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) > Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == Selection.MAX &&
+                robustnessMeasure.getOptimum() == Optimum.MAX &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
                 (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) < Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
@@ -163,7 +165,7 @@ public class ScheduleHelper {
         return false;
     }
 
-    public static boolean compareSchedule(Schedule a, Schedule b, ScheduleComparator comparator) {
+    public static boolean compareSchedule(Schedule a, Schedule b, ObjectiveFunction comparator) {
         return comparator.compare(a, b);
     }
 

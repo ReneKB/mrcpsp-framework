@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.modes;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.heuristic.activities.*;
 import lombok.Getter;
 
@@ -9,7 +9,7 @@ import java.util.List;
 
 public abstract class ModeHeuristic {
     @Getter
-    protected Selection selection;
+    protected Optimum optimum;
 
     public abstract double determineModePriorityValue(Activity activity,
                                                       Mode mode,

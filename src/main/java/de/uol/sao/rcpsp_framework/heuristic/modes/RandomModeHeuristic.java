@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.modes;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 
 import java.util.List;
 import java.util.Random;
@@ -14,6 +14,6 @@ public class RandomModeHeuristic extends ModeHeuristic {
     }
 
     public RandomModeHeuristic() {
-        this.selection = Selection.MIN;
+        this.optimum = Optimum.MIN;
     }
 }

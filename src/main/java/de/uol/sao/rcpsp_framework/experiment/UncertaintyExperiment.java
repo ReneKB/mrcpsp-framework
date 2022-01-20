@@ -212,7 +212,7 @@ public abstract class UncertaintyExperiment implements Experiment {
     public abstract Schedule buildSolution(Benchmark benchmark,
                                            Solver solver,
                                            int iterations,
-                                           Metric<?> robustnessFunction) throws GiveUpException;
+                                           Metric<?> robustnessMetric) throws GiveUpException;
 
     public abstract Schedule buildUncertaintySolution(Schedule plannedSolution,
                                                       Benchmark benchmark,

@@ -26,7 +26,10 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.stereotype.Service;
 
 import java.io.FileWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -95,8 +98,6 @@ public class RobustnessExperiment extends UncertaintyPredictiveExperiment {
         List<String> solvers = ExperimentHelper.getSolversFromArguments(args, Collections.singletonList("TabuSearch"));
         int experiment = ExperimentHelper.getExperimentFromArguments(args, 4);
         String filename = ExperimentHelper.getFileName(benchmarks, this.getClass());
-
-        Map<ExperimentResult, List<Double>> benchmarkMakespanResults = new HashMap<>();
 
         // Init CSV Writer
         FileWriter out = new FileWriter(filename + ".csv");

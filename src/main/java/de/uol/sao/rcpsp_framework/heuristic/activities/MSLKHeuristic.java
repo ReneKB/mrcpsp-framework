@@ -6,7 +6,7 @@ import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
 import de.uol.sao.rcpsp_framework.representation.ActivityListRepresentation;
@@ -56,6 +56,6 @@ public class MSLKHeuristic extends ActivityHeuristic {
     }
 
     public MSLKHeuristic() {
-        this.selection = Selection.MIN;
+        this.optimum = Optimum.MIN;
     }
 }

@@ -1,11 +1,10 @@
 package de.uol.sao.rcpsp_framework.solver;
 
 import de.uol.sao.rcpsp_framework.exception.GiveUpException;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.helper.SolverHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
-import de.uol.sao.rcpsp_framework.metric.Metric;
-import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.representation.ScheduleRepresentation;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
@@ -31,27 +30,28 @@ public class SimulatedAnnealingSolver implements Solver {
     double alpha = 0.90;
 
     @Override
-    @SneakyThrows
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) throws GiveUpException {
-        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark, fixedActivityModeList);
+    public Schedule algorithm(Benchmark benchmark,
+                              int iterations,
+                              ObjectiveFunction objectiveFunction) throws GiveUpException {
+        Schedule bestSchedule = SolverHelper.createInitialSolution(schedulerService, benchmark);
         Schedule overallBestSolution = bestSchedule;
 
         int i = 0;
         while (i < iterations) {
             List<Schedule> neighbours = new ArrayList<>();
-            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(), fixedActivityModeList, 2);
+            List<ScheduleRepresentation> neighboursRepresentations = SolverHelper.getNeighbourhood(benchmark, bestSchedule.getScheduleRepresentation(), null, 2);
 
             for (ScheduleRepresentation neighbour : neighboursRepresentations) {
                 try {
                     if (Math.random() < 0.5)
                         neighbours.add(schedulerService.createSchedule(benchmark, neighbour, null));
-                } catch (Exception ex) {}
+                } catch (Exception ignored) {}
             }
 
-            neighbours.sort((o1, o2) -> SolverHelper.calculateFitness(o1, robustnessFunction) - SolverHelper.calculateFitness(o2, robustnessFunction) > 0 ? 1 : -1);
+            neighbours.sort((o1, o2) -> objectiveFunction.fitness(o1) - objectiveFunction.fitness(o2) > 0 ? 1 : -1);
             Schedule selectedNeighbour = neighbours.size() != 0 ? neighbours.get(0) : bestSchedule;
 
-            double diff = SolverHelper.calculateFitness(bestSchedule, robustnessFunction) - SolverHelper.calculateFitness(selectedNeighbour, robustnessFunction); // reverse as MIN
+            double diff = objectiveFunction.fitness(bestSchedule) - objectiveFunction.fitness(selectedNeighbour);
             boolean improvement = false;
 
             if (diff > 0) {
@@ -65,7 +65,7 @@ public class SimulatedAnnealingSolver implements Solver {
                 temperature = temperature * alpha;
             }
 
-            if (ScheduleHelper.compareSchedule(bestSchedule, overallBestSolution, robustnessFunction))
+            if (ScheduleHelper.compareSchedule(bestSchedule, overallBestSolution, objectiveFunction))
                 overallBestSolution = bestSchedule;
             i += neighboursRepresentations.size();
         }
@@ -73,8 +73,13 @@ public class SimulatedAnnealingSolver implements Solver {
         return overallBestSolution;
     }
 
+    /**
+     * Computes the probability of a solution acceptance acc. to the SA-algorithm
+     * @param diff Difference of the fitness
+     * @param temperature The current temperature
+     * @return The prob of solution acceptance
+     */
     double probability(double diff, double temperature) {
-        double prob = Math.exp(-1 * diff / temperature);
-        return prob;
+        return Math.exp(-1 * diff / temperature);
     }
 }

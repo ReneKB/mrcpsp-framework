@@ -5,7 +5,7 @@ import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 import de.uol.sao.rcpsp_framework.heuristic.activities.LFTHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.LRSHeuristic;
@@ -70,7 +70,7 @@ public class HeuristicsTest {
 
         for (int tryNo = 0; tryNo < 100; tryNo++) {
             try {
-                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs, HeuristicSampling.REGRET_BASED_BIAS, null);
+                ScheduleRepresentation representation = HeuristicDirector.constructScheduleRepresentation(test, lft_lrs, HeuristicSampling.REGRET_BASED_BIAS);
                 Schedule schedule = schedulerService.createSchedule(test, representation, null);
                 if (schedule != null && !scheduleFound) {
                     scheduleFound = true;
@@ -104,7 +104,7 @@ public class HeuristicsTest {
         // test
         Map<Integer, Integer> sampleResults = new HashMap<>();
         for (int i = 0; i < samplingAmount; i++) {
-            int jobId = HeuristicDirector.samplingRegretBasedBiasRandom(priorityValues, Selection.MIN);
+            int jobId = HeuristicDirector.samplingRegretBasedBiasRandom(priorityValues, Optimum.MIN);
             int previousAmount = sampleResults.getOrDefault(jobId, 0);
             sampleResults.put(jobId, previousAmount + 1);
         }

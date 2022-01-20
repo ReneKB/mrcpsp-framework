@@ -1,5 +1,6 @@
 package de.uol.sao.rcpsp_framework.solver;
 
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
 import de.uol.sao.rcpsp_framework.helper.ScheduleHelper;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.heuristic.Heuristic;
@@ -7,8 +8,6 @@ import de.uol.sao.rcpsp_framework.heuristic.HeuristicDirector;
 import de.uol.sao.rcpsp_framework.heuristic.HeuristicSampling;
 import de.uol.sao.rcpsp_framework.heuristic.activities.RandomActivityHeuristic;
 import de.uol.sao.rcpsp_framework.heuristic.modes.RandomModeHeuristic;
-import de.uol.sao.rcpsp_framework.metric.Metric;
-import de.uol.sao.rcpsp_framework.representation.ActivityMode;
 import de.uol.sao.rcpsp_framework.scheduling.Schedule;
 import de.uol.sao.rcpsp_framework.service.SchedulerService;
 import lombok.extern.log4j.Log4j2;
@@ -16,8 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Log4j2
 @Service("RandomSolver")
@@ -28,8 +25,12 @@ public class RandomSolver implements Solver {
     SchedulerService schedulerService;
 
     @Override
-    public Schedule algorithm(Benchmark benchmark, int iterations, Metric<?> robustnessFunction, List<ActivityMode> fixedActivityModeList) {
+    public Schedule algorithm(Benchmark benchmark,
+                              int iterations,
+                              ObjectiveFunction objectiveFunction) {
         Schedule bestSchedule = null;
+
+        // Run the iterative aspect of the algorithm
         for (int i = 0; i < iterations; i++) {
             Schedule schedule = null;
             try {
@@ -38,16 +39,14 @@ public class RandomSolver implements Solver {
                             .modeHeuristic(RandomModeHeuristic.class)
                             .activityHeuristic(RandomActivityHeuristic.class)
                             .build(),
-                        HeuristicSampling.SINGLE,
-                        fixedActivityModeList),
+                        HeuristicSampling.SINGLE),
                         null);
-            } catch (Exception e) {
-                // ignore as it will be considered as worst result
-            }
+            } catch (Exception ignored) { }
 
-            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, robustnessFunction))
+            if (ScheduleHelper.compareSchedule(schedule, bestSchedule, objectiveFunction))
                 bestSchedule = schedule;
         }
+
         return bestSchedule;
     }
 }

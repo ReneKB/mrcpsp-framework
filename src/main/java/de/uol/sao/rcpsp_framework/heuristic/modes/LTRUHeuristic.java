@@ -1,7 +1,7 @@
 package de.uol.sao.rcpsp_framework.heuristic.modes;
 
 import de.uol.sao.rcpsp_framework.benchmark.model.*;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +21,6 @@ public class LTRUHeuristic extends ModeHeuristic {
     }
 
     public LTRUHeuristic() {
-        this.selection = Selection.MIN;
+        this.optimum = Optimum.MIN;
     }
 }

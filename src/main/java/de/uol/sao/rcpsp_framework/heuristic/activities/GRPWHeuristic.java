@@ -3,7 +3,7 @@ package de.uol.sao.rcpsp_framework.heuristic.activities;
 import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
 import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
 import de.uol.sao.rcpsp_framework.benchmark.model.Mode;
-import de.uol.sao.rcpsp_framework.helper.Selection;
+import de.uol.sao.rcpsp_framework.function.Optimum;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +24,6 @@ public class GRPWHeuristic extends ActivityHeuristic {
     }
 
     public GRPWHeuristic() {
-        this.selection = Selection.MAX;
+        this.optimum = Optimum.MAX;
     }
 }
