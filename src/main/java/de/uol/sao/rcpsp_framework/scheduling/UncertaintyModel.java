@@ -12,7 +12,6 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UncertaintyModel {
-
     BinomialDistribution modeDelayDistribution;
 
     public int computeActualDuration(int duration) {
