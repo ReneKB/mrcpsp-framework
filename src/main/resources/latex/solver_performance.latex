@@ -1,0 +1,12 @@
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{#TABLESTRUCTURE}
+\cline{2-#COLUMN}
+\textbf{\begin{tabular}[c]{@{}r@{}}Benchmark: \\ #BENCHMARKNAME\end{tabular}} & #SOLVERS_HEADER \\ \hline
+#SOLVERS_BODY
+\end{tabular}%
+}
+\caption{}
+% \label{tab:example}
+\end{table}

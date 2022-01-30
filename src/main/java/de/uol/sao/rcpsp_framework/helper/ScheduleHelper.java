@@ -1,20 +1,24 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.model.benchmark.Job;
-import de.uol.sao.rcpsp_framework.model.benchmark.Project;
-import de.uol.sao.rcpsp_framework.model.benchmark.Resource;
-import de.uol.sao.rcpsp_framework.model.heuristics.HeuristicSelection;
-import de.uol.sao.rcpsp_framework.model.scheduling.*;
-import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.JobMode;
-import de.uol.sao.rcpsp_framework.model.scheduling.representation.ScheduleRepresentation;
+import de.uol.sao.rcpsp_framework.benchmark.model.Activity;
+import de.uol.sao.rcpsp_framework.benchmark.model.NonRenewableResource;
+import de.uol.sao.rcpsp_framework.benchmark.model.Resource;
+import de.uol.sao.rcpsp_framework.function.ObjectiveFunction;
+import de.uol.sao.rcpsp_framework.function.Optimum;
+import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.representation.ActivityMode;
+import de.uol.sao.rcpsp_framework.scheduling.Interval;
+import de.uol.sao.rcpsp_framework.scheduling.Schedule;
+import de.uol.sao.rcpsp_framework.scheduling.SchedulePlanInfo;
+import de.uol.sao.rcpsp_framework.service.SchedulerService;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * The schedule helper containing helpful functions which are related to schedule and their information of a project
@@ -23,95 +27,96 @@ import java.util.stream.Collectors;
 public class ScheduleHelper {
 
     /**
-     * Creates a {@link ScheduleRelationInfo} which contains activity plan information, like earliest/latest
+     * Creates a {@link SchedulePlanInfo} which contains activity plan information, like earliest/latest
      * finishing and starting times of each job.
      * @param schedule The schedule of relevance
-     * @return The object {@link ScheduleRelationInfo} with the computed values
+     * @return The object {@link SchedulePlanInfo} with the computed values
      */
-    public static ScheduleRelationInfo createScheduleRelationInfo(Schedule schedule) {
-        ScheduleRelationInfo scheduleRelationInfo = new ScheduleRelationInfo();
-        ScheduleRepresentation scheduleRepresentation = schedule.getScheduleRepresentation();
-        List<JobMode> jobModeList = scheduleRepresentation.toJobMode(schedule.getBenchmark().getProject());
-        Project project = schedule.getBenchmark().getProject();
-        List<Job> jobs = jobModeList.stream().map(JobMode::getJob).collect(Collectors.toList());
+    @SneakyThrows
+    public static SchedulePlanInfo createScheduleRelationInfo(Schedule schedule) {
+        Schedule backwardRecursion = new SchedulerService().createScheduleBackward(schedule);
 
-        Map<Job, Integer> leastFinishingTime = scheduleRelationInfo.getLeastFinishingTime();
-        Map<Job, Integer> leastStartingTime = scheduleRelationInfo.getLeastStartingTime();
-        Map<Job, Integer> earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime();
-        Map<Job, Integer> earliestStartingTime = scheduleRelationInfo.getEarliestStartingTime();
+        SchedulePlanInfo schedulePlanInfo = new SchedulePlanInfo();
+        Map<Activity, Integer> latestStartingTime = schedulePlanInfo.getLatestStartingTime();
+        Map<Activity, Integer> latestFinishingTime = schedulePlanInfo.getLatestFinishingTime();
+        List<Activity> activities = schedule.getBenchmark().getProject().getActivities();
 
-        // Beginning job is always a dummy one
-        earliestFinishingTime.put(jobs.get(0), 0);
-        earliestStartingTime.put(jobs.get(0), 0);
+        Map<Activity, Integer> actualStartingTime = schedulePlanInfo.getEarliestStartingTime();
+        Map<Activity, Integer> actualFinishingTime = schedulePlanInfo.getEarliestFinishingTime();
+        actualStartingTime.put(activities.get(0), 0);
+        actualFinishingTime.put(activities.get(0), 0);
 
-        // last Job is always a dummy one
-        int makespan = schedule.computeMetric(Metrics.MAKESPAN);
-
-        // Computation of EST and EFT
-        for (Map.Entry<Resource, List<Interval>> entry : schedule.getResourcePlans().entrySet()) {
-            Resource resource = entry.getKey();
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
             List<Interval> intervals = entry.getValue();
 
             for (Interval interval : intervals) {
-                Job job = interval.getSource().getJob();
-                int beginning = earliestStartingTime.getOrDefault(job, Integer.MIN_VALUE);
+                Activity activity = interval.getSource().getActivity();
+                int beginning = actualStartingTime.getOrDefault(activity, Integer.MIN_VALUE);
                 beginning = Math.max(interval.getLowerBound(), beginning);
-                earliestStartingTime.put(job, beginning);
+                actualStartingTime.put(activity, beginning);
 
-                int ending = earliestFinishingTime.getOrDefault(job, Integer.MAX_VALUE);
+                int ending = actualFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
                 ending = Math.min(interval.getUpperBound() + 1, ending);
-                earliestFinishingTime.put(job, ending);
+                actualFinishingTime.put(activity, ending);
             }
         }
 
-        if (!schedule.isPartialSchedule()) {
-            earliestFinishingTime.put(jobs.get(jobs.size() - 1), makespan);
-            earliestStartingTime.put(jobs.get(jobs.size() - 1), makespan);
-        }
+        int lowestBound = Integer.MAX_VALUE;
+        for (Map.Entry<Resource, List<Interval>> entry : backwardRecursion.getSchedulePlan().entrySet()) {
+            List<Interval> intervals = entry.getValue();
 
-        // Computation of LST and LFT
-        for (int i = jobs.size() - 1; i >= 0; i--) {
-            Job job = jobs.get(i);
-            JobMode selectedMode = jobModeList.stream().filter(jobMode -> jobMode.getJob().getJobId() == job.getJobId()).findFirst().get();
-            int duration = selectedMode.getMode().getDuration();
+            for (Interval interval : intervals) {
+                Activity activity = interval.getSource().getActivity();
+                int beginning = actualStartingTime.getOrDefault(activity, Integer.MIN_VALUE);
+                beginning = Math.max(interval.getLowerBound(), beginning);
+                latestStartingTime.put(activity, beginning);
 
-            int latestEndPoint = Integer.MAX_VALUE;
-            List<Job> successorJobs = job.getSuccessor();
-            if (successorJobs.isEmpty())
-                latestEndPoint = makespan;
-            else {
-                // Get the minimum of the successors
-                for (Job successorJob : successorJobs) {
-                    try {
-                        latestEndPoint = Math.min(leastStartingTime.getOrDefault(successorJob, makespan), latestEndPoint);
-                    } catch (Exception ex) {
-                        System.out.println();
-                    }
-                }
+                int ending = actualFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
+                latestFinishingTime.put(activity, ending);
+
+                lowestBound = Math.min(lowestBound, beginning);
             }
-
-            int latestStartPoint = latestEndPoint - duration;
-            leastStartingTime.put(job, latestStartPoint);
-            leastFinishingTime.put(job, latestEndPoint);
         }
 
-        return scheduleRelationInfo;
+        latestFinishingTime.put(activities.get(0), lowestBound);
+        latestStartingTime.put(activities.get(0), lowestBound);
+
+        return schedulePlanInfo;
+    }
+
+    public static Map<Activity, Integer> getEarliestFinishingTime(Schedule schedule) {
+        List<Activity> activities = schedule.getBenchmark().getProject().getActivities();
+        Map<Activity, Integer> earliestFinishingTime = new HashMap<>();
+        earliestFinishingTime.put(activities.get(0), 0);
+
+        for (Map.Entry<Resource, List<Interval>> entry : schedule.getSchedulePlan().entrySet()) {
+            List<Interval> intervals = entry.getValue();
+
+            for (Interval interval : intervals) {
+                Activity activity = interval.getSource().getActivity();
+                int ending = earliestFinishingTime.getOrDefault(activity, Integer.MAX_VALUE);
+                ending = Math.min(interval.getUpperBound() + 1, ending);
+                earliestFinishingTime.put(activity, ending);
+            }
+        }
+
+        earliestFinishingTime.put(activities.get(activities.size() - 1), schedule.computeMetric(Metrics.MAKESPAN));
+        return earliestFinishingTime;
     }
 
     /**
-     * Computes the slack S for every job. Relevant for a lot of robustness calculations.
-     * @param scheduleRelationInfo The schedule relation information with computed EST/EFT and LST/LFT
+     * Computes the free slack S for every job. Relevant for a lot of robustness calculations.
+     * @param schedulePlanInfo The schedule relation information with computed EST/EFT and LST/LFT
      * @return The map of all job slacks
      */
-    public static Map<Job, Integer> computeSlacks(ScheduleRelationInfo scheduleRelationInfo) {
-        Map<Job, Integer> slack = new HashMap<>();
+    public static Map<Activity, Integer> computeFreeSlacks(SchedulePlanInfo schedulePlanInfo) {
+        Map<Activity, Integer> slack = new HashMap<>();
 
-        for (Map.Entry<Job, Integer> entry : scheduleRelationInfo.getLeastFinishingTime().entrySet()) {
-            Job job = entry.getKey();
-            int latestFinishingTime = entry.getValue();
-            int earliestFinishingTime = scheduleRelationInfo.getEarliestFinishingTime().get(job);
-            slack.put(job, latestFinishingTime - earliestFinishingTime);
-        }
+        // Calculate the slack now
+        schedulePlanInfo.getLatestStartingTime().forEach((job, integer) -> {
+            slack.put(job, integer - schedulePlanInfo.getEarliestStartingTime().get(job));
+        });
 
         return slack;
     }
@@ -127,10 +132,10 @@ public class ScheduleHelper {
         }
         else {
             if (robustnessMetric != null) {
-                log.info(String.format("Makespan: %d - %s: %d - %s",
+                log.info(String.format("Makespan: %d - %s: %s - %s",
                         schedule.computeMetric(Metrics.MAKESPAN),
                         robustnessMetric.getClass().getSimpleName(),
-                        schedule.computeMetric(robustnessMetric),
+                        schedule.computeMetric(robustnessMetric).toString(),
                         schedule.getScheduleRepresentation()));
             } else {
                 log.info(String.format("Makespan: %d - %s",
@@ -146,17 +151,56 @@ public class ScheduleHelper {
         else if (currentBestSchedule == null || (currentBestSchedule.computeMetric(Metrics.MAKESPAN) > schedule.computeMetric(Metrics.MAKESPAN))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MIN &&
+                robustnessMeasure.getOptimum() == Optimum.MIN &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                ((int) currentBestSchedule.computeMetric(robustnessMeasure) > (int) schedule.computeMetric(robustnessMeasure))) {
+                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) > Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         } else if(robustnessMeasure != null &&
-                robustnessMeasure.getOptimum() == HeuristicSelection.MAX &&
+                robustnessMeasure.getOptimum() == Optimum.MAX &&
                 (currentBestSchedule.computeMetric(Metrics.MAKESPAN) == schedule.computeMetric(Metrics.MAKESPAN)) &&
-                ((int) currentBestSchedule.computeMetric(robustnessMeasure) < (int) schedule.computeMetric(robustnessMeasure))) {
+                (Double.parseDouble(currentBestSchedule.computeMetric(robustnessMeasure).toString()) < Double.parseDouble(schedule.computeMetric(robustnessMeasure).toString()))) {
             return true;
         }
 
         return false;
+    }
+
+    public static boolean compareSchedule(Schedule a, Schedule b, ObjectiveFunction comparator) {
+        return comparator.compare(a, b);
+    }
+
+    /**
+     * A schedule plan doesn't consider non-renewable resources in the intervals. However
+     * for visualization non-renewable resources can be interesting tho. This method returns
+     * a resource with lists of intervals, so these can be visualized.
+     * @param schedule A schedule containing a schedule plan
+     * @return A schedule plan including non renewable resources
+     */
+    public static Map<Resource, List<Interval>> getFullSchedulePlan(Schedule schedule) {
+        int endInterval = schedule.computeMetric(Metrics.MAKESPAN) - 1;
+        List<ActivityMode> activityModes = schedule.getScheduleRepresentation().toActivityModeList(schedule.getBenchmark().getProject());
+
+        Map<Resource, List<Interval>> schedulePlan = new HashMap<>(schedule.getSchedulePlan());
+        activityModes.forEach(jobMode -> {
+            jobMode.getMode().getRequestedResources().forEach((resource, amount) -> {
+                if (resource instanceof NonRenewableResource) {
+                    int beginInterval = schedule.getBenchmark().getHorizon();
+                    for (List<Interval> intervals : schedule.getSchedulePlan().values()) {
+                        for (Interval interval : intervals) {
+                            if (interval.getSource().equals(jobMode)) {
+                                beginInterval = Math.min(interval.getLowerBound(), beginInterval);
+                            }
+                        }
+                    }
+
+                    Interval interval = new Interval(beginInterval, endInterval, amount, jobMode);
+                    List<Interval> intervals = schedulePlan.getOrDefault(resource, new ArrayList<>());
+                    intervals.add(interval);
+                    schedulePlan.put(resource, intervals);
+                }
+            });
+        });
+
+        return schedulePlan;
     }
 }

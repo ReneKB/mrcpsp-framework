@@ -1,15 +1,19 @@
 package de.uol.sao.rcpsp_framework.helper;
 
-import de.uol.sao.rcpsp_framework.model.metrics.Metric;
-import de.uol.sao.rcpsp_framework.model.metrics.Metrics;
-import de.uol.sao.rcpsp_framework.services.experiment.Experiment;
-import de.uol.sao.rcpsp_framework.services.solver.Solver;
+import de.uol.sao.rcpsp_framework.benchmark.model.Benchmark;
+import de.uol.sao.rcpsp_framework.metric.Metric;
+import de.uol.sao.rcpsp_framework.metric.Metrics;
+import de.uol.sao.rcpsp_framework.experiment.Experiment;
+import de.uol.sao.rcpsp_framework.scheduling.UncertaintyModel;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.util.Assert;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -74,6 +78,25 @@ public class ExperimentHelper {
         return experiments;
     }
 
+    public static int getLimitsFromArgs(ApplicationArguments args, int defaultValue) {
+        int limit = defaultValue;
+        Set<String> options = args.getOptionNames();
+        for (String beginningOption : options) {
+            switch (CommandArgsOptions.fromString(beginningOption)) {
+                case LIMIT:
+                    String commandStr = CommandArgsOptions.LIMIT.getCommandStr();
+                    List<String> limitValues = args.getOptionValues(commandStr);
+                    if (limitValues.size() != 1)
+                        log.warn(String.format("Limit not properly set. %d will run. " +
+                                "Usage: --%s=10", defaultValue, commandStr));
+                    else
+                        limit = Integer.parseInt(limitValues.get(0));
+            }
+        }
+
+        return limit;
+    }
+
     public static Metric<?> getRobustMeasureFunctionFromArgs(ApplicationArguments args, Metric<?> defaultValue) {
         Metric<?> robustMeasureFunction = defaultValue;
         Set<String> options = args.getOptionNames();
@@ -88,7 +111,7 @@ public class ExperimentHelper {
                     else {
                         try {
                             robustMeasureFunction = Metrics.getMetricByName(robustnessMeasurements.get(0));
-                            Assert.isNull(robustMeasureFunction, "Robustness Measurement unknown");
+                            Assert.notNull(robustMeasureFunction, "Robustness Measurement unknown");
                         } catch (Throwable ex) {
                             log.warn(String.format("Robustness Measurement unknown. %s will be used. " +
                                     "Usage: --%s=RobustMeasure1", defaultValue, commandStr));
@@ -117,5 +140,35 @@ public class ExperimentHelper {
         }
 
         return experiments;
+    }
+
+    public static void filterOneInstancePerParameter(List<Benchmark> benchmarks) {
+        List<Benchmark> benchmarksToDelete = new ArrayList<>();
+        String previousStr = "";
+        for (Benchmark benchmark : benchmarks) {
+            String currentInstanceStr = benchmark.getName().split("_")[0];
+            if (currentInstanceStr.equals(previousStr))
+                benchmarksToDelete.add(benchmark);
+            previousStr = currentInstanceStr;
+        }
+        benchmarks.removeAll(benchmarksToDelete);
+    }
+
+    public static List<UncertaintyModel> getUncertaintyIssues() {
+        int trials = 2;
+        List<UncertaintyModel> uncertaintyModels = new ArrayList<>();
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.00)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.05)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.10)));
+        uncertaintyModels.add(new UncertaintyModel(new BinomialDistribution(trials, 0.20)));
+        return uncertaintyModels;
+    }
+
+    public static String getFileName(List<Benchmark> benchmarks, Class<?> experimentClass) {
+        String datetime = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+        return String.format("results/%s_%s_%s",
+                benchmarks.get(0).getName().replaceAll(".mm(\\/|\\\\).*", ""),
+                experimentClass.getSimpleName(),
+                datetime);
     }
 }
