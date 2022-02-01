@@ -11,10 +11,10 @@
     </parent>
 
     <groupId>de.uol.sao</groupId>
-    <artifactId>rcpsp_framework</artifactId>
+    <artifactId>mrcpsp_framework</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>rcpsp_framework</name>
-    <description>rcpsp_framework</description>
+    <name>mrcpsp_framework</name>
+    <description>mrcpsp_framework</description>
 
     <properties>
         <java.version>11</java.version>
