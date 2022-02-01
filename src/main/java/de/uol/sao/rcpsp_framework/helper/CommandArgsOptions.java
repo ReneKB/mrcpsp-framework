@@ -14,7 +14,6 @@ public enum CommandArgsOptions {
     SOLVERS("solvers"),
     EXPERIMENT_N("n"),
     EXPERIMENT("experiment"),
-    METRIC("metric"),
     ROBUST("robust"),
     LIMIT("limit"),
     SERVER("server"),
