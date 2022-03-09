@@ -1,0 +1,7 @@
+\subsection{Hill Climbing} \label{subsec:Hill_Climbing}
+
+Hill Climbing stellt mit der Klasse \lstinline|HillClimbingSolver| die Realisierung des naiven \ac{LS}-Algorithmus aus Abschnitt \ref{sec:Metaheuristiken} dar. \\
+
+Der \ac{LS}-Algorithmus sieht eine initiale Lösung vor, welche heuristisch über zufällige Kombinationen von Prioritäts- und Selektionsregeln erstellt werden kann. Mit einer Wahrscheinlichkeit von 66\% wird beim \lstinline|HeuristicDirector| die Methode \textit{Single Sampling} ausgewählt, andernfalls werden Aktivitäts- und Moduslisten über \textit{Regret Based Biased Random Sampling} erzeugt. Es werden solange verschiedene Konstellationen von Prioritäts, Selektions- und Samplingverfahren ausprobiert, bis ein gültiger, initialer Zeitplan gefunden wurde. Insbesondere die Selektionsregel \lstinline|LRSHeuristic| eignet sich für Projekte mit einer hohen Komplexität seitens der nicht-erneuerbaren Ressourcen. Diese Art der Erstellung von initialen Lösungen wird auch bei der \ac{TS} und \ac{SA} angewandt. \\
+
+Gemäß des erläuterten \ac{LS}-Algorithmus aus Abschnitt \ref{sec:Metaheuristiken} und der definierten Nachbarschafts(teil)funktion aus Abschnitt \ref{sec:Loesungsansaetze} wird somit iterativ die beste Lösung ausgewählt bis das lokale Optimum erreicht wurde.

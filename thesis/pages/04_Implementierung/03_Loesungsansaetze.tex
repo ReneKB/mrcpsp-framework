@@ -1,0 +1,23 @@
+\section{Lösungsansätze} \label{sec:Loesungsansaetze}
+
+Bereits im Abschnitt \ref{sec:AuswahlMetaheuristischenAlgorithmen}  wurden Metaheuristiken und andere Lösungsansätze selektiert, um Zeitpläne für das \ac{mrcpsp} zu finden. Als abstrakte Anlaufstelle für die Lösungsverfahren dient das Interface \lstinline|Solver|, welches eine Methode \lstinline|algorithm(...)| vorsieht. Dieses wird parametrisiert über ein \lstinline|Benchmark|-Objekt, die Anzahl an Iterationen, eine Robustheitsfunktion und eine feste Anfangsliste von Aktivitäten- und Modi, welche wiederum relevant für die reaktiven Verfahren sind. Aufgerufen wird die Methode über die einzelnen Experimente. Die konkreten Lösungsansätze implementieren diese Methode gemäß des eigentlichen Algorithmus. Für den fairen Vergleich der Algorithmen werden die Iterationen als ein Zähler von erzeugten Aktivitäts- und Moduslisten betrachtet. Das Erzeugen eines Tupels erhöht die durchlaufene Iterationen um eins. Bei einer Nachbarschaft aus fünf Elementen dementsprechend um fünf. \\
+
+Das UML-Klassendiagramm aus Abbildung \ref{img:mrcpsp_framework_solver} zeigt das Zusammenspiel der Lösungsverfahren genauer auf. Alle aus Abschnitt \ref{sec:AuswahlMetaheuristischenAlgorithmen} selektierten Lösungsansätze werden über eine eigene Klasse repräsentiert, welche das Interface \lstinline|Solver| implementieren. Diese erzeugen über die jeweiligen Algorithmen die Aktivitäts- und Moduslisten, um so Zeitpläne über den \lstinline|SchedulerService| zu erzeugen. Insbesondere für die initialen Lösungen nutzen die Metaheuristiken den \lstinline|HeuristicDirector|, um so machbare oder sogar gute Lösungen zunächst heuristisch zu generieren. Insbesondere der \lstinline|GeneticAlgorithm| nutzt für die initiale Population unterschiedliche Prioritäts- und Selektionsregeln. \\
+
+Ebenfalls im Abschnitt \ref{sec:AuswahlMetaheuristischenAlgorithmen} wurde eine gemeinsame Nachbarschaftsfunktion für sowohl Hill Climbing, Tabu Search als auch Simulated Annealing festgelegt. Die Funktionsweise der implementierten Nachbarschaftsfunktion $\Tilde{N}(s)$ ist in Abbildung \ref{img:implementation_neighbourhood} illustriert. Für einen zu betrachtenden Zeitplan $s$ werden stets zwei Zeitpläne in der Nachbarschaft hinzugefügt, welche eine identische Aktivitätsliste zum Basisplan aufweisen. Dennoch wird abweichend zum Basisplan ein Modus innerhalb der Modusliste umgedreht. Alle vom Basisplan aus gültigen Aktivitätsswaps werden ebenfalls einschließlich eines Moduslistenelement-Flip in der Nachbarschaft hinzugefügt. \\
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.84\linewidth]{assets/img/04_Umsetzung/MRCPSPNeighhbourhood.drawio.png}
+    \caption{Funktionsweise der implementierten Nachbarschaftsfunktion anhand eines Beispiels für den Projektplan aus Abbildung \ref{img:visualization_projectplan}} 
+    \label{img:implementation_neighbourhood}
+    \source{Eigene Darstellung}
+\end{figure}
+
+In den folgenden Unterabschnitten werden die implementierten Lösungsansätze für das \ac{mrcpsp} erläutert. Zunächst wird im Abschnitt \ref{subsec:Naiv_Random} die Umsetzung der Erstellung von zufälligen Lösungen vorgestellt. Im Folgeabschnitt \ref{subsec:Hill_Climbing} wird der Hill Climbing-Algorithmus behandelt. Die Tabu Suche wird in Ausschnitt \ref{subsec:MetaheuristischeAlgorithmen_TabuSearch} erläutert, den Simulated Annealing-Algorithmus in Abschnitt \ref{subsec:MetaheuristischeAlgorithmen_SimulatedAnnealing}. Zuletzt gilt es den umgesetzten genetischen Algorithmus im Abschnitt \ref{subsec:MetaheuristischeAlgorithmen_EvolutionaereAlgorithmen} vorzustellen.
+
+\input{pages/04_Implementierung/031_Random}
+\input{pages/04_Implementierung/032_HillClimbing}
+\input{pages/04_Implementierung/042_TabuSearch}
+\input{pages/04_Implementierung/043_SimulatedAnnealing}
+\input{pages/04_Implementierung/041_EvolutionaereAlgorithmen}

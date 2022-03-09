@@ -1,0 +1,102 @@
+\section{Benchmark-Ergebnisse der prädiktiven Methoden}
+\label{sec:BenchmarkErgebnisse_PraediktiveMethoden}
+
+Basierend auf dem gleichen Datensatz und Unsicherheitsszenarien vom vorherigen Abschnitt \ref{sec:BenchmarkErgebnisse_NaivMethoden} werden im Rahmen dieser prädiktiven Methode Zeitpläne gesucht, welche sowohl die Makespan $C_{max}$ minimieren, als auch die Robustheit $\Omega$ maximieren. Bereits im Abschnitt \ref{subsec:Reaktive_Methoden} wurden unterschiedliche Robustheitsmessungsfunktionen vorgestellt, wovon einige in Abschnitt \ref{subsec:ReaktiveZeitplanerstellung} in das MRPCSP-Framework integriert worden sind. \\
+
+Zunächst gilt es die Robustheitsmessungsfunktion $\Omega$ auszuwählen, welche im Mittel die geringste Verspätung für eine Menge an zufälligen Unsicherheitsszenarien ($n = 50$) je Instanz aufweist. Tabelle \ref{tab:evaluation_robustness_n1} zeigt die implementierten Robustheitsmessungsfunktionen $\Omega$ in Kombination der Tabu-Suche auf. Im Anhang \ref{sec:WeitereAuswertung_Robustness} befinden sich für das Instanzset n1 die Resultate für die weiteren Lösungsverfahren. Als Bemessungskriterium werden die gemittelten Verspätungen zu den Basiszeitplänen festgelegt. Es lässt sich erkennen, dass Robustheitsmessungsfunktionen gegenüber keiner Robustheitsoptimierung (No-RM) geringere Projektlaufzeiten aufweisen und somit eine Möglichkeit für den Umgang mit Unsicherheiten darstellt. Insbesondere die Funktionen $\Omega^{SF2}$, $\Omega^{SF2}_{W1}$ und $\Omega^{SF3}$ stellen bessere Strategien zur Messung der Robustheit innerhalb des \ac{mrcpsp} dar. Folglich wird die Robustheitoptimierung über die Funktion $\Omega^{SF2}_{W1}$ als das zu vergleichende prädiktive Verfahren selektiert. \\
+
+{\footnotesize
+\begin{longtable}{ll|rrrr|rrrr}
+\toprule
+\textbf{Instance set n1}                 & {} & \multicolumn{4}{c|}{Mean $\mu$} & \multicolumn{4}{c}{Std. Dev $\sigma$} \\
+\textbf{TabuSearch}                 & Uncertainty $p$: & 0\% & 5\% & 10\% & 20\% & 0\% & 5\% & 10\% & 20\% \\
+Iteration & $\Omega(x)$ &      &      &      &      &      &      &      &      \\
+\midrule
+500  & No-RM & 0.00 & 1.01 & 1.87 & 3.46 & 0.00 & 1.45 & 1.81 & 2.28 \\
+     & SF1 & 0.00 & 0.90 & 1.71 & 3.21 & 0.00 & 1.31 & 1.67 & 2.21 \\
+     & SF1\_W1 & 0.00 & 0.89 & 1.72 & 3.18 & 0.00 & 1.27 & 1.68 & 2.11 \\
+     & SF1\_W9 & 0.00 & 0.94 & 1.71 & 3.27 & 0.00 & 1.24 & 1.58 & 2.10 \\
+     & SF2 & 0.00 & 0.86 & 1.65 & 3.14 & 0.00 & 1.21 & 1.63 & 2.08 \\
+     & SF2\_W1 & 0.00 & 0.86 & 1.63 & 3.10 & 0.00 & 1.22 & 1.55 & 2.01 \\
+     & SF2\_W9 & 0.00 & 0.89 & 1.70 & 3.21 & 0.00 & 1.36 & 1.78 & 2.24 \\
+     & SF3 & 0.00 & 0.87 & 1.67 & 3.16 & 0.00 & 1.19 & 1.56 & 2.08 \\
+     & SF3\_W1 & 0.00 & 0.86 & 1.65 & 3.15 & 0.00 & 1.18 & 1.52 & 1.96 \\
+     & SF3\_W9 & 0.00 & 0.88 & 1.72 & 3.24 & 0.00 & 1.31 & 1.77 & 2.28 \\ \hline
+1000 & No-RM & 0.00 & 0.98 & 1.84 & 3.35 & 0.00 & 1.38 & 1.75 & 2.23 \\
+     & SF1 & 0.00 & 0.93 & 1.74 & 3.26 & 0.00 & 1.28 & 1.68 & 2.13 \\
+     & SF1\_W1 & 0.00 & 0.92 & 1.77 & 3.29 & 0.00 & 1.33 & 1.79 & 2.25 \\
+     & SF1\_W9 & 0.00 & 0.92 & 1.76 & 3.26 & 0.00 & 1.23 & 1.65 & 2.13 \\
+     & SF2 & 0.00 & 0.89 & 1.70 & 3.20 & 0.00 & 1.34 & 1.68 & 2.16 \\
+     & SF2\_W1 & 0.00 & 0.86 & 1.64 & 3.10 & 0.00 & 1.22 & 1.54 & 1.99 \\
+     & SF2\_W9 & 0.00 & 0.86 & 1.67 & 3.13 & 0.00 & 1.20 & 1.60 & 1.99 \\
+     & SF3 & 0.00 & 0.88 & 1.71 & 3.24 & 0.00 & 1.24 & 1.69 & 2.11 \\
+     & SF3\_W1 & 0.00 & 0.89 & 1.68 & 3.22 & 0.00 & 1.25 & 1.63 & 2.11 \\
+     & SF3\_W9 & 0.00 & 0.89 & 1.71 & 3.20 & 0.00 & 1.27 & 1.70 & 2.10 \\ \hline
+2500 & No-RM & 0.00 & 1.02 & 1.91 & 3.46 & 0.00 & 1.38 & 1.79 & 2.26 \\
+     & SF1 & 0.00 & 0.97 & 1.81 & 3.32 & 0.00 & 1.35 & 1.77 & 2.20 \\
+     & SF1\_W1 & 0.00 & 0.93 & 1.71 & 3.22 & 0.00 & 1.27 & 1.60 & 2.05 \\
+     & SF1\_W9 & 0.00 & 0.96 & 1.79 & 3.33 & 0.00 & 1.39 & 1.76 & 2.29 \\
+     & SF2 & 0.00 & 0.85 & 1.64 & 3.17 & 0.00 & 1.18 & 1.58 & 2.07 \\
+     & SF2\_W1 & 0.00 & 0.85 & 1.64 & 3.16 & 0.00 & 1.13 & 1.53 & 1.96 \\
+     & SF2\_W9 & 0.00 & 0.88 & 1.69 & 3.19 & 0.00 & 1.21 & 1.64 & 2.07 \\
+     & SF3 & 0.00 & 0.91 & 1.71 & 3.23 & 0.00 & 1.39 & 1.79 & 2.23 \\
+     & SF3\_W1 & 0.00 & 0.90 & 1.71 & 3.24 & 0.00 & 1.28 & 1.67 & 2.15 \\
+     & SF3\_W9 & 0.00 & 0.94 & 1.76 & 3.29 & 0.00 & 1.40 & 1.75 & 2.24 \\ \hline
+5000 & No-RM & 0.00 & 0.99 & 1.86 & 3.39 & 0.00 & 1.20 & 1.54 & 1.94 \\
+     & SF1 & 0.00 & 0.95 & 1.78 & 3.29 & 0.00 & 1.31 & 1.67 & 2.13 \\
+     & SF1\_W1 & 0.00 & 0.96 & 1.77 & 3.29 & 0.00 & 1.35 & 1.74 & 2.18 \\
+     & SF1\_W9 & 0.00 & 0.98 & 1.83 & 3.39 & 0.00 & 1.39 & 1.81 & 2.29 \\
+     & SF2 & 0.00 & 0.85 & 1.63 & 3.12 & 0.00 & 1.14 & 1.52 & 2.02 \\
+     & SF2\_W1 & 0.00 & 0.86 & 1.64 & 3.14 & 0.00 & 1.15 & 1.50 & 1.97 \\
+     & SF2\_W9 & 0.00 & 0.92 & 1.71 & 3.21 & 0.00 & 1.33 & 1.67 & 2.11 \\
+     & SF3 & 0.00 & 0.90 & 1.74 & 3.23 & 0.00 & 1.25 & 1.62 & 2.03 \\
+     & SF3\_W1 & 0.00 & 0.91 & 1.73 & 3.23 & 0.00 & 1.28 & 1.64 & 2.06 \\
+     & SF3\_W9 & 0.00 & 0.97 & 1.81 & 3.32 & 0.00 & 1.44 & 1.85 & 2.25 \\
+\bottomrule
+\caption{Verspätungswerte der Robustheitfunktionen $\Omega(x)$ angewendet auf die Tabu Suche für das Instanzset n1 mit $n = 50$ Unsicherheitsszenarien. }
+\label{tab:evaluation_robustness_n1}
+\end{longtable}
+}
+\vspace*{-25px}
+\begin{figure}[H]
+\source{Eigene Darstellung}
+\end{figure}
+
+Für alle zu untersuchenden Benchmark Sets gilt es die Robustheit über die ausgewählte Robustheitsmessungsfunktion $\Omega^{SF2}_{W1}$ zu maximieren und die Makespan $C_{max}$ zu minimieren. Dies geschieht über den \lstinline|UncertaintyPredictiveExperiment|, welcher zudem nun Basispläne über die Robustheit sekundär auswählt. Tabelle \ref{tab:evaluation_predictive_n1} zeigt die Ergebnisse des prädiktiven Verfahrens für das Instanzset n1 auf. Im Anhang \ref{sec:WeitereAuswertung_Prädiktiv} befinden sich die Ergebnisse für die weiteren Instanzsets. \\
+
+{\footnotesize
+\begin{longtable}{ll|rrrr|rrrr}
+\toprule
+\textbf{Instance set n1}                 & {} & \multicolumn{4}{c|}{Mean $\mu$} & \multicolumn{4}{c}{Std. Dev $\sigma$} \\
+                & Uncertainty $p$: & 0\% & 5\% & 10\% & 20\% & 0\% & 5\% & 10\% & 20\% \\
+Solver & Iteration &      &      &      &      &      &      &      &      \\
+\midrule
+RandomSolver & 500  & 6.16 & 6.97 & 7.74 & 9.21 & 3.28 & 3.55 & 3.78 & 4.16 \\
+                 & 1000 & 5.43 & 6.27 & 7.04 & 8.56 & 3.16 & 3.53 & 3.78 & 4.17 \\
+                 & 2500 & 4.47 & 5.28 & 6.09 & 7.54 & 2.74 & 3.04 & 3.27 & 3.63 \\
+                 & 5000 & 3.90 & 4.70 & 5.48 & 6.95 & 2.60 & 2.89 & 3.10 & 3.46 \\ \hline
+HillClimbing & 500  & 2.56 & 3.41 & 4.20 & 5.70 & 2.94 & 3.24 & 3.46 & 3.84 \\
+                 & 1000 & 2.40 & 3.22 & 4.00 & 5.46 & 2.63 & 2.95 & 3.21 & 3.56 \\
+                 & 2500 & 2.41 & 3.25 & 4.03 & 5.52 & 2.76 & 3.04 & 3.22 & 3.56 \\
+                 & 5000 & 2.42 & 3.26 & 4.05 & 5.55 & 2.93 & 3.21 & 3.43 & 3.80 \\ \hline
+TabuSearch & 500  & 1.60 & 2.47 & 3.27 & 4.76 & 2.17 & 2.52 & 2.79 & 3.10 \\
+                 & 1000 & 1.26 & 2.12 & 2.90 & 4.38 & 1.96 & 2.30 & 2.53 & 2.91 \\
+                 & 2500 & 0.86 & 1.70 & 2.49 & 4.00 & 1.55 & 1.95 & 2.23 & 2.62 \\
+                 & 5000 & 0.61 & 1.46 & 2.26 & 3.75 & 1.33 & 1.71 & 1.97 & 2.34 \\ \hline
+SimulatedAnnealing & 500  & 2.51 & 3.38 & 4.20 & 5.71 & 2.65 & 3.08 & 3.36 & 3.79 \\
+                 & 1000 & 1.74 & 2.60 & 3.40 & 4.87 & 2.25 & 2.61 & 2.86 & 3.17 \\
+                 & 2500 & 0.92 & 1.79 & 2.55 & 4.06 & 1.29 & 1.82 & 2.13 & 2.54 \\
+                 & 5000 & 0.62 & 1.48 & 2.28 & 3.78 & 1.01 & 1.60 & 1.90 & 2.32 \\ \hline
+GeneticAlgorithm & 500  & 2.17 & 2.99 & 3.77 & 5.25 & 2.15 & 2.42 & 2.61 & 2.94 \\
+                 & 1000 & 1.09 & 1.92 & 2.70 & 4.18 & 1.37 & 1.76 & 2.03 & 2.42 \\
+                 & 2500 & 0.57 & 1.42 & 2.20 & 3.67 & 0.90 & 1.43 & 1.74 & 2.16 \\
+                 & 5000 & 0.43 & 1.27 & 2.05 & 3.54 & 0.80 & 1.35 & 1.69 & 2.10 \\
+\bottomrule
+\caption{Vergleich der prädiktiven Lösungsverfahren auf $m=50$ unterschiedliche Unsicherheitsszenarien für das Instanzset n1. }
+\label{tab:evaluation_predictive_n1}
+\end{longtable}
+}
+\vspace*{-25px}
+\begin{figure}[H]
+\source{Eigene Darstellung}
+\end{figure}

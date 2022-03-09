@@ -1,0 +1,39 @@
+\section{Metaheuristiken} \label{sec:Metaheuristiken}
+Optimierungsprobleme lassen sich im Grundlegenden in zwei Kategorien klassifizieren, nämlich in diskrete und kontinuierliche Optimierungsprobleme. Bei dem diskreten Fall existiert zur Lösungsfindung kein Wissen über einen exakten polynomialen Algorithmus und somit handelt es sich hierbei um ein NP-hartes Problem. Beim kontinuierlichen Fall existiert kein Wissen über einen Algorithmus zur Findung des globalen Optimums, welche die bestmögliche Lösung innerhalb eines endlichen Lösungsraums darstellt. \cite[vgl.][S. 2]{siarry_metaheuristics_2016}\\
+
+Heuristiken können in diskreten Optimierungsproblemen eingesetzt werden, um passable Lösungen zu identifizieren, z. B. über Aktivititätsregeln beim \ac{rcpsp} (vgl. Abschnitt \ref{subsec:SGS_Aktivitaeten}). Diese Heuristiken sind dennoch kein Garant für das Finden vom globalen Optimum. Zudem sind Heuristiken für jeweils ein konkretes Problem entwickelt worden und können nicht auf andere Optimierungsprobleme angewandt werden \cite[vgl.][S. 2]{siarry_metaheuristics_2016}. \\
+
+
+\begin{figure}[H]
+    \centering
+    \noindent\makebox[\textwidth]{%
+    \includegraphics[width=0.9\textwidth]{assets/img/02_Grundlagen/ExampleSearchspace.png}
+    }
+    \caption{Beispielhafte Darstellung eines kontinuierlichen Such- oder Optimierungsraums einer Zielfunktion $f(x, y)$ mit zwei Variablen $x, y$. } 
+    \label{img:example_searchspace}
+    \source{\cite[S. 627]{kashtiban_solving_2016}}
+\end{figure}
+
+Abbildung \ref{img:example_searchspace} stellt einen kontinuierlichen Suchraum einer beliebigen Funktion $f(x, y)$ mit zwei Variablen dar. Das Ziel zur Lösung eines Optimierungsproblems besteht darin, die Definitionen der Variablen zu bestimmen, für welche die Costs (dt. Kosten) gemäß der Cost Function (dt. Kostenfunktion) am minimalsten bzw. maximalsten ist. In der Abbildung ist eine Vielzahl von lokalen Optima zu erkennen. Listing \ref{lst:localsearch} beschreibt einen \ac{LS}-Algorithmus, welcher anhand einer initialen Lösung (z. B. durch das Anwenden von Heuristiken generiert) über eine Anzahl an Iterationen oder einer Zeitvorgabe iterativ die nächstbeste Lösung innerhalb einer Nachbarschaft $N(s)$ auswählt. Das Problem hinter dieser Suchlogik besteht darin, dass dadurch ein lokales Optimum erreicht wird, welches nicht mehr über den Algorithmus verlassen werden kann.  \cite[vgl.][S. 3]{mills_survey_2004}
+
+\begin{lstlisting}[caption={{Local Search (LS)}}, label=lst:localsearch, mathescape=truexinputencoding={utf8}, extendedchars=false, escapeinside=``]
+Create an initial solution $s$ inside the search space;
+while stopping criteria not satisfied do
+    Select best solution $s' \in N(s)$;
+    $s \leftarrow s'$; 
+end
+return the best solution;
+\end{lstlisting}
+
+Innerhalb eines hyperdimensionalen Lösungsraums, wie dies beim \ac{rcpsp} der Fall ist, kann die Anwendung von der naiven lokalen Suche abhängig vom Szenario zu unbefriedigenden Ergebnissen führen. Die Ergebnisse können mehr oder weniger stark vom globalen Optimum abweichen. \\
+
+Als Teilbereich der künstlichen Intelligenzen stellen Metaheuristiken die Werkzeuge zur intelligenten Suche von Lösungen innerhalb von Such- und Optimierungsproblemen dar. Das Ziel von Metaheuristiken gegenüber der lokalen Suche liegt darin, dass lokale Optima vermieden oder verlassen werden können, um so das globale Optimum eines Lösungsraums zu finden. \cite[vgl.][S. 3]{mills_survey_2004} \\
+
+Der Vorteil von Metaheuristiken gegenüber Heuristiken liegt darin, dass diese für alle Arten von diskreten Optimierungsproblemen generisch einsetzbar sind. Das Umgehen mit dem Phänomen der kombinatorischen Explosion innerhalb eines Optimierungsproblems, die Vermeidung der Nutzung von Gradientenberechnungen über die Zielfunktion, die Anlehnung an Naturwissenschaften orientierten Ansätzen, welche in der Physik, Biologie oder Ethologie vorzufinden sind, stellen weitere Vorteile und Merkmale von Metaheuristiken dar. Nachteile von Metaheuristiken sind jedoch die Bestimmung der Hyperparameter innerhalb der Algorithmen und die möglicherweise längere Berechnungsdauer. \cite[vgl.][S. 2 f.]{mills_survey_2004} \\
+
+Dieser Abschnitt befasst sich mit der Einführung von populären Metaheuristiken für diskrete Optimierungsprobleme. Zuerst wird die Tabu Search im Abschnitt \ref{subsec:Grundlagen_TabuSearch} vorgestellt. Eine in der Metallurgie inspirierte Metaheuristik stellt Simulated Annealing (dt. simuliertes Abkühlen) dar, welche im Abschnitt \ref{subsec:Grundlagen_SimulatedAnnealing} eingeführt wird. Evolutionäre Algorithmen, konkret die genetischen Algorithmen, stellen eine aus der Biologie orientierte Metaheuristik dar. Diese werden im Abschnitt \ref{subsec:Grundlagen_EvolutionäreAlgorithmen} behandelt.
+
+
+\input{pages/02_Grundlagen/021_TabuSearch}
+\input{pages/02_Grundlagen/022_SimulatedAnnealing}
+\input{pages/02_Grundlagen/023_EvolutionäreAlgorithmen}

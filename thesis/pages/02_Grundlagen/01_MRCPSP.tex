@@ -1,0 +1,19 @@
+\chapter{Grundlagen} \label{ch:Grundlagen}
+
+Dieses Kapitel dient zur Einführung der Schlüsselthemen der Masterthesis. Wesentliches Thema der Arbeit stellt das Optimierungsproblem (Multi-Mode) Resource-Constrained Project Scheduling Problem. Dieses (M)\ac{rcpsp} wird zunächst im Abschnitt \ref{sec:MRCPSP} erläutert. Metaheuristiken stellen eine generische Möglichkeit zur Lösung von Optimierungsproblemen dar. Abschnitt \ref{sec:Metaheuristiken} zeigt die Funktionsweise von verschiedenen Metaheuristiken auf. 
+
+\section{(Multi-Mode) Resource-Constrained Project Scheduling Problem} \label{sec:MRCPSP}
+
+Eines der am meisten verbreiteten Optimierungsprobleme stellt das Resource Constrained Project Scheduling Problem dar. Dieses Problem findet insbesondere bei der Projektplanung, aber auch in vielen Bereichen der Gegenwart einen realistischen Bezug. Das Problem bezieht sich auf das Finden von optimalen Schedules (dt. Zeitplänen) von festgelegten Projektablaufplänen, wobei die Aktivitäten erneuerbare Ressourcenanforderungen (z B. Maschinen oder menschliche Arbeitskraft) aufweisen. Optimale Schedules können nicht ohne Weiteres bestimmt werden, folglich müssen für einen gegebenen Projektplan alle Möglichkeiten durchiteriert werden. Dies stellt durch die Komplexität des Lösungsraums ein $\mathcal{NP}$-hartes Problem dar \cite[vgl.][S. 2]{kolisch_heuristic_1998}. Das \ac{rcpsp}-Basisproblem wird im Abschnitt \ref{subsec:MRCPSP_RCPSP} erläutert. \\
+
+Das RCPSP sieht bei Aktivitäten nur eine Art der Ausführung vor. Zudem berück-sichtigt das Grundproblem keine nicht-erneuerbaren Ressourcen, wie z. B. Geldmengen oder Verbrauchsgüter, welche insbesondere in der Praxis und in Projekten wesentliche Bestandteile sind. Diese Aspekte werden in einer Problemerweiterung, nämlich dem Multi-Mode Resource-Constrained Project Scheduling Problem berücksichtigt \cite[vgl.][S. 596 f.]{wuliang_improved_2014}, welche im Abschnitt \ref{subsec:MRCPSP_MM} beleuchtet werden. \\
+
+Um zunächst mögliche, wenn auch nicht optimale Lösungen zu erzeugen, wird unter anderem das Verfahren \ac{ssgs} eingesetzt. Dieses ermöglicht das Aufbauen von Schedules über das inkrementelle Erweitern von partiellen Schedules \cite[vgl.][S. 3]{kolisch_heuristic_1998}. \ac{ssgs} findet bei Heuristiken, aber auch in Metaheuristiken Verwendung \cite[vgl.][S. 3]{kolisch_heuristic_1998}. Beleuchtet wird das Konzept einschließlich der gängigen Heuristiken im Abschnitt \ref{subsec:SGS}. \\
+
+In der Realität sind Unsicherheiten in Zeitplänen nicht abwegig. Diese können beispielsweise in Form von Verspätungen, aber auch über erhöhten Ressourcenverbrauch auftreten. Diese Thematik samt Möglichkeiten zum Umgang des Problems werden im Abschnitt \ref{subsec:MRCPSP_Unsicherheiten} erläutert. 
+
+
+\input{pages/02_Grundlagen/011_RCPSPGrundproblem}
+\input{pages/02_Grundlagen/012_MultiMode}
+\input{pages/02_Grundlagen/013_SGS}
+\input{pages/02_Grundlagen/014_Unsicherheiten}

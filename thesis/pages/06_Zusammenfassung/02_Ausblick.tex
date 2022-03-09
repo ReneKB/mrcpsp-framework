@@ -1,0 +1,33 @@
+\section{Ausblick} \label{sec:Ausblick}
+
+Weiterführende Arbeiten können auf den Resultaten dieser Masterthesis aufgebaut werden. Diese Arbeit knüpft an die Erkenntnisse von \cite{brcic_resource_2012} an, in welcher für das Basisproblem \ac{rcpsp} ein Vergleich von prädiktiven und reaktiven Verfahren anhand verschiedener Publikationen vollzogen wurde. Diese Masterthesis betrachtete das \ac{mrcpsp}, eine Generalisierung des \ac{rcpsp}, und verglich quantitativ jeweils ein prädiktives und reaktives Verfahren innerhalb eines eigens implementierten Frameworks mit verschiedenen Metaheuristiken und Iterationen auf verschiedene Benchmark Sets und liefert quantitative Daten und Ergebnisse. \\
+
+Die Erweiterbarkeit des Frameworks war im Mittelpunkt der Konzeption und Implementierung. Über die Interfaces können weitere (Meta-)Heuristiken, Metriken, Experimente oder Benchmark Loader implementiert werden. \\
+
+Als Lösungsverfahren wurden drei Metaheuristiken selektiert, konzipiert und implementiert, nämlich \acl{TS}, \acl{SA} und \acl{GA}. Der aktuelle Trend geht neben der Entwicklung weiterer Metaheuristiken in die Richtung von hybriden Metaheuristiken. Der Einsatz von derartigen Metaheuristiken für das \ac{mrcpsp} innerhalb des Frameworks bietet weiterhin Potenzial und führt möglicherweise zu besseren Ergebnissen. Auch die Nutzung von parallelen oder verteilten Systemen innerhalb der Lösungsverfahren könnte in Zukunft mehr von Relevanz sein. \\
+
+Bei der Robustheitsoptimierung wurde eine Vielzahl an etablierten Robustheitsmessungsfunktionen ausgewählt, implementiert und auf eine Menge von Unsicherheitsszenarien auf bestimmte Benchmark Sets miteinander verglichen. In dieser Thesis wurde somit die Robustheitsmessungsfunktion $\Omega^{SF2}_{W1}$ selektiert, welche den binären Puffer aller Aktivitäten miteinander addiert und mit der Anzahl der Nachfolger gewichtet ist. Weitere Arbeiten könnten sich auf die Selektion und Entwicklung weiterer Robustheitsmessungsfunktionen konzentrieren. \\
+
+Im Rahmen des reaktiven Verfahrens wurden Basiszeitpläne ohne Robustheitsoptimierung zur Hand gezogen. Gemäß \cite[vgl.][S. 404 f.]{brcic_resource_2012} handelt es sich somit bei der umgesetzten Variante um ein proaktiv-reaktives Verfahren. Die Auswirkung von prädiktiv-reaktiven Verfahren, welche die Robustheitsmaximierung innerhalb der Basiszeitpläne vorsieht, kann interessante Ergebnisse liefern, welche in Folgearbeiten evaluiert werden können. \\
+
+Zu jedem Unsicherheitszeitpunkt wurde mithilfe einer erweiterten Tabu Suche mit 500 Iterationen der kaputte Zeitplan über die Minimierung der Kostenfunktion $\mathcal{C}$ repariert. Neben Anpassungen an dem Reperaturalgorithmus können auch weitere Verfahren selektiert oder entworfen werden, um die hohe Berechnungsdauer zum Unsicherheitszeitpunkt zu senken und um das globale Minimum der Kostenfunktion besser anzunähern.
+
+Diese Arbeit befasste sich mit Aktivitätsstörungen als einzige Unsicherheitsquelle. Folgearbeiten könnten sich auf weitere Unsicherheitsquellen, wie beispielsweise (nicht-)erneuerbare Ressourcenstörungen beziehen. \\
+
+Die Forschungsfrage und ihre Unterfragen konnten auf quantitativer Basis beantwortet werden. Mögliche Folgearbeiten könnten den Fokus auf die qualitative Forschung legen. Die erhobenen Daten dieser Arbeit können zur Hand gezogen werden, um festzustellen, wie die Projektdauer sich über die Unsicherheitsszenarien bei Anwendung der Verfahren konkret verändert. Auch die Relevanz der Metadaten zum Projekt, wie die Anzahl der Aktivitäten, Modi, der (nicht)-erneuerbaren Ressourcen, können in einer qualitativen Erhebung genauer betrachtet werden. \\  
+
+Diese Masterthesis bezieht sich mit dem \ac{mrcpsp} auf ein mathematisches Optimierungsproblem, welches in der Praxis, insbesondere bei der Projektplanung, Relevanz findet. Die Transformation zu Projekten in der Praxis und der einhergehenden Evaluierung von prädiktiven und reaktiven Verfahren stellt ebenfalls Forschungsbedarf dar, da sich möglicherweise weitere Anforderungen und Faktoren identifizieren lassen. In Kombination mit einer qualitativen Erhebung können hierbei neue Erkenntnisse entstehen.
+
+% Bei den Lösungsverfahren geht der aktuelle Trend in Richtung hybride Metaheuristiken. Folglich können zukünftige Arbeiten auf die Konzeption und Entwicklung weiterer Metaheuristiken, insbesondere hybride Metaheuristiken für das (M)\ac{rcpsp} setzen. Des Weiteren können weitere Robustheitsmessfunktionen selektiert, entworfen und evaluiert werden. 
+
+% - ! Integrierung weiterer Solver, insbesondere hybride Verfahren
+% - ! Integrierung weiterer Verfahren für das reaktive Scheduling
+% - ! Vergleich weiterer Robustheitsoptimierungen
+% - Weitere Optimierungsprobleme oder Unterarten des RCPSP (M)RCPSP (Stochastic MMRCPSP)
+% - ! Weitere prädiktive und reaktive Verfahren
+% - ! Hybride Verfahren
+% - Qualitative Forschung 
+% -> Konkrete Analyse der Funktionsweise für reaktive Verfahren in Bezug auf die Anzahl der Aktivitäten und Modi
+% -> Konkrete Analyse der Funktionsweise für die Robustheitsoptimierung in Bezug auf die Puffer 
+% - ! Nutzung Parallelität innerhalb der Algorithmen
+% - ! Transformation in der Realität und dessen Evaluierung

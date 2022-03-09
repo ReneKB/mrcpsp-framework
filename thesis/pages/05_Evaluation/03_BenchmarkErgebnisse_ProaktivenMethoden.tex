@@ -1,0 +1,43 @@
+\section{Benchmark-Ergebnisse der proaktiven Methoden} \label{sec:BenchmarkErgebnisse_NaivMethoden}
+
+Die implementierten Lösungsverfahren wurden mit der jeweiligen ersten Instanz jedes Parameters der Benchmarksets m1, m2, n0 und n1 verglichen. Hierbei werden $n = 50$ zufällig generierte Unsicherheitsszenarien gemäß Abschnitt \ref{sec:Unsicherheitsszenarien} über das \lstinline|UncertaintyProactiveExperiment| durchlaufen und die gemittelten Abweichungen zu den Optima miteinander verglichen. Die selektierte proaktive Methode ignoriert Unsicherheiten. Tabelle \ref{tab:evaluation_proactive_n1} zeigt die Ergebnisse für das Instanzset n1 auf, während im Anhang \ref{sec:WeitereAuswertung_Proaktiv} die weiteren Auswertungen für die anderen Instanzsets enthalten sind. \\
+
+{\footnotesize
+\begin{longtable}{ll|rrrr|rrrr}
+\toprule
+\textbf{Instance set n1}                 & {} & \multicolumn{4}{c|}{Mean $\mu$} & \multicolumn{4}{c}{Std. Dev $\sigma$} \\
+                & Uncertainty $p$: & 0\% & 5\% & 10\% & 20\% & 0\% & 5\% & 10\% & 20\% \\
+Solver & Iteration &      &      &      &      &      &      &      &      \\
+\midrule
+RandomSolver & 500  & 6.30 & 7.15 & 7.91 & 9.39 & 3.50 & 3.82 & 4.02 & 4.32 \\
+                 & 1000 & 5.51 & 6.40 & 7.18 & 8.69 & 3.11 & 3.47 & 3.72 & 4.11 \\
+                 & 2500 & 4.66 & 5.54 & 6.34 & 7.84 & 2.83 & 3.32 & 3.63 & 3.98 \\
+                 & 5000 & 3.82 & 4.70 & 5.52 & 7.03 & 2.57 & 2.89 & 3.17 & 3.55 \\ \hline
+HillClimbing & 500  & 4.05 & 5.04 & 5.87 & 7.43 & 3.46 & 3.76 & 3.93 & 4.21 \\
+                 & 1000 & 4.10 & 5.07 & 5.91 & 7.42 & 3.71 & 3.96 & 4.16 & 4.39 \\
+                 & 2500 & 3.90 & 4.84 & 5.69 & 7.22 & 3.57 & 3.82 & 3.99 & 4.22 \\
+                 & 5000 & 3.77 & 4.74 & 5.59 & 7.11 & 3.51 & 3.77 & 3.97 & 4.19 \\ \hline
+TabuSearch & 500  & 1.80 & 2.77 & 3.60 & 5.13 & 2.29 & 2.72 & 2.92 & 3.27 \\
+                 & 1000 & 1.23 & 2.24 & 3.11 & 4.64 & 1.86 & 2.47 & 2.77 & 3.12 \\
+                 & 2500 & 0.86 & 1.85 & 2.71 & 4.24 & 1.57 & 2.12 & 2.39 & 2.75 \\
+                 & 5000 & 0.56 & 1.54 & 2.39 & 3.92 & 1.14 & 1.66 & 1.95 & 2.35 \\ \hline
+SimulatedAnnealing & 500  & 2.89 & 3.78 & 4.59 & 6.12 & 2.50 & 2.80 & 3.04 & 3.39 \\
+                 & 1000 & 1.82 & 2.78 & 3.62 & 5.13 & 1.99 & 2.40 & 2.69 & 3.01 \\
+                 & 2500 & 0.96 & 1.90 & 2.75 & 4.26 & 1.37 & 1.82 & 2.12 & 2.52 \\
+                 & 5000 & 0.69 & 1.71 & 2.58 & 4.13 & 1.05 & 1.76 & 2.09 & 2.53 \\ \hline
+GeneticAlgorithm & 500  & 2.28 & 3.15 & 3.94 & 5.47 & 2.30 & 2.58 & 2.81 & 3.14 \\
+                 & 1000 & 1.04 & 1.92 & 2.74 & 4.24 & 1.35 & 1.78 & 2.06 & 2.43 \\
+                 & 2500 & 0.57 & 1.48 & 2.31 & 3.84 & 0.90 & 1.40 & 1.70 & 2.10 \\
+                 & 5000 & 0.46 & 1.40 & 2.24 & 3.79 & 0.81 & 1.45 & 1.80 & 2.22 \\
+\bottomrule
+\caption{Vergleich der proaktiven Lösungsverfahren auf $m=50$ unterschiedliche Unsicherheitsszenarien für das Instanzset n1. }
+\label{tab:evaluation_proactive_n1}
+\end{longtable}
+}
+
+\vspace*{-25px}
+\begin{figure}[H]
+\source{Eigene Darstellung}
+\end{figure}
+
+Über die Intensität der Unsicherheitsszenarien $p$ lassen sich wesentliche Verspät-ungen erkennen. Über $p = 0$ lassen sich die Ergebnisse der geplanten Zeitpläne ohne Verspätungen ablesen. Erst mit $p > 0$ können Verspätungen entstehen (vgl. Abschnitt \ref{sec:Unsicherheitsszenarien}). Sowohl innerhalb der Tabellen als auch über die Boxplots lassen sich je nach höherer Intensität auch höhere Verspätungen erkennen. 

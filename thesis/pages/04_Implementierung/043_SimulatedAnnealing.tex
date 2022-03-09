@@ -1,0 +1,17 @@
+\subsection{Simulated Annealing} \label{subsec:MetaheuristischeAlgorithmen_SimulatedAnnealing}
+Eine Umsetzung des an der Metallurgie angelehnten \ac{SA}-Algorithmus gilt es in diesem Abschnitt zu erläutern. Die Implementierung des vorgestellten Algorithmus geschieht über die Klasse \lstinline|SimulatedAnnealingSolver|. Die folgenden Hyperparameter wurden mit den hinterlegten Werten umgesetzt, welche sich über kleinere Tests als geeignet erwiesen haben:
+
+$T_0 = 1000$
+
+\begin{description}
+\item[Initiale Temperatur $T_0$:] Für die initiale Temperatur $T_0$ wurde ein Wert von $T_0 = 1000$ ausgewählt. 
+\item[Abkühlungsrate $\alpha$:] Die Temperatur wird über die Iterationen mit einer Rate von $\alpha = 0.9$ abgekühlt. 
+\end{description}
+
+Der implementierte Algorithmus orientiert sich an dem Pseudocode aus Listing \ref{lst:simulatedannealing}. Neben der Auswahl der Hyperparameter gilt es noch die Zielfunktion $f(x)$ zu konkretisieren und die Realisierung der Auswahl der Nachbarschaftsfunktion anzupassen. 
+
+\subsubsection*{Abweichung zur Nachbarschaftsselektion}
+Im Pseudocode aus Abschnitt \ref{subsec:Grundlagen_SimulatedAnnealing} wird in einer Iteration eine zufällige Lösung aus der Nachbarschaft selektiert. In der Umsetzung für das \ac{mrcpsp} wird jedoch jedes Element einer Nachbarschaft mit einer Wahrscheinlichkeit von 50\% nicht betrachtet. Bei den restlichen zu betrachtenden Elementen einer Nachbarschaft wird das beste Element gemäß einer Funktion $f(x)$ selektiert. Dadurch wird ein Zufall gewährleistet, welcher aber nicht willkürlich die schlechtesten Lösungen selektiert. 
+
+\subsubsection*{Realisierung der Zielfunktion $f(x)$}
+Für den \ac{SA}-Algorithmus ist eine Zielfunktion $f(x)$ vorgesehen. Die Fitnessfunktion $f(x)$ des umgesetzten \ac{GA}-Algorithmus aus Abschnitt \ref{subsec:MetaheuristischeAlgorithmen_EvolutionaereAlgorithmen} wird ebenfalls für den Algorithmus eingesetzt. 

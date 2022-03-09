@@ -1,0 +1,78 @@
+\section{Experimente}
+\label{sec:Experimente}
+
+Die Forschungsfrage und ihre Unterfragen gilt es über quantitative Daten zu beantworten. Hierfür sind im Konzeptüberblick (vgl. Abbildung \ref{img:mrcpsp_framework}) Experimente vorgesehen. Das Klassendiagramm aus Abbildung \ref{img:mrcpsp_framework_experimente} zeigt die Umsetzung der einzelnen Experimente auf. Die konkreten Experimente erben vom Interface \lstinline|Experiment|, welche eine Methode \lstinline|runExperiment(...)| vorsieht. Die Parameter der Methode stellen die weiterpropagierten Startargumente und die Liste der zu berücksichtigenden Benchmarks dar. Die Experimente werden über die Komponente \lstinline|CommandRunnerComponent| gemäß der Startargumente gestartet. Die im Kapitel \ref{ch:Evaluation} verwendeten Tabellen werden anhand der aus den Experimenten generierten CSV-Daten erzeugt. Die folgenden Unterabschnitte zeigen die Umsetzungen der Experimente auf.
+
+\subsection{Vergleich der Lösungsansätze} \label{subsec:VergleichLösungsansätze}
+
+Für den Vergleich der Lösungsansätze ist die Klasse \lstinline|SolverPerformanceExperiment| vorgesehen. Für eine Menge an Benchmarks wird ein Experiment mit den folgenden Variablen parametrisiert:
+
+\begin{itemize}
+    \item Liste von Iterationen
+    \item Liste von Lösungsverfahren
+    \item Robustheitsmessungsfunktion $\Omega(x)$
+    \item Anzahl der Experimente $n$ je Solver/Iteration-Kombination
+\end{itemize}
+
+Jeder Benchmark innerhalb eines Benchmark-Sets wird mit allen vorgesehenen Iterationen und Lösungsverfahren $n$-Mal durchlaufen. Diese sollen die Makespan $C_{max}$ minimieren und die Robustheit $\Omega$ maximieren. Mittels diesem Experiment gilt es quantitativ aufzuzeigen, wie sich die Lösungsverfahren über die Iterationen auswirken und welche sich somit besonders eignen. Das $n$-malige Durchlaufen von Lösungsverfahren dient dazu, die Tendenz besser bestimmen zu können, da die Verfahren je nach Ausführung unterschiedliche Ergebnisse liefern können. Beim Vergleich der Lösungsverfahren für das (M)\ac{rcpsp} werden vermehrt die Abweichungen zu den optimalen bzw. der bestbekanntesten Makespan für den Vergleich zur Hand gezogen \cite[vgl.][S. 16 ff.]{kolisch_heuristic_1998} \cite[vgl.][S. 147]{jozefowska_simulated_2001} \cite[vgl.][S. 10]{hartmann_competitive_1998}. Für die $n$-Mal durchlaufenden Experimente je Lösungsverfahren und Iterationen werden die Mittelwerte aus den Abweichungen zum optimalen Makespan und der Robustheit berechnet. Folglich werden die für ein Lösungsverfahren erreichten Makespan und Robustheitswerte innerhalb einer CSV-Datei im Ordner \lstinline|result| gespeichert. \\
+
+Moderne Computersysteme nutzen vermehrt Multicore-Prozessoren, welche um die Jahrtausendwende über die Zeit immer mehr Kerne aufwiesen \cite[vgl.][S. 12]{harrod_journey_2012}. Die Implementierung sieht vor, dass die Anzahl der Experimente $n$ innerhalb des Prozessors parallel durchlaufen werden, um so von den Multicore-Prozessoren zu profitieren. Dies vermindert die tatsächliche Durchlaufzeit eines Experimentes. \\
+
+Für den Vergleich der Verfahren werden ebenfalls die Feasbility- und Optimal-Raten der Algorithmen zur Hand gezogen \cite[vgl.][S. 147 ff.]{jozefowska_simulated_2001} \cite[vgl.][S. 10 f.]{hartmann_competitive_1998}. Die Feasbility-Rate gibt an, ob für alle Benchmarks gültige Zeitpläne für das konkrete Lösungsverfahren gefunden wurden. Die Optimal-Rate sagt zudem aus, ob für alle Benchmarks (gemäß der Makespan $C_{max}$) ein optimaler Zeitplan gefunden wurde. Dadurch, dass in dieser Implementierung mehrere Experimente $n$ für ein Verfahren durchlaufen werden, wird in der Kalkulation der Raten stets nur das beste Experiment berücksichtigt. 
+
+\subsection{Unsicherheiten} 
+\label{subsec:VergleichUnsicherheiten}
+
+Die pro-, prä- und reaktiven Varianten gilt es auf eine Menge an Unsicherheitsszenarien miteinander zu vergleichen. Die Grundlage für alle Varianten stellt die abstrakte Klasse \lstinline|UncertaintyExperiment| dar. Diese implementiert das Interface \lstinline|Experiment| und die vorgesehene Methode \lstinline|runExperiment(...)|. Die Parametrisierung entspricht die des Vergleichs der Lösungsansätze aus dem Abschnitt \ref{subsec:VergleichLösungsansätze}. Je Benchmark werden alle zu berücksichtigenden Lösungsverfahren und Iterationen $n$-Mal durchlaufen. Zudem sieht die Klasse die abstrakte Methode \lstinline|buildSolution(...)| vor, welche von den konkreten Verfahren implementiert werden müssen. Über diese Methode soll die Parametrisierung der Lösungsverfahren (bspw. die Robustheitsoptimierung) für das entsprechende Verfahren erfolgen. \\
+
+Die Basiszeitpläne gilt es anschließend auf eine Menge an Unsicherheitsszenarien gemäß Abschnitt \ref{sec:Unsicherheitsszenarien} zu evaluieren. Die für jedes Verfahren zu implementierende Methode \lstinline|int getUncertaintyExperiments()| gibt die Anzahl der Unsicherheitsszenarien je Unsicherheitsmodel zurück, die für jeden Basiszeitplan durchlaufen werden. Aufgrund der Komplexität geschieht dies innerhalb des Prozessors parallel. Über die Methode \lstinline|buildUncertaintySolution()| wird das Unsicherheitsszenario auf den Basiszeitplan angewandt. Zudem wird im Fall einer reaktiven Zeitplanerstellung direkt auf Unsicherheiten reagiert. \\
+
+Die resultierenden Verspätungen verlängern die Makespan $C_{max}$ der Basiszeitpläne. Die Makespan eines Zeitplans nach Anwendung eines Unsicherheitsszenarios wird im Rahmen der Arbeit als $C_{max}'$ definiert und beschreibt die Makespan des eigentlichen bzw. des Verspätungszeitplans. Ziel der einzelnen Verfahren ist es, die resultierende Verspätung zum Basiszeitplan $C_{max}^\Delta = C_{max}' - C_{max}$ zu minimieren. Durch eine Vielzahl an Experimenten und Unsicherheitsszenarien entstehen Basis- und Verspätungszeitpläne, für welche die Makespans $C_{max}, C_{max}'$ und Metadaten, wie das angewandte Lösungsverfahren und die Robustheitsmessungsfunktion in einer seperaten CSV-Datei gespeichert werden. Diese werden genutzt um je nach Experimentreihe und Benchmark die Mittelwerte $\overline{C_{max}}$, $\overline{C_{max}'}$, $\overline{C_{max}^\Delta}$ je nach Lösungsverfahren zu berechnen.  \\
+
+Insbesondere die reaktive Zeitplanerstellung stellt ein zeitaufwendiges Verfahren dar, da für jede Aktivitätsverspätung eine reaktive Tabu-Suche mit 500 Iterationen ausgeführt wird. Um die Berechnungszeit in der Evaluation zu verringern, wird innerhalb eines PSPLIB-Benchmarkssets nur die erste Instanz eines jeweiligen Parameters betrachtet. Somit werden beispielsweise beim Benchmarkset \lstinline|m1| 64 anstelle von 640 Benchmarks durchlaufen. Die folgenden Unterabschnitte erläutern die Realisierungen der einzelnen Verfahren für den Umgang der Unsicherheitsszenarien. 
+
+\subsubsection{Proaktive Zeitplanerstellung} \label{subsec:ProaktiveZeitplanerstellung}
+
+Die Klasse \lstinline|UncertaintyProactiveExperiment| stellt das Unsicherheitsexperiment mit der proaktiven Methode dar. Unsicherheiten gilt es hierbei gänzlich zu ignorieren. Die Methode \lstinline|buildSolution(...)| erzeugt über die Solver zunächst die Basiszeitpläne, welche die Makespan $C_{max}$ minimieren. Über die Methode \lstinline|buildUncertaintySolution(...)| werden auf die Basiszeitpläne die Unsicherheitsszenarien angewandt. Die Anzahl der Unsicherheitsszenarien wurde aufgrund der niedrigen Komplexität auf $m = 50$ festgelegt. 
+
+\subsubsection{Prädiktive Zeitplanerstellung} \label{subsec:PrädiktiveZeitplanerstellung}
+
+Bei der prädiktiven Zeitplanerstellung ist die Klasse \lstinline|UncertaintyPredictiveExperiment| vorgesehen. Hierbei werden im Vornherein Basiszeitpläne erzeugt, welche neben der Minimierung der Makespan $C_{max}$ die Maximierung der Robustheit $\Omega$ als Ziel haben. Über die Methode \lstinline|buildSolution(...)| werden somit über die Solver Basiszeitpläne erzeugt, die beide Zielfunktionen gemäß Abschnitt \ref{sec:AuswahlMetaheuristischenAlgorithmen} optimiert. Die Methode \lstinline|buildUncertaintySolution(...)| bleibt gegenüber der proaktiven Zeitplanerstellung aus Abschnitt \ref{subsec:ProaktiveZeitplanerstellung} unverändert. Ebenfalls werden aufgrund der geringen Komplexität $m = 50$ Unsicherheitsszenarien durchlaufen. \\
+
+Im Abschnitt \ref{subsec:Praediktive_Methoden} wurden verschiedene Robustheitsmessungsfunktionen aufgeführt. Zuvor gilt es festzustellen, welche Funktion sich für die Benchmarks-Sets am besten eignet. Um die beste Funktion auszuwählen, wird ein weiteres Experiment, nämlich ein Vergleich der Robustheitsmessungen benötigt. Dieses wird über die Klasse \lstinline|RobustnessExperiment| realisiert. Dieses Experiment baut auf dem Schema des \lstinline|UncertaintyExperiment| auf, vergleicht aber eine Liste von Robustheitsmessungsfunktionen $\Omega_i^j \, \forall i \in SF, j \in W$ quantitativ  auf die Wirksamkeit für $m = 50$ Unsicherheitsszenarien. In der Evaluierung wird die beste Robustheitsmessungsfunktion für das \lstinline|UncertaintyPredictiveExperiment| selektiert. Die implementierten Robustheitsmessungsfunktionen sind in Tabelle \ref{tab:integrated_robustness_measures} aufgeführt.
+
+\begin{table}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{tabular}{l|l|l|l}
+\begin{tabular}[c]{@{}l@{}}Kennung /\\ Klassenname\end{tabular} & Slack Function (SF) & Weight (W) & Beschreibung                                                                \\ \hline
+SF1                                                             & SF1            & -      & Summe von freien Puffern                                                    \\
+SF1\_W1                                                         & SF1            & W1     & Summe von freien Puffern, gewichtet mit der Anzahl der direkten Nachfolger  \\
+SF1\_W9                                                         & SF1            & W9     & Summe von freien Puffern, gewichtet mit der Anzahl aller Vorgänger          \\ \hline
+SF2                                                             & SF2            & -      & Summe von binären Puffern                                                   \\
+SF2\_W1                                                         & SF2            & W1     & Summe von binären Puffern, gewichtet mit der Anzahl der direkten Nachfolger \\
+SF2\_W9                                                         & SF2            & W9     & Summe von binären Puffern, gewichtet mit der Anzahl aller Vorgänger         \\ \hline
+SF3                                                             & SF3            & -      & Minimum zwischen freien Puffer und Bruchteil der Aktivitätsdauer            \\
+SF3\_W1 &
+  SF3 &
+  W1 &
+  \begin{tabular}[c]{@{}l@{}}Minimum zwischen freien Puffer und Bruchteil der Aktivitätsdauer, \\ gewichtet mit der Anzahl der direkten Nachfolger\end{tabular} \\
+SF3\_W9 &
+  SF3 &
+  W9 &
+  \begin{tabular}[c]{@{}l@{}}Minimum zwischen freien Puffer und Bruchteil der Aktivitätsdauer, \\ gewichtet mit der Anzahl aller Vorgänger\end{tabular}
+\end{tabular}%
+}
+\caption{Integrierte Robustheitsmessungfunktionen $\Omega_i^j \, \forall i \in SF, j \in W$}
+\label{tab:integrated_robustness_measures}
+\source{Eigene Darstellung}
+\end{table}
+
+\subsubsection{Reaktive Zeitplanerstellung}
+\label{subsec:ReaktiveZeitplanerstellung}
+
+Für die reaktive Zeitplanerstellung ist die Klasse \lstinline|UncertaintyReactiveExperiment| vorgesehen. Die Implementierung der Methode \lstinline|buildSolution(...)| orientiert sich hierbei an dem proaktiven Äquivalent. \\
+
+Bei den reaktiven Verfahren werden gemäß Abschnitt \ref{sec:AuswahlVerfahrenUnsicherheiten} an den Verspätungs-zeitpunkten über eine reaktive Tabu-Suche alternative Zeitpläne gefunden. Dieser Algorithmus wurde über die Klasse \lstinline|ReactiveTabuSearchAlgorithm| realisiert, welche sich von den anderen Lösungsverfahren dahingehend unterscheidet, dass Zeilpläne gefunden werden, die die Kostenzielfunktion $\mathcal{C}$ aus Abschnitt \ref{subsec:Reaktive_Methoden} minimiert. Als initiale Lösung wird bei der reaktiven Tabu-Suche der Basiszeitplan bzw. der aktuelle Zeitplan zur Hand gezogen. Die Größe der reaktiven Tabu-Suche bleibt mit $|TL| = \sqrt{N - 2}$ gleich zum Basislösungsverfahren. Da ein Zeitplan bei der reaktiven Tabu-Suche zum Teil ausgeführt wurde, gilt es die durchlaufenden Aktivitäts- und Modusteillisten (\lstinline|List<ActivityMode> fixedActivityModeList|) bei dem neuen Zeitplan zu berücksichtigen. Über die Methode \lstinline|SolverHelper.getNeighbourhood(...)| werden folglich Zeitpläne in einer Nachbarschaft $s^* \in N(s)$ generiert, welche die bereits durchlaufenden Aktivitäten- und Modi in der Reihenfolge beinhalten. \\
+
+Aufgrund der hohen Komplexität der reaktiven Verfahren werden 12 anstelle von 50 Unsicherheitsszenarien je Unsicherheitsmodell durchlaufen. Dies ist notwendig, da je nach Unsicherheitsmodell für jedes Unsicherheitsszenario womöglich mehrfach neue Zeitpläne gesucht werden müssen. Durch die Nutzung von mehreren Prozessorkernen kann zwar die Erstellung der neuen Zeitpläne parallel durchlaufen werden, dennoch stellt das reaktive Verfahren gegenüber den pro- und prädiktiven Verfahren eine höhere Komplexität im Bezug auf die Berechnungsdauer dar. 

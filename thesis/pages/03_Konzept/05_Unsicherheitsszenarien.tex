@@ -1,0 +1,33 @@
+\section{Unsicherheitsszenarien} \label{sec:Unsicherheitsszenarien}
+
+Unsicherheiten, wie Aktivitäts- und Ressourcenstörungen müssen zunächst konzipiert und anschließend implementiert werden. Hierfür gilt es die Unsicherheiten in dem existierenden Benchmarkdatensatz aus Abschnitt \ref{sec:Benchmarkdatensatz} zu integrieren. In dieser Masterthesis werden die Aktivitätsstörungen als einzige Unsicherheitsart analysiert. \\
+
+Um Unsicherheitsszenarien zu erzeugen, stehen unterschiedliche Arten für die Umsetzung zur Verfügung. \cite{khemakhem_efficient_2013} verwendet für den Vergleich von Robustheitsmessungen ein Störungsschema mit $\Delta_j = 0.20 \cdot d_j$ \cite[vgl. ][S. 260]{khemakhem_efficient_2013}. Folglich verspätet sich jede Aktivität um 20\%. \\
+
+Durch eine fixe Verspätung über $\Delta_j = 0.2 \cdot d_j$ wäre somit jede Aktivität verspätet. Bei dem reaktiven Ansatz, wird zu einem Verspätungszeitpunkt ein neuer Zeitplan generiert. Dies führt dazu, dass nach jeder Aktivität ein neuer Zeitplan generiert werden muss. Bei einer hohen Anzahl an Aktivitäten kann diese Art von Störungsschema zeitaufwendig sein, da ohnehin das Erzeugen von neuen Zeitplänen bei den reaktiven Methoden sich als zeitintensiv herausgestellt hat (vgl. Abschnitt \ref{subsec:Reaktive_Methoden}). Zudem ist die Annahme, dass jede Aktivität sich um einen konstanten Faktor 20\% verspätet nicht zwingend realitätsnah. \\
+
+Im Bezug auf die Aktivitätsstörungen nutzt \cite{deblaere_reactive_2011} die stetige Gleichverteilung, welche eine zufällige Verspätung zwischen $[1, d_j]$ auswählt \cite[vgl.][S. 72]{deblaere_reactive_2011}. Somit entspricht das Unsicherheitsszenario gemäß \cite{deblaere_reactive_2011} bei $\Delta_j = \mathcal{U}(1, d_j)$. \\
+
+Im Rahmen dieser Masterarbeit sollen Verspätungen ebenfalls gemäß einer Verteilungsfunktion erzeugt werden. Dadurch, dass die Dauer $d_{j,m} \in \mathbb{N}$ einer natürlichen Zahl entspricht, sind diskrete Verteilungsfunktionen erforderlich. Die Binomialverteilung $\mathcal{B}(n, p)$ stellt das diskrete Pardon der Normalverteilung $\mathcal{N}(\mu, \sigma)$ dar, welche sich durch die Parametrisierung über die Versuchsanzahl $n$ und dem Wahrscheinlichkeitswert eines Vorkommens $p$ für das Generieren von Unsicherheitsszenarien eignet. Die Neigung einer Binomialfunktion wird über $p$ bestimmt. Bei $p > 0.5$ ist die Verteilung linksschief, bei $p < 0.5$ rechtsschief, ansonsten mit $p = 0.5$ symmetrisch. \\
+
+Die Parametrisierung der Binomialverteilung $\mathcal{B}(n, p)$ erfolgt über das Berücksich-tigen von Definitionen von Annahmen. Die erste Annahme ist, dass eine Aktivität sich um maximal zwei Zeiteinheiten verspäten darf. Folglich wird $n \in \mathbb{N}$ mit zwei definiert, da neben den zwei Verspätungsfällen auch der Fall von keiner Verspätung über das nullte Element in der Verteilung abgedeckt wird. Zudem wird angenommen, dass ein Großteil der Aktivitäten pünktlich, ein kleinerer Teil mit einer Zeiteinheit und ein noch kleinerer Teil mit zwei Zeiteinheiten Verspätung abgeschlossen werden sollen. Da somit für den Parameter $p \in \mathbb{R}$ unzählige Möglichkeiten zur Verfügung stehen und zudem auch für die Intensität der Unsicherheiten ausschlaggebend ist, werden unterschiedliche Werte für $p$ zur Evaluierung verwendet, welche in Tabelle \ref{tab:binomial_uncertainty} aufgeführt sind. 
+
+\begin{table}[H]
+\centering
+\begin{tabular}{r|ccc}
+     & $p(\mathcal{B}(2, p) = 0)$ & $p(\mathcal{B}(2, p) = 1) $ & $p(\mathcal{B}(2, p) = 2)$ \\ \hline
+p = 0\%  & 100\% & 0\% & 0\% \\
+p = 5\%  & 90.25\% & 9.5\% & 0.25\%  \\
+p = 10\% & 81\% & 18\% & 1\%  \\
+p = 20\% & 64\% & 32\% & 4\% 
+\end{tabular}
+\caption{Wahrscheinlichkeitswerte für Aktivitätsstörungen gemäß der Binomialfunktion $\mathcal{B}(3, p)$}
+\source{Eigene Darstellung}
+\label{tab:binomial_uncertainty}
+\end{table}
+
+Durch das Erzeugen von Unsicherheitsszenarien für Aktivitätsstörungen über die Binomialfunktion $\Delta_j = \mathcal{B}(n, p)$ ist der Zufall ausschlaggebend. Insbesondere bei der Evaluierung der pro-/prä-/reaktiven  Verfahren sollten mehrere Unsicherheitsszenarien für einen zu betrachtenden Zeitplan $S$ durchlaufen werden. Erst durch das Durchlaufen unterschiedlicher Unsicherheitsszenarien können Aussagen über die tatsächlichen Leistungen der Verfahren gemacht werden. Dieses Problem ist bei dem deterministischen Ansatz über $\Delta_j = 0.2 \cdot d_j$ nicht vorzufinden, da im Vornherein alle Aktivitäten die gleiche Verspätung aufweisen. Zunächst ist die Berechnung mehrerer unterschiedlicher Experimente pro Zeitplan $S$ fraglos zeitaufwendiger, können aber heutzutage in der CPU bei entsprechender Anzahl der Kerne parallel ausgeführt werden.
+
+% \[
+% \mathcal{B}(n, p) = \binom{n}{k} % \cdot p^k \cdot (1 - p)^{n-k}
+% \]

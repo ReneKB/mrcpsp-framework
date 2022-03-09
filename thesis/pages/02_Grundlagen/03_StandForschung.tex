@@ -1,0 +1,28 @@
+\section{Stand der Forschung} \label{sec:StandForschung}
+% Berücksichtigung weiterer Robustness Verfahren ("Eine Evaluierung weiterer Robustheitsfunktionen für das MRCPSP stehen noch aus. ")
+
+% Weitere Problemerweiterungen
+% Paper: http://archive.ceciis.foi.hr/app/public/conferences/1/papers2012/iis7.pdf
+
+% Zusammenhang zwischen Metaheuristiken und (M)RCPSP
+
+
+Der Einsatz von Metaheuristiken für das (M)\ac{rcpsp} stellt keineswegs einen unerforschter Bereich dar. Bereits 1998 verglichen \cite{kolisch_heuristic_1998} die Leistungen der Metaheuristiken für das Finden von optimalen Zeitplänen im Bezug auf die Projektdauer. Hierbei wurden unterschiedlich implementierte Metaheuristiken wie die \acl{TS}, \acl{SA} und \acl{GA} von Wissenschaftlern für das \ac{rcpsp} quantitativ verglichen \cite[vgl.][S. 17 f.]{kolisch_heuristic_1998}.\\
+
+Für die Multi-Mode Problemerweiterung wurden ebenfalls bereits eine Vielzahl an Metaheuristiken entworfen. Allein für die genetischen Algorithmen existiert eine Vielzahl von wissenschaftlichen Veröffentlichungen, wie der im Jahre 2003 publizierte Artikel von \cite{alcaraz_solving_2003}. Weitere Artikel stellen beispielsweise die im Jahr 2013 veröffentlichte Arbeit von \cite{li_solving_2013} oder 2015 von \cite{sebt_efficient_2015} dar. Diese Arbeiten beziehen sich alle auf das \ac{mrcpsp}, aber unterscheiden sich unter anderem stark ihren Repräsentationsformen, Crossover-, Mutations- und Selektionsoperatoren oder die Wahl der Hyperparameter. Abseits von den genetischen Algorithmen wurde unter anderem 2001 von \cite{jozefowska_simulated_2001} ein Simulated Annealing-Algorithmus für das \ac{mrcpsp} implementiert. Innerhalb eines Papers zum reaktiven Scheduling wurde 2011 von \cite{deblaere_reactive_2011} ein Tabu Search-Algorithmus umgesetzt. \\
+
+Das Thema der Unsicherheiten und der prädiktive Umgang wurde 2005 von \cite{al-fawzan_bi-objective_2005} in einem Artikel behandelt. In Kombination mit einer multi-objective Tabu Search gilt es die Projektdauer zu minimieren und zugleich die Robustheit zu maximieren. Durch die Maximierung der Robustheit können Pläne im Vornherein gefunden und die Projektverspätungen durch eine erhöhte Puffergröße minimiert werden \cite[vgl.][S. 177 f.]{al-fawzan_bi-objective_2005}. \\
+
+Abseits der Maximierung der Summe aller Aktivitätspuffer existiert eine Vielzahl an Robustheitsfunktionen. 2013 wurden im Artikel von \cite{khemakhem_efficient_2013} bestehende und neue Robustheitsmessungen für das \ac{rcpsp} verglichen. \\
+
+Die Verspätungen durch Unsicherheiten können zudem reaktiv gemindert werden. 2011 nutzte \cite{deblaere_reactive_2011} als reaktives Verfahren für das \ac{mrcpsp} unter anderem baumbasierte Suchtechniken, um so die Reschedule Costs bei den Unsicherheitszeitpunkten zu minimieren \cite[vgl.][S. 66]{deblaere_reactive_2011}. \\
+
+2012 wurde in einer Erhebung von \cite{brcic_resource_2012} sowohl proaktive, prädiktive als auch für die reaktive Verfahren sowohl für das \ac{rcpsp} als auch die stochastische Version S\ac{rcpsp} aufgeführt. Im Fazit der Erhebung wurde anhand Daten verschiedener Publikationen hervorgehoben, dass im Bezug zum Basisproblem proaktive Verfahren besser für quantifizierbare Unsicherheiten und reaktive Verfahren geeigneter für weitaus größere Unsicherheiten sind. \\
+
+Diese Masterarbeit baut auf den Ausblick von \cite[S. 405 f.]{brcic_resource_2012} auf und betrachtet Unsicherheiten für das \ac{mrcpsp}, was eine generalisierte Variante des \ac{rcpsp} darstellt. Die zitierte Erhebung baut auf quantitative Daten einzelner Publikationen auf, welche unterschiedliche Unsicherheitsszenarien und Verfahren zur Lösung des \ac{mrcpsp} aufweisen. Es gilt somit festzustellen, wie sich die Verfahren aus den pro-, prä- und reaktiven Methoden quantitativ auf eine gemeinsame Basis von Unsicherheitsszenarien und Metaheuristiken auswirken. Zudem kann evaluiert werden, wie sich die Leistung der unterschiedlichen Metaheuristiken nach Anwenden der Unsicherheitsszenarien auf die Projektdauer bei den einzelnen Verfahren auswirken. Die aufgeführten Themen liefern zum Zeitpunkt der Thesis noch Forschungsbedarf, was die Existenz der Forschungsfrage und dessen Unterfragen aus Abschnitt \ref{sec:Ziele} begründen soll. 
+%  Ebenfalls im Ausblick von \cite[S. 405 f.]{brcic_resource_2012} vorzufinden gilt es noch die Robustheitsoptimierung innerhalb der reaktiven Verfahren zu evaluieren.
+
+% Forschungslücke
+% - Quantitativ mit gleichen Unsicherheitsszenarien / Solvervarianten, da dies in der Arbeit kritisiert wurde
+% - MRCPSP anstelle von RCPSP
+% - Impact von Metaheuristiken 

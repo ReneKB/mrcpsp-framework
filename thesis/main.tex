@@ -1,0 +1,305 @@
+\documentclass
+[
+	12pt, %Schriftgröße
+	a4paper, %Papierformat
+	twoside, %einseitiger Druck, für zweiseitigen Druck weglassen
+	openany, %neue Kapitel dürfen auch auf linker Seite beginnen (beidseitiger Druck), sonst openright (default)
+	chapterprefix, %Kapitelüberschriften zu Beginn eines Kapitels anzeigen
+	listof=totoc, %Verzeichnisse (Abbildungen/Tabellen) im Inhaltsverzeichnis aufführen
+	%draft, %Entwurfsmodus: lässt Links und Abbildungen weg, zeigt übervolle Zeilen an, wird schneller gesetzt
+]{scrbook}
+
+\newcommand*{\universitaet}[1]{\def\universitaet{#1}}
+\newcommand*{\fach}[1]{\def\fach{#1}}
+\newcommand*{\arbeitsart}[1]{\def\arbeitsart{#1}}
+\newcommand*{\titel}[1]{\def\titel{#1}}
+\newcommand*{\autor}[1]{\def\autor{#1}}
+\newcommand*{\gutachterEins}[1]{\def\gutachterEins{#1}}
+\newcommand*{\gutachterZwei}[1]{\def\gutachterZwei{#1}}
+\newcommand*{\gutachterDrei}[1]{\def\gutachterDrei{#1}}
+\newcommand*{\abteilung}[1]{\def\abteilung{#1}}
+\newcommand*{\department}[1]{\def\department{#1}}
+\newcommand*{\ort}[1]{\def\ort{#1}}
+\newcommand*{\datum}[1]{\def\datum{#1}}
+
+%---------------------------------
+%---Sprache, Schrift & Encoding---
+%---------------------------------
+\setlength {\marginparwidth }{2cm}
+\usepackage[colorinlistoftodos]{todonotes}
+
+\usepackage[ngerman]{babel} %neue deutsche Rechtschreibung
+\usepackage[utf8]{inputenc} %alternativ: ansinew (windows), latin1, latin9 (Linux/UNIX/Mac)
+
+%\usepackage[T1]{fontenc} %einkommentieren, wenn Buchstaben/Schriftbild schief aussehen!
+%\usepackage{lmodern} %andere Schrift, sieht evtl. besser aus
+
+%------------
+%---Layout---
+%------------
+
+\usepackage
+[
+	left=3cm, %linker Seitenrand
+	right=3cm, %rechter Seitenrand
+	top=2.5cm, %oberer Seitenrand
+	bottom=2.5cm, %unterer Seitenrand
+]{geometry}
+\usepackage[onehalfspacing]{setspace} %1,5-facher Zeilenabstand
+
+%\usepackage{indentfirst} %rückt auch den ersten Absatz eines (Unter)abschnitts ein, so wie alle anderen Absätze auch
+
+\usepackage
+[
+	headsepline, %Kopfzeile durch Querlinie abheben
+%	footsepline, %Fußzeile durch Querlinie abheben
+	draft=false, %Kopf-/Fußzeile auch im draft-Modus (siehe documentclass) anzeigen
+]{scrlayer-scrpage}
+
+\clearpairofpagestyles
+\ihead[]{\headmark} %Kapitel-/Abschnittsname innen in der Kopfzeile, außer zu Beginn neuer Kapitel
+%\chead[]{}
+\ohead*[]{\pagemark} %Seitenzahl außen in der Kopfzeile, außer zu Beginn neuer Kapitel
+%\ifoot[]{}
+%\cfoot[]{}
+\ofoot*[\pagemark]{} %Seitenzahl außen in die Fußzeile, aber nur zu Beginn neuer Kapitel
+
+\renewcommand*\chapterformat{\chapapp~\thechapter} %Kapitelüberschriften in der Form Kapitel~<Nummer>
+\newcommand{\source}[1]{\caption*{\hfill Quelle: {#1}} }
+
+\DeclareTOCStyleEntry[numwidth=3em]{tocline}{figure} % Für Abbildungsverzeichnis
+\DeclareTOCStyleEntry[numwidth=3em]{tocline}{table} % Für Tabellenverzeichnis
+
+%-----------
+%---Mathe---
+%-----------
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+%---------------
+%---Sonstiges---
+%---------------
+
+\usepackage[square,sort,comma,numbers]{natbib} %ermöglicht die Verwendung von \citet{} und \citep{}
+\bibliographystyle{alphaurl} %Geändert, vorher: dinat | Zitierstil: andere auch möglich, z.B. alphadin, plain, ...
+
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+
+\usepackage[german]{authblk}
+
+\usepackage{enumerate}
+\usepackage{paralist}
+
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{blindtext}
+\usepackage{ltablex}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage[utf8]{inputenc}
+% \lstset{basicstyle=\ttfamily\footnotesize,breaklines=true}
+\renewcommand{\lstlistlistingname}{Quellcodeverzeichnis}
+
+\lstset{
+language=java,
+basicstyle=\small\sffamily,
+numbers=left,
+numberstyle=\tiny,
+frame=tb,
+columns=fullflexible,
+showstringspaces=false
+}
+
+%------------------
+%---Links & URLs---
+%------------------
+
+%hyperref möglichst als letztes package laden (es gibt aber Ausnahmen)!
+\usepackage[hyphens]{url}
+%\usepackage[draft]{hyperref} %falls Fehler beim Compilieren auftreten aufgrund von hyperlinks. Hinweis: Ist der draft Modus eingeschaltet, funktionieren KEINE Referanzen mehr.
+\usepackage{hyperref} %für Referenzen, Verweise, Links, ...
+\hypersetup{
+     urlcolor=black,
+}
+
+\usepackage[nohyperlinks]{acronym} %Für Abkürzungen
+
+\newcommand*\signature[2][6cm]{\vspace*{2cm}\parbox{#1}{\hrulefill\par#2}}
+
+
+%-----------------------------
+%---Variablen zum ausfüllen---
+%-----------------------------
+
+\universitaet{Carl von Ossietzky Universität Oldenburg}
+\fach{Informatik} %Informatik, ...
+\arbeitsart{Masterarbeit} 
+\titel{Entwicklung von prädiktiven und reaktiven Lösungsansätzen für das MRCPSP auf Basis von Metaheuristiken}
+\autor{René Kuchenbuch, B. Sc.}
+\gutachterEins{apl. Prof. Dr.-Ing. Jürgen Sauer}
+\gutachterZwei{Julius Möller, M. Sc.}
+\abteilung{Abteilung Systemanalyse und -optimierung}
+\department{Department für Informatik}
+\ort{Oldenburg}
+\datum{\today} 
+
+%----------------
+%---Titelseite---
+%----------------
+
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+\begin{document}
+
+\frontmatter %römische Seitennummerierung für den Anfang
+
+\makeatletter
+\begin{titlepage}
+\centering
+\begin{figure}[htb]
+  \centering
+  \begin{subfigure}{0.5\textwidth}
+    \centering
+    \includegraphics[scale=1.8]{assets/img/uni_ol_logo.png}
+    \end{subfigure}%
+    \begin{subfigure}{0.5\textwidth}
+      \centering
+      \includegraphics[scale=0.35]{assets/img/abteilungslogo.jpg}
+    \end{subfigure}
+\end{figure}
+
+{\scshape\Large\universitaet\par}
+\vspace{1cm}
+{\scshape\normalsize\fach\par}
+{\scshape\normalsize\arbeitsart\par}
+
+\vfill
+
+\hrule
+\vspace{1cm}
+{\LARGE\bfseries\titel\par}
+\vspace{1cm}
+\hrule
+
+\vfill
+
+\begin{minipage}[t]{0.5\textwidth}
+  \begin{flushleft}
+    {\normalsize\itshape vorgelegt von:\par}
+    {\normalsize Autor: \autor\par}
+    {\normalsize Studiengang: Informatik (M. Sc.) \par}
+    {\normalsize Matr. Nr.: 5896997}
+  \end{flushleft}
+\end{minipage}
+\begin{minipage}[t]{0.4\textwidth}
+  \begin{flushright}
+    {\normalsize\itshape Betreuender Gutachter:\par}
+    {\normalsize\gutachterEins}
+    \hbox to 3cm{}%
+
+    {\normalsize\itshape Zweiter Gutachter:\par}
+    {\normalsize\gutachterZwei}
+  \end{flushright}
+\end{minipage}
+
+\vfill
+
+{\normalsize\abteilung\par}
+{\normalsize\department\par}
+\vspace{1cm}
+{\normalsize\ort{}, \datum\par}
+\end{titlepage}
+\makeatother
+
+%---------------
+%---Disclaimer---
+%---------------
+
+\input{pages/X1_Sonstiges/X3_Disclaimer}
+
+%---------------
+%---Abstracts---
+%---------------
+
+\input{pages/X1_Sonstiges/X4_Abstract}
+
+%-------------------
+%---Verzeichnisse---
+%-------------------
+
+\setcounter{page}{0}
+\tableofcontents
+
+\listoffigures
+\listoftables
+\lstlistoflistings
+ 
+\input{pages/X1_Sonstiges/X5_Abkuerzungen} 
+
+%---------------
+%---Hauptteil---
+%---------------
+
+\mainmatter
+
+\input{pages/01_Einleitung/01_Motivation}
+\input{pages/01_Einleitung/02_Ziele}
+\input{pages/01_Einleitung/03_Aufbau}
+
+\input{pages/02_Grundlagen/01_MRCPSP}
+\input{pages/02_Grundlagen/02_Metaheuristiken}
+\input{pages/02_Grundlagen/03_StandForschung}
+
+\input{pages/03_Konzept/01_Problemstellung}
+\input{pages/03_Konzept/02_Konzeptüberblick}
+\input{pages/03_Konzept/03_MetaheuristischeAlgorithmen}
+\input{pages/03_Konzept/04_AnpassungBenchmarks}
+\input{pages/03_Konzept/05_Unsicherheitsszenarien}
+
+\input{pages/04_Implementierung/01_Grundframework}
+\input{pages/04_Implementierung/01X_Heuristics}
+\input{pages/04_Implementierung/03_Loesungsansaetze}
+\input{pages/04_Implementierung/02_PrädiktivReaktiveMethoden}
+\input{pages/04_Implementierung/05_Visualisierung}
+
+\input{pages/05_Evaluation/01_Versuchsaufbau} 
+\input{pages/05_Evaluation/02_BenchmarkErgebnisseMetaheuristiken} 
+\input{pages/05_Evaluation/03_BenchmarkErgebnisse_ProaktivenMethoden} 
+\input{pages/05_Evaluation/04_BenchmarkErgebnisse_PraediktiveMethoden}
+\input{pages/05_Evaluation/05_BenchmarkErgebnisse_ReaktiveMethoden}
+\input{pages/05_Evaluation/06_Vergleich} 
+
+\input{pages/06_Zusammenfassung/01_Fazit} 
+\input{pages/06_Zusammenfassung/02_Ausblick}
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Literaturverzeichnis} 
+
+\bibliography{references} 
+
+%------------
+%---Anhang---
+%------------
+
+\appendix 
+
+\input{pages/X1_Sonstiges/X1_Anhang}
+
+%-------------
+%---Schluss---
+%-------------
+
+\backmatter 
+
+\input{pages/X1_Sonstiges/X2_Erklaerung} 
+
+\end{document}
